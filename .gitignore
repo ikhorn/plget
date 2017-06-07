@@ -1,0 +1,5 @@
+cscope*
+*.o
+plget
+tags
+*.d
