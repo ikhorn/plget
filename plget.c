@@ -180,7 +180,7 @@ static int udp_socket(struct plgett *plget)
 
 	ret = bind(sock, (struct sockaddr *)addr, sizeof(struct sockaddr_in));
 	if (ret < 0)
-		return perror("Couldn't set priority"), -errno;
+		return perror("Couldn't bind"), -errno;
 
 	addr->sin_addr = plget->iaddr;
 
