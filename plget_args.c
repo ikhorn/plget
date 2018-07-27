@@ -88,7 +88,7 @@ static struct option plget_options[] = {
 	{"prio",	required_argument,	0, 'p'},
 	{"busy-poll",	required_argument,	0, 'w'},
 	{"rel-time",	required_argument,	0, 'r'},
-	{"stream-num",	required_argument,	0, 'k'},
+	{"stream-id",	required_argument,	0, 'k'},
 	{"dev-deep",	required_argument,	0, 'd'},
 	{NULL, 0, NULL, 0},
 };
