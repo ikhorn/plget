@@ -294,7 +294,7 @@ On workstation, packet generator:
 :~# plget -i eth0 -t udp -u 385 -m pkt-gen -n 1600 -l 512 -s 103 -a 192.168.3.16
 
 On target board (192.168.3.16), measure periodically rate:
-:~# plget -i eth0 -t udp -u 385 -m rx-rate -l 512
+:~# plget -i eth0 -t udp -u 385 -m rx-rate
 
 By default rate is measured once a second, but can be tuned with -s.
 For measurements h/w timestamps are used if possible, otherwise software.
