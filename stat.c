@@ -173,7 +173,7 @@ void stats_diff(struct stats *a, struct stats *b, struct stats *res)
 
 static void stats_print_log(struct stats *ss, int flags, struct timespec *rtime)
 {
-	__u64 min_val = 1000000, max_val = 0;
+	double min_val = 1000000, max_val = 0;
 	struct timespec *ts, temp;
 	char line[LOG_LINE_SIZE];
 	int max_n = 0, min_n = 0;
@@ -251,9 +251,9 @@ static void stats_print_log(struct stats *ss, int flags, struct timespec *rtime)
 	if (flags & STATS_LIN_DATA)
 		return;
 
-	printf("max val(#%d) = %.2fus\n", max_n, (double)max_val);
-	printf("min val(#%d) = %.2fus\n", min_n, (double)min_val);
-	printf("peak-to-peak = %.2fus\n", (double)(max_val - min_val));
+	printf("max val(#%d) = %.2fus\n", max_n, max_val);
+	printf("min val(#%d) = %.2fus\n", min_n, min_val);
+	printf("peak-to-peak = %.2fus\n", max_val - min_val);
 }
 
 int stats_reserve(struct stats *ss, int entry_num)
