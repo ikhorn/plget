@@ -6,15 +6,16 @@ timestamping, as for rx as for tx path. It can be used to measure complete
 latency from wire to an application and from an application to wire, round
 trip latency and more.
 
-Can be useful to trace hw timestamps when packets were sent or received in
-case of some shaping verification, like CBS Qdisc in both, offload and not
-offload modes, observe interpacket gap on so on. In case if h/w timestamping
-is not supported or partly supported, the sw timestamps are used, but not for
-everything. All timestamps are bind to the packet, so no need in any additional
-tracing tools and tracing impact is moved to the minimum. Usually PHC counter
-is running on the same timeline with system counter, but their synchronization
-can be done only once at driver initialization. To avoid mistiming while
-measurements, the phc2sys tool from linux ptp packet should be running:
+Can be useful for developers to trace hw timestamps when packets were sent or
+received in case of some shaping verification, like CBS Qdisc in both, offload
+and not offload modes, observe interpacket gap, inverstigate interchannel
+impact and so on. In case if h/w timestamping is not supported or partly
+supported, the sw timestamps are used, but not for everything. All timestamps
+are bind to the packet, so no need in any additional tracing tools and tracing
+impact is moved to the minimum. Usually PHC counter is running on the same
+timeline with system counter, but their synchronization can be done only once
+at driver initialization. To avoid mistiming while stack latency measurements,
+the phc2sys tool from linux ptp packet should be running:
 "phc2sys -s CLOCK_REALTIME -c eth0 -m -O 0". It allows to keep in sync
 two time counters in sub-microsecond level accuracy, for TI AM572x it was
 ~172ns in average, depends on discreteness of timers and their accuracy).
