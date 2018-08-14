@@ -98,8 +98,16 @@ static void plget_check_args(struct plgett *plget)
 	int mod = plget->mod;
 	int need_addr;
 
-	if (plget->flags & PLF_SCHED_STAT && !plget->dev_deep)
-		plget->dev_deep = 1;
+	if (plget->flags & PLF_SCHED_STAT) {
+		/* as always present some packet scheduler
+		 * TODO: identify virtual interface and increase to 2
+		 * TODO: identify a bridge and increase to 2 or 3 if vlan
+		 */
+		if (!plget->dev_deep)
+			plget->dev_deep = 1;
+	} else {
+		plget->dev_deep = 0;
+	}
 
 	/* set default lat printout */
 	if ((mod == TX_LAT || mod == RX_LAT || mod == ECHO_LAT ||
