@@ -84,7 +84,7 @@ Example 1:
 Measure RX latency for UDP packets, port 385.
 
 On target board (192.168.3.16):
-:~# plget -i eth0 -t udp -u 385 -m rx-lat -n 16 -l 512
+:~# plget -i eth0 -t udp -u 385 -m rx-lat -n 16
 
 On client side generate appropriate packets:
 :~# plget -i eth0 -t udp -u 385 -m tx-lat -n 16 -s 100 -l 512 -a 192.168.3.16
@@ -95,9 +95,9 @@ Measure RX latency for PTP l4 packets (port 319), useful if the driver
 supports h/w timestamping only for PTP kind packets.
 
 On target board (192.168.3.16):
-:~# plget -i eth0 -t udp -u 319 -m rx-lat -n 16 -l 512
+:~# plget -i eth0 -t udp -u 319 -m rx-lat -n 16
 or
-:~# plget -i eth0 -t ptpl4 -m rx-lat -n 16 -l 512
+:~# plget -i eth0 -t ptpl4 -m rx-lat -n 16
 
 On client side generate appropriate packets:
 :~# plget -i eth0 -t udp -u 319 -m tx-lat -n 16 -s 100 -l 512 -a 192.168.3.16
@@ -109,7 +109,7 @@ Example 3:
 Measure RX latency for avtp packets (IEEE 1722)
 
 On target board (c8:a0:30:b4:94:03):
-:~# plget -i eth0 -t avtp -m rx-lat -n 16 -l 512
+:~# plget -i eth0 -t avtp -m rx-lat -n 16
 
 On client side generate appropriate packets:
 :~# plget -i eth0 -t avtp -m tx-lat -n 16 -s 100 -l 512 -a c8:a0:30:b4:94:03
