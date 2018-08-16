@@ -182,6 +182,19 @@ Measure TX latency for ptpl2 packets (IEEE 1588)
 
 If address is not specified then 01:1B:19:00:00:00 is used.
 
+Example 5:
+---------
+Measure TX latency for ptpl2 packet, but also get latency in
+packet scheduler (IEEE 1588)
+
+:~# plget -if=eth0 --type=ptpl2 --mode=tx-lat --pkt-num=16 --pkt-size=512 \
+--format=sched,lat --pps=100
+
+or if vlan is used (one more sched ts):
+
+:~# plget -if=eth0.100 --type=ptpl2 --mode=tx-lat --pkt-num=16 --pkt-size=512 \
+--format=sched,lat --pps=100 --dev-deep=2
+
                         EXTERNAL/ECHO LATENCY EXAMPLES
 ================================================================================
 +--------------------------------------------------+
