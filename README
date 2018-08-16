@@ -1,6 +1,6 @@
                              INTRODUCTION
 ================================================================================
-plget is a tool used to measure latency packets spend in network stack, NIC
+plget is a tool used to measure latency packets spent in network stack, NIC
 driver and on the wire, trace interpacket gap, based as on h/w as on sw
 timestamping, as for rx as for tx path. It can be used to measure complete
 latency from wire to an application and from an application to wire, round
@@ -303,6 +303,7 @@ Or use default multicast group and run appropriately:
 On one side run packet generator, on another plget tool in "rx-rate" mode
 
 Example:
+--------
 
 On workstation, packet generator:
 :~# plget -i eth0 -t udp -u 385 -m pkt-gen -n 1600 -l 512 -s 103 -a 192.168.3.16
@@ -313,8 +314,19 @@ On target board (192.168.3.16), measure periodically rate:
 By default rate is measured once a second, but can be tuned with -s.
 For measurements h/w timestamps are used if possible, otherwise software.
 
-                          MORE THEN ONE STREAM EXAMPLE
+			"HWTS" or/and "IPGAP" EXAMPLE
 ================================================================================
+For next examples, replace or add "ipgap" to -f command to get interpacket gap.
+
+Example 1:
+----------
+Get plot, how packets are put on line:
+:~# plget -i eth0 -t ptpl2 -m tx-lat -n 16 -s 100 -l 512 -f hwts
+
+Packets are shown in relative to first packet ts time.
+
+Example 2:
+----------
 To measure tx-lat or hwts with several applications in parallel, and print plots
 for two applications on the same time line (not relative to first ts time) the
 following script can be used:
@@ -333,6 +345,8 @@ BASE_TIME=$(./plget)
 # run stream 2 with prio 3 and stream id = 1 to get hwts to tss2 file
 :~# plget -i eth0 -t ptpl2 -m tx-lat -n 16 -s 100 -l 512 -f hwts -p 2 \
 	-r $BASE_TIME -k 1 > tss2
+
+All this can be done getting in parallel "latency" and "ipgap"
 
                               PRINTOUTS
 ================================================================================
