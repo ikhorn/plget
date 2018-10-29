@@ -120,6 +120,15 @@ static int enable_hw_timestamping(struct plgett *plget)
 
 	strncpy(ifreq_ts.ifr_name, plget->if_name, sizeof(ifreq_ts.ifr_name));
 	ifreq_ts.ifr_data = (void *)&hwconfig;
+	ret = ioctl(plget->sock, SIOCGHWTSTAMP, &ifreq_ts);
+	printf("SIOCGHWTSTAMP: tx_type was %d; rx_filter was %d\n",
+	       hwconfig.tx_type, hwconfig.rx_filter);
+
+	memset(&ifreq_ts, 0, sizeof(ifreq_ts));
+	memset(&hwconfig, 0, sizeof(hwconfig));
+
+	strncpy(ifreq_ts.ifr_name, plget->if_name, sizeof(ifreq_ts.ifr_name));
+	ifreq_ts.ifr_data = (void *)&hwconfig;
 
 	need_tx_hwts = plget->mod == TX_LAT ||
 		       plget->mod == EXT_LAT ||
