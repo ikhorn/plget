@@ -57,7 +57,7 @@ void rxlat_proc_packet(struct plgett *plget)
 	int pkt_size, err;
 
 	plget->msg.msg_controllen = sizeof(plget->control);
-	pkt_size = recvmsg(plget->sock, &plget->msg, 0);
+	pkt_size = recvmsg(plget->sfd, &plget->msg, 0);
 
 	err = clock_gettime(CLOCK_REALTIME, &ts);
 	if (err)
@@ -88,7 +88,7 @@ static int rxrate_proc_packet(struct plgett *plget, struct timespec *ts)
 	int pkt_size;
 
 	msg->msg_controllen = sizeof(plget->control);
-	pkt_size = recvmsg(plget->sock, msg, 0);
+	pkt_size = recvmsg(plget->sfd, msg, 0);
 	if (pkt_size < 0) {
 		return perror("recvmsg"), -errno;
 	}
@@ -138,7 +138,7 @@ int rxrate(struct plgett *plget)
 	if (timer_fd < 0)
 		return timer_fd;
 
-	fds[0].fd = plget->sock;
+	fds[0].fd = plget->sfd;
 	fds[0].events = POLLIN;
 	fds[1].fd = timer_fd;
 	fds[1].events = POLLIN;

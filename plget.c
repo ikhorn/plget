@@ -87,18 +87,18 @@ int plget_setup_timer(struct plgett *plget)
 	return fd;
 }
 
-int setup_sock(int sock, int flags)
+int setup_sock(int sfd, int flags)
 {
 	int val, err;
 	unsigned int len = sizeof(val);
 
 	val = flags;
 	printf("setting ts_flags: 0x%x\n", val);
-	err = setsockopt(sock, SOL_SOCKET, SO_TIMESTAMPING, &val, len);
+	err = setsockopt(sfd, SOL_SOCKET, SO_TIMESTAMPING, &val, len);
 	if (err)
 		return perror("setsockopt"), -errno;
 
-	err = getsockopt(sock, SOL_SOCKET, SO_TIMESTAMPING, &val, &len);
+	err = getsockopt(sfd, SOL_SOCKET, SO_TIMESTAMPING, &val, &len);
 	if (err)
 		return perror("getsockopt"), -errno;
 
@@ -120,7 +120,7 @@ static int enable_hw_timestamping(struct plgett *plget)
 
 	strncpy(ifreq_ts.ifr_name, plget->if_name, sizeof(ifreq_ts.ifr_name));
 	ifreq_ts.ifr_data = (void *)&hwconfig;
-	ret = ioctl(plget->sock, SIOCGHWTSTAMP, &ifreq_ts);
+	ret = ioctl(plget->sfd, SIOCGHWTSTAMP, &ifreq_ts);
 	printf("SIOCGHWTSTAMP: tx_type was %d; rx_filter was %d\n",
 	       hwconfig.tx_type, hwconfig.rx_filter);
 
@@ -156,7 +156,7 @@ static int enable_hw_timestamping(struct plgett *plget)
 	}
 
 	hwconfig_requested = hwconfig;
-	ret = ioctl(plget->sock, SIOCSHWTSTAMP, &ifreq_ts);
+	ret = ioctl(plget->sfd, SIOCSHWTSTAMP, &ifreq_ts);
 	if (ret < 0) {
 		if (hwconfig_requested.tx_type == HWTSTAMP_TX_OFF &&
 		    hwconfig_requested.rx_filter == HWTSTAMP_FILTER_NONE)
@@ -178,30 +178,30 @@ static int udp_socket(struct plgett *plget)
 	struct sockaddr_in *addr = (struct sockaddr_in *)&plget->sk_addr;
 	int ip_multicast_loop = 0;
 	struct ip_mreqn mreq;
-	int sock, ret;
+	int sfd, ret;
 
-	sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	if (sock < 0)
+	sfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if (sfd < 0)
 		return perror("socket"), -errno;
 
 	addr->sin_family = AF_INET;
 	addr->sin_port = htons(plget->port);
 
-	ret = bind(sock, (struct sockaddr *)addr, sizeof(struct sockaddr_in));
+	ret = bind(sfd, (struct sockaddr *)addr, sizeof(struct sockaddr_in));
 	if (ret < 0)
 		return perror("Couldn't bind"), -errno;
 
 	addr->sin_addr = plget->iaddr;
 
 	if (plget->flags & PLF_PRIO) {
-		ret = setsockopt(sock, SOL_SOCKET, SO_PRIORITY, &plget->prio,
+		ret = setsockopt(sfd, SOL_SOCKET, SO_PRIORITY, &plget->prio,
 				 sizeof(plget->prio));
 		if (ret < 0)
 			return perror("Couldn't set priority"), -errno;
 	}
 
 	if (plget->flags & PLF_BUSYPOLL) {
-		ret = setsockopt(sock, SOL_SOCKET, SO_BUSY_POLL,
+		ret = setsockopt(sfd, SOL_SOCKET, SO_BUSY_POLL,
 				 &plget->busypoll_time,
 				 sizeof(plget->busypoll_time));
 		if (ret < 0)
@@ -209,40 +209,40 @@ static int udp_socket(struct plgett *plget)
 	}
 
 	/* bind socket to the interface */
-	ret = setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, plget->if_name,
+	ret = setsockopt(sfd, SOL_SOCKET, SO_BINDTODEVICE, plget->if_name,
 			 sizeof(plget->if_name));
 	if (ret < 0)
 		return perror("Couldn't bind to the interface"), -errno;
 
 	if (!(plget->flags & PLF_PTP))
-		return sock;
+		return sfd;
 
 	/* set multicast group for outgoing packets */
 	mreq.imr_multiaddr = plget->iaddr;
 	mreq.imr_address.s_addr = htonl(INADDR_ANY);
 	mreq.imr_ifindex = if_nametoindex(plget->if_name);
-	ret = setsockopt(sock, IPPROTO_IP, IP_MULTICAST_IF, &mreq,
+	ret = setsockopt(sfd, IPPROTO_IP, IP_MULTICAST_IF, &mreq,
 			 sizeof(mreq));
 	if (ret < 0)
 		return perror("set multicast"), -errno;
 
 	if (plget->mod == TX_LAT || plget->mod == PKT_GEN)
-		return sock;
+		return sfd;
 
 	/* join multicast group */
-	ret = setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq,
+	ret = setsockopt(sfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq,
 			 sizeof(struct ip_mreqn));
 	if (ret < 0)
 		return perror("join multicast group"), -errno;
 
 	printf("joined mcast group: %s\n", inet_ntoa(plget->iaddr));
 
-	ret = setsockopt(sock, IPPROTO_IP, IP_MULTICAST_LOOP,
+	ret = setsockopt(sfd, IPPROTO_IP, IP_MULTICAST_LOOP,
 		         &ip_multicast_loop, sizeof(ip_multicast_loop));
 	if (ret < 0)
 		perror("loop multicast");
 
-	return sock;
+	return sfd;
 }
 
 static int packet_socket(struct plgett *plget)
@@ -251,7 +251,7 @@ static int packet_socket(struct plgett *plget)
 	unsigned char *mac = plget->macaddr;
 	struct packet_mreq mreq;
 	__u16 protocol;
-	int sock, ret;
+	int sfd, ret;
 
 	if (plget->flags & PLF_AVTP)
 		protocol = htons(ETH_P_TSN);
@@ -260,8 +260,8 @@ static int packet_socket(struct plgett *plget)
 	else
 		protocol = 0;
 
-	sock = socket(AF_PACKET, SOCK_DGRAM, protocol);
-	if (sock < 0)
+	sfd = socket(AF_PACKET, SOCK_DGRAM, protocol);
+	if (sfd < 0)
 		return perror("socket"), -errno;
 
 	addr->sll_family = AF_PACKET;
@@ -271,7 +271,7 @@ static int packet_socket(struct plgett *plget)
 	if (plget->if_name[0] != '\0')
 		addr->sll_ifindex = if_nametoindex(plget->if_name);
 
-	ret = bind(sock, (struct sockaddr *)addr, sizeof(struct sockaddr_ll));
+	ret = bind(sfd, (struct sockaddr *)addr, sizeof(struct sockaddr_ll));
 	if (ret < 0)
 		return perror("Couldn't bind() to interface"), -errno;
 
@@ -279,25 +279,25 @@ static int packet_socket(struct plgett *plget)
 	memcpy(addr->sll_addr, mac, ETH_ALEN);
 
 	if (plget->flags & PLF_PRIO) {
-		ret = setsockopt(sock, SOL_SOCKET, SO_PRIORITY, &plget->prio,
+		ret = setsockopt(sfd, SOL_SOCKET, SO_PRIORITY, &plget->prio,
 				 sizeof(plget->prio));
 		if (ret < 0)
 			return perror("Couldn't set priority"), -errno;
 	}
 
 	if (plget->mod == TX_LAT || plget->mod == PKT_GEN)
-		return sock;
+		return sfd;
 
 	 /* join multicast group if address is provided */
 	if (*mac == '\0')
-		return sock;
+		return sfd;
 
 	mreq.mr_ifindex = addr->sll_ifindex;
 	mreq.mr_type = PACKET_MR_MULTICAST;
 	mreq.mr_alen = ETH_ALEN;
 	memcpy(&mreq.mr_address, mac, ETH_ALEN);
 
-	ret = setsockopt(sock, SOL_PACKET,
+	ret = setsockopt(sfd, SOL_PACKET,
 			 PACKET_ADD_MEMBERSHIP, &mreq,
 			 sizeof(struct packet_mreq));
 	if (ret < 0) {
@@ -308,7 +308,7 @@ static int packet_socket(struct plgett *plget)
 	printf("joined mcast group: %02x:%02x:%02x:%02x:%02x:%02x\n",
 	       mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
-	return sock;
+	return sfd;
 }
 
 static int xdp_socket(struct plgett *plget)
@@ -323,15 +323,15 @@ static int xdp_socket(struct plgett *plget)
 static int plget_create_socket(struct plgett *plget)
 {
 	if (plget->pkt_type == PKT_UDP)
-		plget->sock = udp_socket(plget);
+		plget->sfd = udp_socket(plget);
 	else if (plget->pkt_type == PKT_ETH)
-		plget->sock = packet_socket(plget);
+		plget->sfd = packet_socket(plget);
 	else if (plget->pkt_type == PKT_XDP_ETH)
-		plget->sock = xdp_socket(plget);
+		plget->sfd = xdp_socket(plget);
 	else
 		plget_fail("uknown packet type");
 
-	if (plget->sock < 0)
+	if (plget->sfd < 0)
 		return 1;
 
 	return 0;
@@ -507,7 +507,7 @@ static int init_test(struct plgett *plget)
 
 	fill_in_data_pointers(plget);
 
-	ret = setup_sock(plget->sock, ts_flags);
+	ret = setup_sock(plget->sfd, ts_flags);
 	return ret;
 }
 

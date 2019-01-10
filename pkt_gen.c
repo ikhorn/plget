@@ -25,13 +25,13 @@ int fast_pktgen(struct plgett *plget)
 	int dsize = plget->payload_size;
 	char *packet = plget->packet;
 	int sid = plget->stream_id;
-	int sock = plget->sock;
+	int sfd = plget->sfd;
 	int pnum, ret, i = 0;
 
 	pnum = plget->pkt_num ? plget->pkt_num : ~0;
 	for (i = 0; i < pnum; i++) {
 		*plget->seq_id_wr = htons((i & SEQ_ID_MASK) | sid);
-		ret = sendto(sock, packet, dsize, 0, addr,
+		ret = sendto(sfd, packet, dsize, 0, addr,
 			     sizeof(plget->sk_addr));
 		if (ret != dsize) {
 			if (ret < 0)
@@ -54,7 +54,7 @@ int pktgen(struct plgett *plget)
 	int timer_fd, pnum, ret, i = 0;
 	char *packet = plget->packet;
 	int sid = plget->stream_id;
-	int sock = plget->sock;
+	int sfd = plget->sfd;
 	struct pollfd fds[1];
 	uint64_t exps;
 
@@ -88,7 +88,7 @@ int pktgen(struct plgett *plget)
 				goto err;
 			}
 
-			ret = sendto(sock, packet, dsize, 0, addr,
+			ret = sendto(sfd, packet, dsize, 0, addr,
 				     sizeof(plget->sk_addr));
 			if (ret != dsize) {
 				if (ret < 0)

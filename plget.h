@@ -86,7 +86,7 @@ struct plgett {
 	int pkt_size;
 	int pkt_num;
 	int payload_size;
-	int sock;
+	int sfd;
 	int port;
 	int flags;
 	int prio;
@@ -107,7 +107,7 @@ struct plgett {
 	struct msghdr msg;
 };
 
-int setup_sock(int sock, int flags);
+int setup_sock(int sfd, int flags);
 int plget_setup_timer(struct plgett *plget);
 struct stats *plget_best_rx_vect(void);
 struct stats *plget_best_tx_vect(void);

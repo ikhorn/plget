@@ -38,7 +38,7 @@ static int get_tx_tstamps(struct plgett *plget)
 	char *magic;
 
 	plget->msg.msg_controllen = sizeof(plget->control);
-	psize = recvmsg(plget->sock, msg, MSG_ERRQUEUE);
+	psize = recvmsg(plget->sfd, msg, MSG_ERRQUEUE);
 	if (psize < 0) {
 		perror("recvmsg error occured");
 		return -1;
@@ -125,7 +125,7 @@ static int txlat_proc_packets(struct plgett *plget, int pkt_num)
 	if (timer_fd < 0)
 		return 1;
 
-	fds[0].fd = plget->sock;
+	fds[0].fd = plget->sfd;
 	fds[0].events = POLLERR;
 	fds[1].fd = timer_fd;
 	fds[1].events = POLLIN;
@@ -161,7 +161,7 @@ static int txlat_proc_packets(struct plgett *plget, int pkt_num)
 
 			/* send packet */
 			clock_gettime(CLOCK_REALTIME, &ts);
-			ret = sendto(plget->sock, plget->packet,
+			ret = sendto(plget->sfd, plget->packet,
 					plget->payload_size, 0,
 					(struct sockaddr *)&plget->sk_addr,
 					sizeof(plget->sk_addr));
@@ -203,13 +203,13 @@ void txlat_proc_packet(struct plgett *plget)
 	struct timespec ts;
 	int ret;
 
-	fds[0].fd = plget->sock;
+	fds[0].fd = plget->sfd;
 	fds[0].events = POLLERR;
 	ts_num = plget->dev_deep + 1;
 
 	/* send packet */
 	clock_gettime(CLOCK_REALTIME, &ts);
-	ret = sendto(plget->sock, plget->packet,
+	ret = sendto(plget->sfd, plget->packet,
 			plget->payload_size, 0,
 			(struct sockaddr *)&plget->sk_addr,
 			sizeof(plget->sk_addr));
