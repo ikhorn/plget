@@ -311,12 +311,23 @@ static int packet_socket(struct plgett *plget)
 	return sock;
 }
 
+static int xdp_socket(struct plgett *plget)
+{
+	int sfd;
+
+	sfd = 0;
+
+	return sfd;
+}
+
 static int plget_create_socket(struct plgett *plget)
 {
 	if (plget->pkt_type == PKT_UDP)
 		plget->sock = udp_socket(plget);
 	else if (plget->pkt_type == PKT_ETH)
 		plget->sock = packet_socket(plget);
+	else if (plget->pkt_type == PKT_XDP_ETH)
+		plget->sock = xdp_socket(plget);
 	else
 		plget_fail("uknown packet type");
 
@@ -328,9 +339,8 @@ static int plget_create_socket(struct plgett *plget)
 
 static int plget_create_packet(struct plgett *plget)
 {
-	int payload_size;
+	int payload_size, i;
 	char *dp;
-	int i;
 
 	/* check settings */
 	if (plget->pkt_size &&
@@ -339,7 +349,7 @@ static int plget_create_packet(struct plgett *plget)
 			return -EINVAL;
 	}
 
-	/* calculate size and payload */
+	/* adjust size and payload for packet */
 	if (plget->pkt_type == PKT_UDP) {
 		if (plget->flags & PLF_PTP) {
 			if (plget->pkt_size &&

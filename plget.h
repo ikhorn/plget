@@ -61,7 +61,8 @@ extern struct stats temp;
 
 enum pkt_type {
 	PKT_UDP,
-	PKT_ETH
+	PKT_ETH,
+	PKT_XDP_ETH,
 };
 
 enum test_mod {

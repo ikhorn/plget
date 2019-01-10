@@ -226,6 +226,9 @@ static void plget_set_packet_type(struct plgett *plget)
 	} else if (!strcmp("ptpl2", optarg)) {
 		plget->pkt_type = PKT_ETH;
 		plget->flags |= PLF_PTP;
+	} else if (!strcmp("xdp_ptpl2", optarg)) {
+		plget->pkt_type = PKT_XDP_ETH;
+		plget->flags |= PLF_PTP;
 	} else {
 		plget_fail("unsupported packet type");
 	}
