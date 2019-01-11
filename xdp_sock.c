@@ -83,7 +83,7 @@ struct xsock {
 	unsigned long prev_tx_npkts;
 };
 
-static void *xdpsk_allocate_frames_memory(int sfd)
+static void *frames_allocate(int sfd)
 {
 	struct xdp_umem_reg mr;
 	void *bufs;
@@ -118,7 +118,7 @@ static struct sock_umem *umem_allocate(int sfd)
 	if (!umem)
 		return perror("cannot allocate umem shell"), NULL;
 
-	bufs = xdpsk_allocate_frames_memory(sfd);
+	bufs = frames_allocate(sfd);
 	if (!bufs)
 		return perror("cannot allocate umem shell"), NULL;
 
