@@ -83,6 +83,19 @@ struct xsock {
 	unsigned long prev_tx_npkts;
 };
 
+static int get_ring_offsets(int sfd, struct xdp_mmap_offsets *offsets)
+{
+	socklen_t opt_len;
+	int ret;
+
+	opt_len = sizeof(struct xdp_mmap_offsets);
+	ret = getsockopt(sfd, SOL_XDP, XDP_MMAP_OFFSETS, offsets, &opt_len);
+	if (ret)
+		return perror("cannot get xdp mmap offsets"), -errno;
+
+	return 0;
+}
+
 static void *frames_allocate(int sfd)
 {
 	struct xdp_umem_reg mr;
@@ -111,7 +124,6 @@ static struct sock_umem *umem_allocate(int sfd)
 	struct xdp_mmap_offsets offsets;
 	struct sock_umem *umem;
 	int desc_num, ret;
-	socklen_t opt_len;
 	void *bufs;
 
 	umem = calloc(1, sizeof(struct sock_umem));
@@ -135,11 +147,9 @@ static struct sock_umem *umem_allocate(int sfd)
 	if (ret)
 		return perror("cannot set size for completion queue"), NULL;
 
-	/* get offsets for the rings */
-	opt_len = sizeof(offsets);
-	ret = getsockopt(sfd, SOL_XDP, XDP_MMAP_OFFSETS, &offsets, &opt_len);
+	ret = get_ring_offsets(sfd, &offsets);
 	if (ret)
-		return perror("cannot get xdp mmap offsets"), NULL;
+		return NULL;
 
 	/* initialize fill queue */
 	umem->fq.map = mmap(0, offsets.fr.desc + FQ_DESC_NUM * sizeof(__u64),
@@ -178,7 +188,6 @@ static int rx_ring_allocate(struct xsock *xsk)
 	struct xdp_mmap_offsets offsets;
 	int sfd = xsk->sfd;
 	int desc_num, ret;
-	socklen_t opt_len;
 
 	/* set number of descriptors for tx and rx queues */
 	desc_num = RQ_DESC_NUM;
@@ -186,10 +195,9 @@ static int rx_ring_allocate(struct xsock *xsk)
 	if (ret)
 		return perror("xdp socket rx ring desc num"), -errno;
 
-	opt_len = sizeof(offsets);
-	ret = getsockopt(sfd, SOL_XDP, XDP_MMAP_OFFSETS, &offsets, &opt_len);
+	ret = get_ring_offsets(sfd, &offsets);
 	if (ret)
-		return perror("cannot get xdp mmap offsets"), -errno;
+		return ret;
 
 	xsk->rx.map = mmap(0, offsets.rx.desc + RQ_DESC_NUM * sizeof(struct xdp_desc),
 			   PROT_READ | PROT_WRITE, MAP_SHARED | MAP_POPULATE, sfd,
@@ -211,18 +219,15 @@ static int tx_ring_allocate(struct xsock *xsk)
 	struct xdp_mmap_offsets offsets;
 	int sfd = xsk->sfd;
 	int desc_num, ret;
-	socklen_t opt_len;
-
 
 	desc_num = TQ_DESC_NUM;
 	ret = setsockopt(sfd, SOL_XDP, XDP_TX_RING, &desc_num, sizeof(int));
 	if (ret)
 		return perror("xdp socket tx ring desc num"), -errno;
 
-	opt_len = sizeof(offsets);
-	ret = getsockopt(sfd, SOL_XDP, XDP_MMAP_OFFSETS, &offsets, &opt_len);
+	ret = get_ring_offsets(sfd, &offsets);
 	if (ret)
-		return perror("cannot get xdp mmap offsets"), -errno;
+		return ret;
 
 	xsk->tx.map = mmap(0, offsets.tx.desc + TQ_DESC_NUM * sizeof(struct xdp_desc),
 			   PROT_READ | PROT_WRITE, MAP_SHARED | MAP_POPULATE, sfd,
