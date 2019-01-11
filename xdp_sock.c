@@ -75,7 +75,7 @@ struct xsock {
 	struct sock_queue rx;
 	struct sock_queue tx;
 	int sfd;
-	struct xdp_umem *umem;
+	struct sock_umem *umem;
 	__u32 outstanding_tx;
 	unsigned long rx_npkts;
 	unsigned long tx_npkts;
