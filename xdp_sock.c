@@ -258,6 +258,9 @@ int xdp_socket(struct plgett *plget)
 	xsk->sfd = sfd;
 
 	umem = umem_allocate(sfd);
+	if (!umem)
+		return perror("cannot allocate umem"), -errno;
+
 
 	ret = rx_ring_allocate(xsk);
 	if (ret)
