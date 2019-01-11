@@ -244,23 +244,19 @@ int xdp_socket(struct plgett *plget)
 {
 	struct sock_umem *umem;
 	struct xsock *xsk;
-	int sfd, ret;
-
-	sfd = socket(AF_XDP, SOCK_RAW, 0);
-	if (sfd < 0)
-		return perror("xdp socket"), -errno;
+	int ret;
 
 	xsk = calloc(1, sizeof(*xsk));
 	if (!xsk)
 		return -errno;
 
-	plget->sfd = sfd;
-	xsk->sfd = sfd;
+	xsk->sfd = socket(AF_XDP, SOCK_RAW, 0);
+	if (xsk->sfd < 0)
+		return perror("xdp socket"), -errno;
 
-	umem = umem_allocate(sfd);
+	umem = umem_allocate(xsk->sfd);
 	if (!umem)
 		return perror("cannot allocate umem"), -errno;
-
 
 	ret = rx_ring_allocate(xsk);
 	if (ret)
@@ -270,5 +266,5 @@ int xdp_socket(struct plgett *plget)
 	if (ret)
 		return perror("cannot allocate tx ring"), -errno;
 
-	return sfd;
+	return xsk->sfd;
 }
