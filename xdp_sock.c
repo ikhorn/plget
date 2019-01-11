@@ -206,11 +206,45 @@ static int rx_ring_allocate(struct xsock *xsk)
 	return 0;
 }
 
+static int tx_ring_allocate(struct xsock *xsk)
+{
+	struct xdp_mmap_offsets offsets;
+	int sfd = xsk->sfd;
+	int desc_num, ret;
+	socklen_t opt_len;
+
+
+	desc_num = TQ_DESC_NUM;
+	ret = setsockopt(sfd, SOL_XDP, XDP_TX_RING, &desc_num, sizeof(int));
+	if (ret)
+		return perror("xdp socket tx ring desc num"), -errno;
+
+	opt_len = sizeof(offsets);
+	ret = getsockopt(sfd, SOL_XDP, XDP_MMAP_OFFSETS, &offsets, &opt_len);
+	if (ret)
+		return perror("cannot get xdp mmap offsets"), -errno;
+
+	xsk->tx.map = mmap(0, offsets.tx.desc + TQ_DESC_NUM * sizeof(struct xdp_desc),
+			   PROT_READ | PROT_WRITE, MAP_SHARED | MAP_POPULATE, sfd,
+			   XDP_PGOFF_TX_RING);
+	if (xsk->tx.map == MAP_FAILED)
+		return perror("cannot map rx ring memory"), -errno;
+
+	xsk->tx.mask = TQ_DESC_NUM - 1;
+	xsk->tx.size = TQ_DESC_NUM;
+	xsk->tx.producer = xsk->tx.map + offsets.tx.producer;
+	xsk->tx.consumer = xsk->tx.map + offsets.tx.consumer;
+	xsk->tx.ring = xsk->tx.map + offsets.tx.desc;
+	xsk->tx.cached_cons = TQ_DESC_NUM;
+
+	return 0;
+}
+
 int xdp_socket(struct plgett *plget)
 {
 	struct sock_umem *umem;
 	struct xsock *xsk;
-	int sfd;
+	int sfd, ret;
 
 	sfd = socket(AF_XDP, SOCK_RAW, 0);
 	if (sfd < 0)
@@ -224,7 +258,14 @@ int xdp_socket(struct plgett *plget)
 	xsk->sfd = sfd;
 
 	umem = umem_allocate(sfd);
-	rx_ring_allocate(xsk);
+
+	ret = rx_ring_allocate(xsk);
+	if (ret)
+		return perror("cannot allocate rx ring"), -errno;
+
+	ret = tx_ring_allocate(xsk);
+	if (ret)
+		return perror("cannot allocate tx ring"), -errno;
 
 	return sfd;
 }
