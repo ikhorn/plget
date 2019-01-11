@@ -119,6 +119,38 @@ static void *frames_allocate(int sfd)
 	return bufs;
 }
 
+static int fill_ring_allocate(struct sock_umem *umem)
+{
+	struct xdp_mmap_offsets offsets;
+	int sfd = umem->fd;
+	int desc_num, ret;
+
+	desc_num = FQ_DESC_NUM;
+	ret = setsockopt(sfd, SOL_XDP, XDP_UMEM_FILL_RING, &desc_num,
+			 sizeof(int));
+	if (ret)
+		return perror("cannot set size for fill queue"), -errno;
+
+	ret = get_ring_offsets(sfd, &offsets);
+	if (ret)
+		return -errno;
+
+	umem->fq.map = mmap(0, offsets.fr.desc + FQ_DESC_NUM * sizeof(__u64),
+			    PROT_READ | PROT_WRITE, MAP_SHARED | MAP_POPULATE,
+			    sfd, XDP_UMEM_PGOFF_FILL_RING);
+	if (umem->fq.map == MAP_FAILED)
+		return perror("cannot map fill queue memory"), -errno;
+
+	umem->fq.mask = FQ_DESC_NUM - 1;
+	umem->fq.size = FQ_DESC_NUM;
+	umem->fq.producer = umem->fq.map + offsets.fr.producer;
+	umem->fq.consumer = umem->fq.map + offsets.fr.consumer;
+	umem->fq.ring = umem->fq.map + offsets.fr.desc;
+	umem->fq.cached_cons = FQ_DESC_NUM;
+
+	return 0;
+}
+
 static struct sock_umem *umem_allocate(int sfd)
 {
 	struct xdp_mmap_offsets offsets;
@@ -134,13 +166,12 @@ static struct sock_umem *umem_allocate(int sfd)
 	if (!bufs)
 		return perror("cannot allocate umem shell"), NULL;
 
-	/* set size of fill and completion queues */
-	desc_num = FQ_DESC_NUM;
-	ret = setsockopt(sfd, SOL_XDP, XDP_UMEM_FILL_RING, &desc_num,
-			 sizeof(int));
+	umem->fd = sfd;
+	ret = fill_ring_allocate(umem);
 	if (ret)
-		return perror("cannot set size for fill queue"), NULL;
+		return perror("cannot fill ring"), NULL;
 
+	/* set size of fill and completion queues */
 	desc_num = CQ_DESC_NUM;
 	ret = setsockopt(sfd, SOL_XDP, XDP_UMEM_COMPLETION_RING, &desc_num,
 			 sizeof(int));
@@ -150,20 +181,6 @@ static struct sock_umem *umem_allocate(int sfd)
 	ret = get_ring_offsets(sfd, &offsets);
 	if (ret)
 		return NULL;
-
-	/* initialize fill queue */
-	umem->fq.map = mmap(0, offsets.fr.desc + FQ_DESC_NUM * sizeof(__u64),
-			    PROT_READ | PROT_WRITE, MAP_SHARED | MAP_POPULATE,
-			    sfd, XDP_UMEM_PGOFF_FILL_RING);
-	if (umem->fq.map == MAP_FAILED)
-		return perror("cannot map fill queue memory"), NULL;
-
-	umem->fq.mask = FQ_DESC_NUM - 1;
-	umem->fq.size = FQ_DESC_NUM;
-	umem->fq.producer = umem->fq.map + offsets.fr.producer;
-	umem->fq.consumer = umem->fq.map + offsets.fr.consumer;
-	umem->fq.ring = umem->fq.map + offsets.fr.desc;
-	umem->fq.cached_cons = FQ_DESC_NUM;
 
 	/* initialize completion queue */
 	umem->cq.map = mmap(0, offsets.cr.desc + CQ_DESC_NUM * sizeof(__u64),
@@ -178,7 +195,6 @@ static struct sock_umem *umem_allocate(int sfd)
 	umem->cq.consumer = umem->cq.map + offsets.cr.consumer;
 	umem->cq.ring = umem->cq.map + offsets.cr.desc;
 	umem->frames = bufs;
-	umem->fd = sfd;
 
 	return umem;
 }
