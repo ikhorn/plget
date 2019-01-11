@@ -185,15 +185,14 @@ static int completion_ring_allocate(struct sock_umem *umem)
 static struct sock_umem *umem_allocate(int sfd)
 {
 	struct sock_umem *umem;
-	void *bufs;
 	int ret;
 
 	umem = calloc(1, sizeof(struct sock_umem));
 	if (!umem)
 		return perror("cannot allocate umem shell"), NULL;
 
-	bufs = frames_allocate(sfd);
-	if (!bufs)
+	umem->frames = frames_allocate(sfd);
+	if (!umem->frames)
 		return perror("cannot allocate umem shell"), NULL;
 
 	umem->fd = sfd;
@@ -204,8 +203,6 @@ static struct sock_umem *umem_allocate(int sfd)
 	ret = completion_ring_allocate(umem);
 	if (ret)
 		return perror("cannot fill ring"), NULL;
-
-	umem->frames = bufs;
 
 	return umem;
 }
