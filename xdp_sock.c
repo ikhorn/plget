@@ -182,31 +182,6 @@ static int completion_ring_allocate(struct sock_umem *umem)
 	return 0;
 }
 
-static struct sock_umem *umem_allocate(int sfd)
-{
-	struct sock_umem *umem;
-	int ret;
-
-	umem = calloc(1, sizeof(struct sock_umem));
-	if (!umem)
-		return perror("cannot allocate umem shell"), NULL;
-
-	umem->frames = frames_allocate(sfd);
-	if (!umem->frames)
-		return perror("cannot allocate umem shell"), NULL;
-
-	umem->fd = sfd;
-	ret = fill_ring_allocate(umem);
-	if (ret)
-		return perror("cannot fill ring"), NULL;
-
-	ret = completion_ring_allocate(umem);
-	if (ret)
-		return perror("cannot fill ring"), NULL;
-
-	return umem;
-}
-
 static int rx_ring_allocate(struct xsock *xsk)
 {
 	struct xdp_mmap_offsets offsets;
@@ -267,6 +242,31 @@ static int tx_ring_allocate(struct xsock *xsk)
 	xsk->tx.cached_cons = TQ_DESC_NUM;
 
 	return 0;
+}
+
+static struct sock_umem *umem_allocate(int sfd)
+{
+	struct sock_umem *umem;
+	int ret;
+
+	umem = calloc(1, sizeof(struct sock_umem));
+	if (!umem)
+		return perror("cannot allocate umem shell"), NULL;
+
+	umem->frames = frames_allocate(sfd);
+	if (!umem->frames)
+		return perror("cannot allocate umem shell"), NULL;
+
+	umem->fd = sfd;
+	ret = fill_ring_allocate(umem);
+	if (ret)
+		return perror("cannot fill ring"), NULL;
+
+	ret = completion_ring_allocate(umem);
+	if (ret)
+		return perror("cannot fill ring"), NULL;
+
+	return umem;
 }
 
 int xdp_socket(struct plgett *plget)
