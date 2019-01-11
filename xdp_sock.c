@@ -17,6 +17,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/mman.h>
 //#include <linux/if_xdp.h>
 
 #ifndef XDP_RX_RING
@@ -107,7 +108,10 @@ static void *xdpsk_allocate_frames_memory(int sfd)
 
 static struct sock_umem *umem_allocate(int sfd)
 {
+	struct xdp_mmap_offsets offsets;
 	struct sock_umem *umem;
+	int desc_num, ret;
+	socklen_t opt_len;
 	void *bufs;
 
 	umem = calloc(1, sizeof(struct sock_umem));
@@ -118,12 +122,60 @@ static struct sock_umem *umem_allocate(int sfd)
 	if (!bufs)
 		return perror("cannot allocate umem shell"), NULL;
 
+	/* set size of fill and completion queues */
+	desc_num = FQ_DESC_NUM;
+	ret = setsockopt(sfd, SOL_XDP, XDP_UMEM_FILL_RING, &desc_num,
+			 sizeof(int));
+	if (ret)
+		return perror("cannot set size for fill queue"), NULL;
+
+	desc_num = CQ_DESC_NUM;
+	ret = setsockopt(sfd, SOL_XDP, XDP_UMEM_COMPLETION_RING, &desc_num,
+			 sizeof(int));
+	if (ret)
+		return perror("cannot set size for completion queue"), NULL;
+
+	/* get offsets for the rings */
+	opt_len = sizeof(offsets);
+	ret = getsockopt(sfd, SOL_XDP, XDP_MMAP_OFFSETS, &offsets, &opt_len);
+	if (ret)
+		return perror("cannot get xdp mmap offsets"), NULL;
+
+	/* initialize fill queue */
+	umem->fq.map = mmap(0, offsets.fr.desc + FQ_DESC_NUM * sizeof(__u64),
+			    PROT_READ | PROT_WRITE, MAP_SHARED | MAP_POPULATE,
+			    sfd, XDP_UMEM_PGOFF_FILL_RING);
+	if (umem->fq.map == MAP_FAILED)
+		return perror("cannot map fill queue memory"), NULL;
+
+	umem->fq.mask = FQ_DESC_NUM - 1;
+	umem->fq.size = FQ_DESC_NUM;
+	umem->fq.producer = umem->fq.map + offsets.fr.producer;
+	umem->fq.consumer = umem->fq.map + offsets.fr.consumer;
+	umem->fq.ring = umem->fq.map + offsets.fr.desc;
+	umem->fq.cached_cons = FQ_DESC_NUM;
+
+	/* initialize completion queue */
+	umem->cq.map = mmap(0, offsets.cr.desc + CQ_DESC_NUM * sizeof(__u64),
+			     PROT_READ | PROT_WRITE, MAP_SHARED | MAP_POPULATE,
+			     sfd, XDP_UMEM_PGOFF_COMPLETION_RING);
+	if (umem->cq.map == MAP_FAILED)
+		return perror("cannot map completion queue memory"), NULL;
+
+	umem->cq.mask = CQ_DESC_NUM - 1;
+	umem->cq.size = CQ_DESC_NUM;
+	umem->cq.producer = umem->cq.map + offsets.cr.producer;
+	umem->cq.consumer = umem->cq.map + offsets.cr.consumer;
+	umem->cq.ring = umem->cq.map + offsets.cr.desc;
+
+	umem->frames = bufs;
+	umem->fd = sfd;
+
 	return umem;
 }
 
 int xdp_socket(struct plgett *plget)
 {
-	struct xdp_mmap_offsets offsets;
 	struct sock_umem *umem;
 	struct xsock *xsk;
 	int sfd;
