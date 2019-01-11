@@ -34,6 +34,7 @@
 #include <sys/mman.h>
 #include "pkt_gen.h"
 #include "result.h"
+#include "xdp_sock.h"
 
 #define ALIGN_ROUNDUP(x, align)\
 	((align) * (((x) + align - 1) / (align)))
@@ -307,15 +308,6 @@ static int packet_socket(struct plgett *plget)
 
 	printf("joined mcast group: %02x:%02x:%02x:%02x:%02x:%02x\n",
 	       mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-
-	return sfd;
-}
-
-static int xdp_socket(struct plgett *plget)
-{
-	int sfd;
-
-	sfd = 0;
 
 	return sfd;
 }

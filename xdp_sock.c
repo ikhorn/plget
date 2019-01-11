@@ -15,6 +15,8 @@
 #include "xdp_sock.h"
 #include <stdio.h>
 #include <errno.h>
+#include <stdlib.h>
+#include <unistd.h>
 //#include <linux/if_xdp.h>
 
 #ifndef XDP_RX_RING
@@ -36,6 +38,7 @@
 
 #define FRAME_NUM	256	/* number of frames to operate on */
 #define FRAME_SIZE	2048	/* 2 frames per page */
+#define FRAME_HEADROOM	0
 
 
 struct umem_queue {
@@ -79,9 +82,41 @@ struct xsock {
 	unsigned long prev_tx_npkts;
 };
 
+static void *xdpsk_allocate_frames_memory(int sfd)
+{
+	struct xdp_umem_reg mr;
+	void *bufs;
+	int ret;
+
+	ret = posix_memalign(&bufs, getpagesize(), FRAME_NUM * FRAME_SIZE);
+	if (ret)
+		return perror("cannot allocate frames memory"), NULL;
+
+	/* register/map user memory for payload/frames */
+	mr.addr = (unsigned long)bufs;
+	mr.len = FRAME_NUM * FRAME_SIZE;
+	mr.chunk_size = FRAME_SIZE;
+	mr.headroom = FRAME_HEADROOM;
+
+	ret = setsockopt(sfd, SOL_XDP, XDP_UMEM_REG, &mr, sizeof(mr));
+	if (ret)
+		return perror("cannot register umem for frames"), NULL;
+
+	return bufs;
+}
+
 static struct sock_umem *umem_allocate(int sfd)
 {
 	struct sock_umem *umem;
+	void *bufs;
+
+	umem = calloc(1, sizeof(struct sock_umem));
+	if (!umem)
+		return perror("cannot allocate umem shell"), NULL;
+
+	bufs = xdpsk_allocate_frames_memory(sfd);
+	if (!bufs)
+		return perror("cannot allocate umem shell"), NULL;
 
 	return umem;
 }
