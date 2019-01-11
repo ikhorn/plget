@@ -133,7 +133,7 @@ static int fill_ring_allocate(struct sock_umem *umem)
 
 	ret = get_ring_offsets(sfd, &offsets);
 	if (ret)
-		return -errno;
+		return ret;
 
 	umem->fq.map = mmap(0, offsets.fr.desc + FQ_DESC_NUM * sizeof(__u64),
 			    PROT_READ | PROT_WRITE, MAP_SHARED | MAP_POPULATE,
@@ -151,12 +151,42 @@ static int fill_ring_allocate(struct sock_umem *umem)
 	return 0;
 }
 
-static struct sock_umem *umem_allocate(int sfd)
+static int completion_ring_allocate(struct sock_umem *umem)
 {
 	struct xdp_mmap_offsets offsets;
-	struct sock_umem *umem;
+	int sfd = umem->fd;
 	int desc_num, ret;
+
+	desc_num = CQ_DESC_NUM;
+	ret = setsockopt(sfd, SOL_XDP, XDP_UMEM_COMPLETION_RING, &desc_num,
+			 sizeof(int));
+	if (ret)
+		return perror("cannot set size for completion queue"), -errno;
+
+	ret = get_ring_offsets(sfd, &offsets);
+	if (ret)
+		return ret;
+
+	umem->cq.map = mmap(0, offsets.cr.desc + CQ_DESC_NUM * sizeof(__u64),
+			     PROT_READ | PROT_WRITE, MAP_SHARED | MAP_POPULATE,
+			     sfd, XDP_UMEM_PGOFF_COMPLETION_RING);
+	if (umem->cq.map == MAP_FAILED)
+		return perror("cannot map completion queue memory"), -errno;
+
+	umem->cq.mask = CQ_DESC_NUM - 1;
+	umem->cq.size = CQ_DESC_NUM;
+	umem->cq.producer = umem->cq.map + offsets.cr.producer;
+	umem->cq.consumer = umem->cq.map + offsets.cr.consumer;
+	umem->cq.ring = umem->cq.map + offsets.cr.desc;
+
+	return 0;
+}
+
+static struct sock_umem *umem_allocate(int sfd)
+{
+	struct sock_umem *umem;
 	void *bufs;
+	int ret;
 
 	umem = calloc(1, sizeof(struct sock_umem));
 	if (!umem)
@@ -171,29 +201,10 @@ static struct sock_umem *umem_allocate(int sfd)
 	if (ret)
 		return perror("cannot fill ring"), NULL;
 
-	/* set size of fill and completion queues */
-	desc_num = CQ_DESC_NUM;
-	ret = setsockopt(sfd, SOL_XDP, XDP_UMEM_COMPLETION_RING, &desc_num,
-			 sizeof(int));
+	ret = completion_ring_allocate(umem);
 	if (ret)
-		return perror("cannot set size for completion queue"), NULL;
+		return perror("cannot fill ring"), NULL;
 
-	ret = get_ring_offsets(sfd, &offsets);
-	if (ret)
-		return NULL;
-
-	/* initialize completion queue */
-	umem->cq.map = mmap(0, offsets.cr.desc + CQ_DESC_NUM * sizeof(__u64),
-			     PROT_READ | PROT_WRITE, MAP_SHARED | MAP_POPULATE,
-			     sfd, XDP_UMEM_PGOFF_COMPLETION_RING);
-	if (umem->cq.map == MAP_FAILED)
-		return perror("cannot map completion queue memory"), NULL;
-
-	umem->cq.mask = CQ_DESC_NUM - 1;
-	umem->cq.size = CQ_DESC_NUM;
-	umem->cq.producer = umem->cq.map + offsets.cr.producer;
-	umem->cq.consumer = umem->cq.map + offsets.cr.consumer;
-	umem->cq.ring = umem->cq.map + offsets.cr.desc;
 	umem->frames = bufs;
 
 	return umem;
