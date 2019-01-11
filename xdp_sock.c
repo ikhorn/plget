@@ -93,7 +93,7 @@ static void *xdpsk_allocate_frames_memory(int sfd)
 	if (ret)
 		return perror("cannot allocate frames memory"), NULL;
 
-	/* register/map user memory for payload/frames */
+	/* register/map user memory for frames */
 	mr.addr = (unsigned long)bufs;
 	mr.len = FRAME_NUM * FRAME_SIZE;
 	mr.chunk_size = FRAME_SIZE;
@@ -167,11 +167,43 @@ static struct sock_umem *umem_allocate(int sfd)
 	umem->cq.producer = umem->cq.map + offsets.cr.producer;
 	umem->cq.consumer = umem->cq.map + offsets.cr.consumer;
 	umem->cq.ring = umem->cq.map + offsets.cr.desc;
-
 	umem->frames = bufs;
 	umem->fd = sfd;
 
 	return umem;
+}
+
+static int rx_ring_allocate(struct xsock *xsk)
+{
+	struct xdp_mmap_offsets offsets;
+	int sfd = xsk->sfd;
+	int desc_num, ret;
+	socklen_t opt_len;
+
+	/* set number of descriptors for tx and rx queues */
+	desc_num = RQ_DESC_NUM;
+	ret = setsockopt(sfd, SOL_XDP, XDP_RX_RING, &desc_num, sizeof(int));
+	if (ret)
+		return perror("xdp socket rx ring desc num"), -errno;
+
+	opt_len = sizeof(offsets);
+	ret = getsockopt(sfd, SOL_XDP, XDP_MMAP_OFFSETS, &offsets, &opt_len);
+	if (ret)
+		return perror("cannot get xdp mmap offsets"), -errno;
+
+	xsk->rx.map = mmap(0, offsets.rx.desc + RQ_DESC_NUM * sizeof(struct xdp_desc),
+			   PROT_READ | PROT_WRITE, MAP_SHARED | MAP_POPULATE, sfd,
+			   XDP_PGOFF_RX_RING);
+	if (xsk->rx.map == MAP_FAILED)
+		return perror("cannot map rx ring memory"), -errno;
+
+	xsk->rx.mask = RQ_DESC_NUM - 1;
+	xsk->rx.size = RQ_DESC_NUM;
+	xsk->rx.producer = xsk->rx.map + offsets.rx.producer;
+	xsk->rx.consumer = xsk->rx.map + offsets.rx.consumer;
+	xsk->rx.ring = xsk->rx.map + offsets.rx.desc;
+
+	return 0;
 }
 
 int xdp_socket(struct plgett *plget)
@@ -184,9 +216,15 @@ int xdp_socket(struct plgett *plget)
 	if (sfd < 0)
 		return perror("xdp socket"), -errno;
 
+	xsk = calloc(1, sizeof(*xsk));
+	if (!xsk)
+		return -errno;
+
 	plget->sfd = sfd;
+	xsk->sfd = sfd;
 
 	umem = umem_allocate(sfd);
+	rx_ring_allocate(xsk);
 
 	return sfd;
 }
