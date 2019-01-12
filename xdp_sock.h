@@ -17,6 +17,47 @@
 
 #include "plget.h"
 
+struct umem_queue {
+	__u32 cached_prod;
+	__u32 cached_cons;
+	__u32 mask;
+	__u32 size;
+	__u32 *producer;
+	__u32 *consumer;
+	__u64 *ring;
+	void *map;
+};
+
+struct sock_umem {
+	char *frames;
+	struct umem_queue fq;
+	struct umem_queue cq;
+	int fd;
+};
+
+struct sock_queue {
+	__u32 cached_prod;
+	__u32 cached_cons;
+	__u32 mask;
+	__u32 size;
+	__u32 *producer;
+	__u32 *consumer;
+	struct xdp_desc *ring;
+	void *map;
+};
+
+struct xsock {
+	struct sock_queue rx;
+	struct sock_queue tx;
+	int sfd;
+	struct sock_umem *umem;
+	__u32 outstanding_tx;
+	unsigned long rx_npkts;
+	unsigned long tx_npkts;
+	unsigned long prev_rx_npkts;
+	unsigned long prev_tx_npkts;
+};
+
 int xdp_socket(struct plgett *plget);
 
 #endif
