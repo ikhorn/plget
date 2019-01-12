@@ -18,11 +18,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/mman.h>
-//#include <linux/if_xdp.h>
-
-#ifndef XDP_RX_RING
-#include "linux/if_xdp.h"
-#endif
 
 #ifndef AF_XDP
 #define AF_XDP 44
@@ -271,19 +266,21 @@ static struct sock_umem *umem_allocate(int sfd)
 
 int xdp_socket(struct plgett *plget)
 {
+	struct sockaddr_xdp *addr = (struct sockaddr_xdp *)&plget->sk_addr;
 	struct sock_umem *umem;
 	struct xsock *xsk;
-	int ret;
+	int ret, sfd;
 
 	xsk = calloc(1, sizeof(*xsk));
 	if (!xsk)
 		return -errno;
 
-	xsk->sfd = socket(AF_XDP, SOCK_RAW, 0);
-	if (xsk->sfd < 0)
+	sfd = socket(AF_XDP, SOCK_RAW, 0);
+	if (sfd < 0)
 		return perror("xdp socket"), -errno;
 
-	umem = umem_allocate(xsk->sfd);
+	xsk->sfd = sfd;
+	umem = umem_allocate(sfd);
 	if (!umem)
 		return perror("cannot allocate umem"), -errno;
 
@@ -295,5 +292,14 @@ int xdp_socket(struct plgett *plget)
 	if (ret)
 		return perror("cannot allocate tx ring"), -errno;
 
-	return xsk->sfd;
+	/* bind socket with interface and queue */
+	addr->sxdp_family = AF_XDP;
+	addr->sxdp_ifindex = if_nametoindex(plget->if_name);
+	addr->sxdp_queue_id = plget->queue;
+
+	ret = bind(sfd, (struct sockaddr *)addr, sizeof(struct sockaddr_xdp));
+	if (ret)
+		return perror("cannot bind dev and queue with socket"), -errno;
+
+	return sfd;
 }
