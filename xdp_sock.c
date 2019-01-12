@@ -297,6 +297,11 @@ int xdp_socket(struct plgett *plget)
 	addr->sxdp_ifindex = if_nametoindex(plget->if_name);
 	addr->sxdp_queue_id = plget->queue;
 
+	if (plget->flags & PLF_ZERO_COPY)
+		addr->sxdp_flags = XDP_ZEROCOPY;
+	else
+		addr->sxdp_flags = XDP_COPY;
+
 	ret = bind(sfd, (struct sockaddr *)addr, sizeof(struct sockaddr_xdp));
 	if (ret)
 		return perror("cannot bind dev and queue with socket"), -errno;

@@ -18,9 +18,13 @@
 #include <netpacket/packet.h>
 #include <net/ethernet.h>
 #include <netinet/in.h>
-#include <linux/if.h>
+#include <net/if.h>
 #include <sys/time.h>
 #include "stat.h"
+
+#ifndef XDP_RX_RING
+#include "linux/if_xdp.h"
+#endif
 
 #define ts_correct(ts)			((ts)->tv_sec || (ts)->tv_nsec)
 #define NSEC_PER_SEC			1000000000ULL
@@ -51,6 +55,8 @@ extern struct stats temp;
 #define PLF_BUSYPOLL			BIT(9)
 #define PLF_TS_ID_ALLOWED		BIT(10)
 #define PLF_SCHED_STAT			BIT(11)
+#define PLF_QUEUE			BIT(12)
+#define PLF_ZERO_COPY			BIT(13)
 
 #define PLF_PRINTOUT			(PLF_HW_STAT |\
 					PLF_HW_GAP_STAT |\
@@ -75,7 +81,11 @@ enum test_mod {
 };
 
 struct plgett {
-	struct in_addr iaddr;
+	union {
+		struct in_addr iaddr;
+		struct sockaddr_ll iaddr2;
+		struct sockaddr_xdp iaddr3;
+	};
 	unsigned char macaddr[8];
 	struct sockaddr_ll sk_addr;
 	enum test_mod mod;
@@ -90,6 +100,7 @@ struct plgett {
 	int port;
 	int flags;
 	int prio;
+	int queue; /* must be used by XDP socket */
 	int busypoll_time;
 	int stream_id;
 	int dev_deep;

@@ -72,6 +72,8 @@ static void plget_usage(void)
 	       "by default 1 is used. That is if vlan + bridge then -d 3, and "
 	       "so on, basically it's equal to number of sched timestamps "
 	       "expected\n");
+	printf("\tq QUEUE\t\t--queue=QUEUE\t\t:set queue for xpd socket\n");
+	printf("\tz \t\t--zero-copy\t\t:force zero-copy XDP mode\n");
 }
 
 static struct option plget_options[] = {
@@ -90,6 +92,8 @@ static struct option plget_options[] = {
 	{"rel-time",	required_argument,	0, 'r'},
 	{"stream-id",	required_argument,	0, 'k'},
 	{"dev-deep",	required_argument,	0, 'd'},
+	{"queue",	required_argument,	0, 'q'},
+	{"zero-copy",	no_argument,		0, 'z'},
 	{NULL, 0, NULL, 0},
 };
 
@@ -180,6 +184,16 @@ static void plget_check_args(struct plgett *plget)
 
 		if (plget->port)
 			printf("Cannot specify port for non UDP packets\n");
+		break;
+	case PKT_XDP_ETH:
+		if (plget->if_name[0] == '\0')
+			plget_fail("For XDP sockets, dev has to be specified");
+
+		if (!(plget->flags & PLF_QUEUE))
+			plget_fail("For XDP sockets, dev has to be specified");
+
+		need_addr = (plget->macaddr[0] == '\0') &&
+			    (mod == TX_LAT || mod == EXT_LAT || mod == PKT_GEN);
 		break;
 	default:
 		plget_fail("Please, specify packet_type");
@@ -320,7 +334,7 @@ static void read_args(struct plgett *plget, int argc, char **argv)
 {
 	int idx, opt;
 
-	while ((opt = getopt_long(argc, argv, "s:u:p:i:m:n:l:a:t:f:b:cw:r:k:d:",
+	while ((opt = getopt_long(argc, argv, "s:u:p:i:m:n:l:a:t:f:b:cw:r:k:d:q:z",
 	       plget_options, &idx)) != -1) {
 		switch (opt) {
 		case 's':
@@ -370,6 +384,11 @@ static void read_args(struct plgett *plget, int argc, char **argv)
 		case 'd':
 			plget->dev_deep = atoi(optarg);
 			break;
+		case 'q':
+			plget->queue = atoi(optarg);
+			plget->flags |= PLF_QUEUE;
+		case 'z':
+			plget->flags |= PLF_ZERO_COPY;
 		default:
 			plget_fail("unknown option");
 		}
