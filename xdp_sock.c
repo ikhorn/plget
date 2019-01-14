@@ -32,8 +32,9 @@
 #define FQ_DESC_NUM	1024
 #define CQ_DESC_NUM	1024
 
+#define FRAME_SIFT	11
+#define FRAME_SIZE	(2 ^ FRAME_SIFT)	/* 2 frames per page */
 #define FRAME_NUM	256	/* number of frames to operate on */
-#define FRAME_SIZE	2048	/* 2 frames per page */
 #define FRAME_HEADROOM	0
 
 static int get_ring_offsets(int sfd, struct xdp_mmap_offsets *offsets)
