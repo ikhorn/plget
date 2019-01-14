@@ -392,28 +392,23 @@ Example 2:
 To measure tx-lat or hwts with several applications in parallel, and print plots
 for two applications on the same time line (not relative to first ts time) the
 following script can be used:
-
+~~~
 #!/bin/sh
 # get hardware timestamps for both streams to observe inter streams impact
 
 # get common time base running plget w/o arguments, to present readable
 # timestamps in one time line.
-~~~
-:~# BASE_TIME=$(./plget)
-~~~
+
+BASE_TIME=$(./plget)
 
 # run stream 1 with prio 3 and stream id = 0 to get hwts to tss1 file
-~~~
-:~# plget -i eth0 -t ptpl2 -m tx-lat -n 16 -s 100 -l 512 -f hwts -p 3 \
+plget -i eth0 -t ptpl2 -m tx-lat -n 16 -s 100 -l 512 -f hwts -p 3 \
 	-r $BASE_TIME -k 0 > tss1&
-~~~
 
 # run stream 2 with prio 3 and stream id = 1 to get hwts to tss2 file
-~~~
-:~# plget -i eth0 -t ptpl2 -m tx-lat -n 16 -s 100 -l 512 -f hwts -p 2 \
+plget -i eth0 -t ptpl2 -m tx-lat -n 16 -s 100 -l 512 -f hwts -p 2 \
 	-r $BASE_TIME -k 1 > tss2
 ~~~
-
 All this can be done getting in parallel "latency" and "ipgap"
 
 # PRINTOUTS
