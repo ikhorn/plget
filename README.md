@@ -48,6 +48,16 @@ This tool is used for measuring the following:
 :~# plget -h
 ~~~
 
+# PRINTOUTS
+Printout can be tuned with -f option. "hwts" means print h/w timestamps (if they
+are present ofc) normalized to first packet timestamp, as absolute time is not
+relevant, "ipgap" means time between neighbor h/w timestamps and useful to see
+how h/w shaping behaves in case of several streams etc. The "lat" is set by
+default, but only if -f option is not used. All can be used in one line
+"-f lat,hwts,ipgap". Also, if stack latency before entering packet scheduler is
+needed, -f "sched" can be ued, relevant only for modes with tx, like echo-lat,
+ext-lat, tx-lat.
+
 # EXAMPLES
 
 ## RX LATENCY EXAMPLES
@@ -410,13 +420,3 @@ plget -i eth0 -t ptpl2 -m tx-lat -n 16 -s 100 -l 512 -f hwts -p 2 \
 	-r $BASE_TIME -k 1 > tss2
 ~~~
 All this can be done getting in parallel "latency" and "ipgap"
-
-# PRINTOUTS
-Printout can be tuned with -f option. "hwts" means print h/w timestamps (if they
-are present ofc) normalized to first packet timestamp, as absolute time is not
-relevant, "ipgap" means time between neighbor h/w timestamps and useful to see
-how h/w shaping behaves in case of several streams etc. The "lat" is set by
-default, but only if -f option is not used. All can be used in one line
-"-f lat,hwts,ipgap". Also, if stack latency before entering packet scheduler is
-needed, -f "sched" can be ued, relevant only for modes with tx, like echo-lat,
-ext-lat, tx-lat.
