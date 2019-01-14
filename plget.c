@@ -286,6 +286,14 @@ static int packet_socket(struct plgett *plget)
 			return perror("Couldn't set priority"), -errno;
 	}
 
+	if (plget->flags & PLF_BUSYPOLL) {
+		ret = setsockopt(sfd, SOL_SOCKET, SO_BUSY_POLL,
+				 &plget->busypoll_time,
+				 sizeof(plget->busypoll_time));
+		if (ret < 0)
+			return perror("Couldn't set busy poll time"), -errno;
+	}
+
 	if (plget->mod == TX_LAT || plget->mod == PKT_GEN)
 		return sfd;
 
