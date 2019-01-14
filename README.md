@@ -3,7 +3,7 @@
 driver and on the wire, trace interpacket gap, based as on h/w as on sw
 timestamping, as for rx as for tx path. It can be used to measure complete
 latency from wire to an application and from an application to wire, round
-trip latency and more.
+trip latency and more. The plget tool uses socket interface.
 
 Can be useful for developers to trace hw timestamps when packets were sent or
 received in case of some shaping verification, like CBS Qdisc in both, offload
@@ -19,9 +19,10 @@ the phc2sys tool from linux ptp packet should be running:
 two time counters in sub-microsecond level accuracy, for TI AM572x it was
 ~172ns in average, depends on discreteness of timers and their accuracy).
 
-One of the possible test models can be seen "example_latency_test_model.jpg"
-The plget tool uses socket interface and different options connected with
-priority and latency. See plget -h for more information.
+One of the possible test models:
+
+![](https://github.com/ikhorn/plget/blob/master/example_latency_test_model.jpg)
+
 
 # PURPOSE
 This tool is used for measuring the following:
