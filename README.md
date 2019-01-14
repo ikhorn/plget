@@ -61,9 +61,8 @@ ext-lat, tx-lat.
 # EXAMPLES
 
 ## RX LATENCY EXAMPLES
-
 ~~~
-				example scheme
+				examples scheme
   +-----------------+      +-------------------------------------------------+
   |  WORKSTATION    |      |                   TARGET BOARD                  |
   |-----------------|      |---------------------------+---------------------|
@@ -158,9 +157,8 @@ If address is not set for pkt-gen or tx-lat modes then default multicast address
 is used: 01:1B:19:00:00:00 in this case rx-lat should set address explicitly.
 
 ## TX LATENCY EXAMPLES
-
 ~~~
-	          example scheme
+		  examples scheme
 +-------------------------------------------------+
 |                   TARGET BOARD                  |
 |---------------------+---------------------------|
@@ -241,8 +239,8 @@ or if vlan is used (one more sched ts):
 ~~~
 
 ## EXTERNAL/ECHO LATENCY EXAMPLES
-
 ~~~
+		     examples scheme
 +--------------------------------------------------+
 |                    TARGET BOARD 1                |
 |----------------------+---------------------------|
@@ -282,7 +280,6 @@ or if vlan is used (one more sched ts):
       |            |              |       sync           |
       +--------------------------------------------------+
 ~~~
-
 
 In this case plget has to be running on workstation and on testing board.
 It's called external latency mode because it measures latency of testing board
