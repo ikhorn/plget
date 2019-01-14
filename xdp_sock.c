@@ -314,5 +314,10 @@ int xsk_sendto(struct plgett *plget, unsigned int frame_idx)
 	frame_idx++;
 	frame_idx %= FRAME_NUM;
 
+	/* kick */
+	ret = sendto(plget->xsk->sfd, NULL, 0, MSG_DONTWAIT, NULL, 0);
+	if (ret >= 0 || errno == ENOBUFS || errno == EAGAIN || errno == EBUSY)
+		return 0;
+
 	return plget->payload_size;
 }
