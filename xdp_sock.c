@@ -264,5 +264,6 @@ int xdp_socket(struct plgett *plget)
 	if (ret)
 		return perror("cannot bind dev and queue with socket"), -errno;
 
+	plget->xsk = xsk;
 	return sfd;
 }

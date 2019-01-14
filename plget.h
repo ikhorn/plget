@@ -104,6 +104,7 @@ struct plgett {
 	int busypoll_time;
 	int stream_id;
 	int dev_deep;
+	struct xsock *xsk; /* xdp soket info */
 
 	/* packet related info */
 	char *packet;
