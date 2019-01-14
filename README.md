@@ -382,7 +382,6 @@ By default rate is measured once a second, but can be tuned with -s.
 For measurements h/w timestamps are used if possible, otherwise software.
 
 ## "HWTS" or/and "IPGAP" EXAMPLE
-================================================================================
 For next examples, replace or add "ipgap" to -f command to get interpacket gap.
 
 Example 1:
