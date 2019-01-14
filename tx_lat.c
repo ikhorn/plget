@@ -114,10 +114,16 @@ static int txlat_sendto(struct plgett *plget)
 {
 	int ret;
 
-	ret = sendto(plget->sfd, plget->packet, plget->payload_size, 0,
-			(struct sockaddr *)&plget->sk_addr,
-			sizeof(plget->sk_addr));
-	return ret;
+	if (plget->pkt_type != PKT_XDP_ETH) {
+		ret = sendto(plget->sfd, plget->packet, plget->payload_size, 0,
+				(struct sockaddr *)&plget->sk_addr,
+				sizeof(plget->sk_addr));
+		return ret;
+	}
+
+	/* prepare descs */
+
+	return 0;
 }
 
 static int txlat_proc_packets(struct plgett *plget, int pkt_num)
@@ -171,10 +177,6 @@ static int txlat_proc_packets(struct plgett *plget, int pkt_num)
 
 			/* send packet */
 			clock_gettime(CLOCK_REALTIME, &ts);
-			ret = sendto(plget->sfd, plget->packet,
-					plget->payload_size, 0,
-					(struct sockaddr *)&plget->sk_addr,
-					sizeof(plget->sk_addr));
 			ret = txlat_sendto(plget);
 
 			stats_push(&tx_app_v, &ts);

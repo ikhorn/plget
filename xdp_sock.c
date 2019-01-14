@@ -32,10 +32,20 @@
 #define FQ_DESC_NUM	1024
 #define CQ_DESC_NUM	1024
 
-#define FRAME_SIFT	11
-#define FRAME_SIZE	(2 ^ FRAME_SIFT)	/* 2 frames per page */
+#define FRAME_SHIFT	11
+#define FRAME_SIZE	(2 ^ FRAME_SHIFT)	/* 2 frames per page */
 #define FRAME_NUM	256	/* number of frames to operate on */
 #define FRAME_HEADROOM	0
+
+#define barrier() __asm__ __volatile__("": : :"memory")
+
+#ifdef __aarch64__
+#define u_smp_rmb() __asm__ __volatile__("dmb ishld": : :"memory")
+#define u_smp_wmb() __asm__ __volatile__("dmb ishst": : :"memory")
+#else
+#define u_smp_rmb() barrier()
+#define u_smp_wmb() barrier()
+#endif
 
 static int get_ring_offsets(int sfd, struct xdp_mmap_offsets *offsets)
 {
@@ -152,17 +162,17 @@ static int rx_ring_allocate(struct xsock *xsk)
 	if (ret)
 		return ret;
 
-	xsk->rx.map = mmap(0, offsets.rx.desc + RQ_DESC_NUM * sizeof(struct xdp_desc),
+	xsk->rq.map = mmap(0, offsets.rx.desc + RQ_DESC_NUM * sizeof(struct xdp_desc),
 			   PROT_READ | PROT_WRITE, MAP_SHARED | MAP_POPULATE, sfd,
 			   XDP_PGOFF_RX_RING);
-	if (xsk->rx.map == MAP_FAILED)
+	if (xsk->rq.map == MAP_FAILED)
 		return perror("cannot map rx ring memory"), -errno;
 
-	xsk->rx.mask = RQ_DESC_NUM - 1;
-	xsk->rx.size = RQ_DESC_NUM;
-	xsk->rx.producer = xsk->rx.map + offsets.rx.producer;
-	xsk->rx.consumer = xsk->rx.map + offsets.rx.consumer;
-	xsk->rx.ring = xsk->rx.map + offsets.rx.desc;
+	xsk->rq.mask = RQ_DESC_NUM - 1;
+	xsk->rq.size = RQ_DESC_NUM;
+	xsk->rq.producer = xsk->rq.map + offsets.rx.producer;
+	xsk->rq.consumer = xsk->rq.map + offsets.rx.consumer;
+	xsk->rq.ring = xsk->rq.map + offsets.rx.desc;
 
 	return 0;
 }
@@ -182,18 +192,18 @@ static int tx_ring_allocate(struct xsock *xsk)
 	if (ret)
 		return ret;
 
-	xsk->tx.map = mmap(0, offsets.tx.desc + TQ_DESC_NUM * sizeof(struct xdp_desc),
+	xsk->tq.map = mmap(0, offsets.tx.desc + TQ_DESC_NUM * sizeof(struct xdp_desc),
 			   PROT_READ | PROT_WRITE, MAP_SHARED | MAP_POPULATE, sfd,
 			   XDP_PGOFF_TX_RING);
-	if (xsk->tx.map == MAP_FAILED)
+	if (xsk->tq.map == MAP_FAILED)
 		return perror("cannot map rx ring memory"), -errno;
 
-	xsk->tx.mask = TQ_DESC_NUM - 1;
-	xsk->tx.size = TQ_DESC_NUM;
-	xsk->tx.producer = xsk->tx.map + offsets.tx.producer;
-	xsk->tx.consumer = xsk->tx.map + offsets.tx.consumer;
-	xsk->tx.ring = xsk->tx.map + offsets.tx.desc;
-	xsk->tx.cached_cons = TQ_DESC_NUM;
+	xsk->tq.mask = TQ_DESC_NUM - 1;
+	xsk->tq.size = TQ_DESC_NUM;
+	xsk->tq.producer = xsk->tq.map + offsets.tx.producer;
+	xsk->tq.consumer = xsk->tq.map + offsets.tx.consumer;
+	xsk->tq.ring = xsk->tq.map + offsets.tx.desc;
+	xsk->tq.cached_cons = TQ_DESC_NUM;
 
 	return 0;
 }
@@ -267,4 +277,42 @@ int xdp_socket(struct plgett *plget)
 
 	plget->xsk = xsk;
 	return sfd;
+}
+
+/* API implementation */
+
+static inline __u32 xq_get_free_dnum(struct sock_queue *q, __u32 ndescs)
+{
+	__u32 free_entries = q->cached_cons - q->cached_prod;
+
+	if (free_entries >= ndescs)
+		return free_entries;
+
+	/* Refresh the local tail pointer */
+	q->cached_cons = *q->consumer + q->size;
+	return q->cached_cons - q->cached_prod;
+}
+
+int xsk_sendto(struct plgett *plget, unsigned int frame_idx)
+{
+	struct sock_queue *tq = &plget->xsk->tq;
+	struct xdp_desc *ring = tq->ring;
+	__u32 ret, desc_idx;
+
+	/* prepare frame */
+	ret = xq_get_free_dnum(tq, 1);
+	if (!ret)
+		return 0;
+
+	desc_idx = tq->cached_prod++ & tq->mask;
+	ring[desc_idx].addr = frame_idx << FRAME_SHIFT;
+	ring[desc_idx].len = plget->payload_size;
+
+	u_smp_wmb();
+
+	*tq->producer = tq->cached_prod;
+	frame_idx++;
+	frame_idx %= FRAME_NUM;
+
+	return plget->payload_size;
 }
