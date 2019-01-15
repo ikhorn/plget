@@ -190,7 +190,7 @@ static void plget_check_args(struct plgett *plget)
 			plget_fail("For XDP sockets, dev has to be specified");
 
 		if (!(plget->flags & PLF_QUEUE))
-			plget_fail("For XDP sockets, dev has to be specified");
+			plget->queue = 0;
 
 		need_addr = (plget->macaddr[0] == '\0') &&
 			    (mod == TX_LAT || mod == EXT_LAT || mod == PKT_GEN);
@@ -386,7 +386,6 @@ static void read_args(struct plgett *plget, int argc, char **argv)
 			break;
 		case 'q':
 			plget->queue = atoi(optarg);
-			plget->flags |= PLF_QUEUE;
 		case 'z':
 			plget->flags |= PLF_ZERO_COPY;
 		default:
