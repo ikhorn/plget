@@ -47,8 +47,8 @@ struct sock_queue {
 };
 
 struct xsock {
-	struct sock_queue rx;
-	struct sock_queue tx;
+	struct sock_queue rq;
+	struct sock_queue tq;
 	struct sock_umem *umem;
 	int sfd;
 };

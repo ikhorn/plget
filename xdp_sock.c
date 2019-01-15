@@ -283,19 +283,66 @@ int xdp_socket(struct plgett *plget)
 
 static inline __u32 xq_get_free_dnum(struct sock_queue *q, __u32 ndescs)
 {
-	__u32 free_entries = q->cached_cons - q->cached_prod;
+	__u32 entries = q->cached_cons - q->cached_prod;
 
-	if (free_entries >= ndescs)
-		return free_entries;
+	if (entries >= ndescs)
+		return entries;
 
 	/* Refresh the local tail pointer */
 	q->cached_cons = *q->consumer + q->size;
 	return q->cached_cons - q->cached_prod;
 }
 
+static inline __u32 umemq_get_complete_dnum(struct umem_queue *q, __u32 ndescs)
+{
+	__u32 entries = q->cached_prod - q->cached_cons;
+
+	if (entries == 0) {
+		q->cached_prod = *q->producer;
+		entries = q->cached_prod - q->cached_cons;
+	}
+
+	return (entries > ndescs) ? ndescs : entries;
+}
+
+static inline size_t umem_complete_from_kernel(struct umem_queue *cq,
+					       __u64 *d, __u32 ndescs)
+{
+	__u32 idx, i, entries = umemq_get_complete_dnum(cq, ndescs);
+
+	u_smp_rmb();
+
+	for (i = 0; i < entries; i++) {
+		idx = cq->cached_cons++ & cq->mask;
+		d[i] = cq->ring[idx];
+	}
+
+	if (entries > 0) {
+		u_smp_wmb();
+
+		*cq->consumer = cq->cached_cons;
+	}
+
+	return entries;
+}
+
+int xsk_tx_complete(struct xsock *xsk, __u32 ndescs)
+{
+	int ret;
+	__u64 desc;
+
+	ret = sendto(xsk->sfd, NULL, 0, MSG_DONTWAIT, NULL, 0);
+	if (ret >= 0 || errno == ENOBUFS || errno == EAGAIN || errno == EBUSY)
+		return 0;
+
+	ret = umem_complete_from_kernel(&xsk->umem->cq, &desc, ndescs);
+	return ret;
+}
+
 int xsk_sendto(struct plgett *plget, unsigned int frame_idx)
 {
-	struct sock_queue *tq = &plget->xsk->tq;
+	struct xsock *xsk = plget->xsk;
+	struct sock_queue *tq = &xsk->tq;
 	struct xdp_desc *ring = tq->ring;
 	__u32 ret, desc_idx;
 
@@ -315,9 +362,7 @@ int xsk_sendto(struct plgett *plget, unsigned int frame_idx)
 	frame_idx %= FRAME_NUM;
 
 	/* kick */
-	ret = sendto(plget->xsk->sfd, NULL, 0, MSG_DONTWAIT, NULL, 0);
-	if (ret >= 0 || errno == ENOBUFS || errno == EAGAIN || errno == EBUSY)
-		return 0;
+	xsk_tx_complete(xsk, 1);
 
 	return plget->payload_size;
 }
