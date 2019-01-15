@@ -326,7 +326,7 @@ static inline size_t umem_complete_from_kernel(struct umem_queue *cq,
 	return entries;
 }
 
-int xsk_tx_complete(struct xsock *xsk, __u32 ndescs)
+static int xsk_tx_complete(struct xsock *xsk, __u32 ndescs)
 {
 	int ret;
 	__u64 desc;
