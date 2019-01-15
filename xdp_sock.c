@@ -236,7 +236,6 @@ static struct sock_umem *umem_allocate(int sfd)
 int xdp_socket(struct plgett *plget)
 {
 	struct sockaddr_xdp *addr = (struct sockaddr_xdp *)&plget->sk_addr;
-	struct sock_umem *umem;
 	struct xsock *xsk;
 	int ret, sfd;
 
@@ -249,8 +248,8 @@ int xdp_socket(struct plgett *plget)
 		return perror("xdp socket"), -errno;
 
 	xsk->sfd = sfd;
-	umem = umem_allocate(sfd);
-	if (!umem)
+	xsk->umem = umem_allocate(sfd);
+	if (!xsk->umem)
 		return perror("cannot allocate umem"), -errno;
 
 	ret = rx_ring_allocate(xsk);
