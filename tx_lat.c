@@ -10,6 +10,7 @@
 #include "plget.h"
 #include "stat.h"
 #include "tx_lat.h"
+#include "xdp_sock.h"
 #include <poll.h>
 #include <unistd.h>
 #include <errno.h>
@@ -110,7 +111,7 @@ static void txlat_stop_timer(int fd)
 	timerfd_settime(fd, 0, &tspec, NULL);
 }
 
-static int txlat_sendto(struct plgett *plget)
+static int txlat_sendto(struct plgett *plget, unsigned int tx_idx)
 {
 	int ret;
 
@@ -121,9 +122,8 @@ static int txlat_sendto(struct plgett *plget)
 		return ret;
 	}
 
-	/* prepare descs */
-
-	return 0;
+	ret = xsk_sendto(plget, tx_idx);
+	return ret;
 }
 
 static int txlat_proc_packets(struct plgett *plget, int pkt_num)
@@ -177,7 +177,7 @@ static int txlat_proc_packets(struct plgett *plget, int pkt_num)
 
 			/* send packet */
 			clock_gettime(CLOCK_REALTIME, &ts);
-			ret = txlat_sendto(plget);
+			ret = txlat_sendto(plget, tx_cnt);
 
 			stats_push(&tx_app_v, &ts);
 			if (ret != plget->payload_size) {

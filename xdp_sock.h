@@ -54,5 +54,6 @@ struct xsock {
 };
 
 int xdp_socket(struct plgett *plget);
+int xsk_sendto(struct plgett *plget, unsigned int frame_idx);
 
 #endif
