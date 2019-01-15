@@ -272,7 +272,8 @@ static void plget_set_address(struct plgett *plget)
 
 	if (plget->pkt_type == PKT_UDP) {
 		inet_aton(optarg, &plget->iaddr);
-	} else if (plget->pkt_type == PKT_ETH) {
+	} else if (plget->pkt_type == PKT_ETH ||
+		   plget->pkt_type == PKT_XDP_ETH) {
 		ret =
 		sscanf(optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
 			&plget->macaddr[0], &plget->macaddr[1],
