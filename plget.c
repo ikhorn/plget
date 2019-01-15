@@ -88,7 +88,7 @@ int plget_setup_timer(struct plgett *plget)
 	return fd;
 }
 
-int setup_sock(int sfd, int flags)
+int setup_sock_ts(int sfd, int flags)
 {
 	int val, err;
 	unsigned int len = sizeof(val);
@@ -345,7 +345,7 @@ static int plget_create_packet(struct plgett *plget)
 	/* check settings */
 	if (plget->pkt_size &&
 	    (plget->pkt_size < 64 || plget->pkt_size > ETH_DATA_LEN)) {
-			printf("incorrect packet size\n");
+			printf("incorrect packet size: 64 < size < 1500\n");
 			return -EINVAL;
 	}
 
@@ -461,7 +461,7 @@ static int init_test(struct plgett *plget)
 	    mod == RX_LAT)
 		stats_reserve(&temp, plget->pkt_num);
 
-	/* reserve memory and set ts flags */
+	/* reserve stats memory and set ts flags */
 	if (mod == EXT_LAT || mod == ECHO_LAT || mod == TX_LAT) {
 		if (plget->flags & PLF_PRINTOUT) {
 			stats_reserve(&tx_app_v, plget->pkt_num);
@@ -497,6 +497,7 @@ static int init_test(struct plgett *plget)
 
 	ts_flags |= SOF_TIMESTAMPING_RAW_HARDWARE;
 
+	/* create and fill in packet */
 	if (mod == EXT_LAT || mod == TX_LAT || mod == PKT_GEN) {
 		ret = plget_create_packet(plget);
 		if (ret)
@@ -505,9 +506,10 @@ static int init_test(struct plgett *plget)
 		plget->packet = plget->data;
 	}
 
+	/* for simplicity and speed */
 	fill_in_data_pointers(plget);
 
-	ret = setup_sock(plget->sfd, ts_flags);
+	ret = setup_sock_ts(plget->sfd, ts_flags);
 	return ret;
 }
 
