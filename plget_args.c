@@ -263,7 +263,7 @@ static void plget_set_mode(struct plgett *plget)
 	else if (!strcmp("rx-rate", optarg))
 		plget->mod = RX_RATE;
 	else
-		plget_fail("uknown mode");
+		plget_fail("unkown mode");
 }
 
 static void plget_set_address(struct plgett *plget)
@@ -285,7 +285,7 @@ static void plget_set_address(struct plgett *plget)
 	} else if (!plget->pkt_type) {
 		plget_fail("Set paket type first");
 	} else {
-		plget_fail("uknown pkt type");
+		plget_fail("unkown pkt type");
 	}
 }
 
