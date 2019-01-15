@@ -19,7 +19,7 @@
 #include <arpa/inet.h>
 #include <string.h>
 
-#define PLGET_NAME_VER			"plget v0.3"
+#define PLGET_NAME_VER			"plget v0.4"
 #define PTP_EVENT_PORT			319
 #define PTP_GENERAL_PORT		320
 #define PTP_PRIMARY_MCAST_IPADDR	"224.0.1.129"
