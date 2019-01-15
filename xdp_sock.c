@@ -33,7 +33,7 @@
 #define CQ_DESC_NUM	1024
 
 #define FRAME_SHIFT	11
-#define FRAME_SIZE	(2 ^ FRAME_SHIFT)	/* 2 frames per page */
+#define FRAME_SIZE	(1 << FRAME_SHIFT)	/* 2 frames per page */
 #define FRAME_NUM	256	/* number of frames to operate on */
 #define FRAME_HEADROOM	0
 
