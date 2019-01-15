@@ -353,7 +353,7 @@ int xsk_sendto(struct plgett *plget, unsigned int frame_idx)
 
 	desc_idx = tq->cached_prod++ & tq->mask;
 	ring[desc_idx].addr = frame_idx << FRAME_SHIFT;
-	ring[desc_idx].len = plget->payload_size;
+	ring[desc_idx].len = plget->pkt_size;
 
 	u_smp_wmb();
 
@@ -364,5 +364,5 @@ int xsk_sendto(struct plgett *plget, unsigned int frame_idx)
 	/* kick */
 	xsk_tx_complete(xsk, 1);
 
-	return plget->payload_size;
+	return plget->pkt_size;
 }
