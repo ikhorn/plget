@@ -1,6 +1,8 @@
 CFLAGS += -g -Wall
 LDFLAGS += -lm
 
+CC?=$(CROSS_COMPILE)gcc
+
 all: plget
 
 ALL_SOURCES:=$(wildcard *.c)
