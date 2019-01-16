@@ -350,8 +350,10 @@ static void fill_in_packets(struct plgett *plget)
 	n = (plget->pkt_type == PKT_XDP_ETH) ? plget->xsk->umem->frame_num : 1;
 
 	for (i = 0; i < n; i++) {
-		if (plget->pkt_type == PKT_XDP_ETH)
-			plget->packet = plget->xsk->umem->frames;
+		if (plget->pkt_type == PKT_XDP_ETH) {
+			j = FRAME_SIZE * i;
+			plget->packet = &plget->xsk->umem->frames[j];
+		}
 
 		if (plget->flags & PLF_PTP) {
 			memcpy(plget->packet, ptpv2_sync_header,
@@ -364,6 +366,9 @@ static void fill_in_packets(struct plgett *plget)
 		for (j = 0; j < payload_size; j++)
 			*dp++ = (rand() % 230) + 1;
 	}
+
+	if (plget->pkt_type == PKT_XDP_ETH)
+		plget->packet = plget->xsk->umem->frames;
 }
 
 static int plget_create_packet(struct plgett *plget)
