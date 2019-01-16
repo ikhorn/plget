@@ -37,7 +37,6 @@ struct sock_umem {
 	char *frames;
 	struct umem_queue fq;
 	struct umem_queue cq;
-	int frame_num;
 	int fd;
 };
 

@@ -347,7 +347,7 @@ static void fill_in_packets(struct plgett *plget)
 	if (plget->flags & PLF_PTP)
 		payload_size -= sizeof(ptpv2_sync_header);
 
-	n = (plget->pkt_type == PKT_XDP_ETH) ? plget->xsk->umem->frame_num : 1;
+	n = (plget->pkt_type == PKT_XDP_ETH) ? FRAME_NUM : 1;
 
 	for (i = 0; i < n; i++) {
 		if (plget->pkt_type == PKT_XDP_ETH) {
