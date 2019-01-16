@@ -40,11 +40,11 @@
 #define barrier() __asm__ __volatile__("": : :"memory")
 
 #ifdef __aarch64__
-#define u_smp_rmb() __asm__ __volatile__("dmb ishld": : :"memory")
-#define u_smp_wmb() __asm__ __volatile__("dmb ishst": : :"memory")
+#define __smp_rmb() __asm__ __volatile__("dmb ishld": : :"memory")
+#define __smp_wmb() __asm__ __volatile__("dmb ishst": : :"memory")
 #else
-#define u_smp_rmb() barrier()
-#define u_smp_wmb() barrier()
+#define __smp_rmb() barrier()
+#define __smp_wmb() barrier()
 #endif
 
 static int get_ring_offsets(int sfd, struct xdp_mmap_offsets *offsets)
@@ -309,7 +309,7 @@ static inline size_t umem_complete_from_kernel(struct umem_queue *cq,
 {
 	__u32 idx, i, entries = umemq_get_complete_dnum(cq, ndescs);
 
-	u_smp_rmb();
+	__smp_rmb();
 
 	for (i = 0; i < entries; i++) {
 		idx = cq->cached_cons++ & cq->mask;
@@ -317,7 +317,7 @@ static inline size_t umem_complete_from_kernel(struct umem_queue *cq,
 	}
 
 	if (entries > 0) {
-		u_smp_wmb();
+		__smp_wmb();
 
 		*cq->consumer = cq->cached_cons;
 	}
@@ -354,7 +354,7 @@ int xsk_sendto(struct plgett *plget, unsigned int frame_idx)
 	ring[desc_idx].addr = frame_idx << FRAME_SHIFT;
 	ring[desc_idx].len = plget->pkt_size;
 
-	u_smp_wmb();
+	__smp_wmb();
 
 	*tq->producer = tq->cached_prod;
 	frame_idx++;
