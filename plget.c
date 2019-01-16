@@ -337,15 +337,43 @@ static int plget_create_socket(struct plgett *plget)
 	return 0;
 }
 
+static void fill_in_packets(struct plgett *plget)
+{
+	int payload_size;
+	int n, i, j;
+	char *dp;
+
+	payload_size = plget->payload_size;
+	if (plget->flags & PLF_PTP)
+		payload_size -= sizeof(ptpv2_sync_header);
+
+	n = (plget->pkt_type == PKT_XDP_ETH) ? plget->xsk->umem->frame_num : 1;
+
+	for (i = 0; i < n; i++) {
+		if (plget->pkt_type == PKT_XDP_ETH)
+			plget->packet = plget->xsk->umem->frames;
+
+		if (plget->flags & PLF_PTP) {
+			memcpy(plget->packet, ptpv2_sync_header,
+			       sizeof(ptpv2_sync_header));
+
+			dp = plget->packet + sizeof(ptpv2_sync_header);
+		} else
+			dp = plget->packet;
+
+		for (j = 0; j < payload_size; j++)
+			*dp++ = (rand() % 230) + 1;
+	}
+}
+
 static int plget_create_packet(struct plgett *plget)
 {
-	int payload_size, i;
-	char *dp;
+	int payload_size;
 
 	/* check settings */
 	if (plget->pkt_size &&
 	    (plget->pkt_size < 64 || plget->pkt_size > ETH_DATA_LEN)) {
-			printf("incorrect packet size: 64 < size < 1500\n");
+			printf("incorrect packet size: 64 <= size <= 1500\n");
 			return -EINVAL;
 	}
 
@@ -383,18 +411,7 @@ static int plget_create_packet(struct plgett *plget)
 		return -ENOMEM;
 
 	/* fill in payload */
-	if (plget->flags & PLF_PTP) {
-		memcpy(plget->packet, ptpv2_sync_header,
-		       sizeof(ptpv2_sync_header));
-
-		dp = plget->packet + sizeof(ptpv2_sync_header);
-		payload_size -= sizeof(ptpv2_sync_header);
-	} else
-		dp = plget->packet;
-
-	for (i = 0; i < payload_size; i++)
-		*dp++ = (rand() % 230) + 1;
-
+	fill_in_packets(plget);
 	return 0;
 }
 

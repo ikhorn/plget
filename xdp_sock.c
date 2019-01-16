@@ -230,6 +230,7 @@ static struct sock_umem *umem_allocate(int sfd)
 	if (ret)
 		return perror("cannot fill ring"), NULL;
 
+	umem->frame_num = FRAME_NUM;
 	return umem;
 }
 
