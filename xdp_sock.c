@@ -364,5 +364,5 @@ int xsk_sendto(struct plgett *plget, unsigned int frame_idx)
 	/* kick */
 	xsk_tx_complete(xsk, 1);
 
-	return plget->pkt_size;
+	return plget->payload_size;
 }
