@@ -453,8 +453,7 @@ static int plget_create_packet(struct plgett *plget)
 
 static void fill_in_data_pointers(struct plgett *plget)
 {
-	int ptp_header_size;
-	int off;
+	int off = 0;
 
 	plget->iov.iov_base = plget->data;
 	plget->iov.iov_len = sizeof(plget->data);
@@ -466,31 +465,29 @@ static void fill_in_data_pointers(struct plgett *plget)
 	if (plget->mod == RX_LAT || plget->mod == RX_RATE)
 		return;
 
-	ptp_header_size =
-		ALIGN_ROUNDUP(sizeof(ptpv2_sync_header), sizeof(long));
+	if (plget->flags & PKT_XDP)
+		off += ETH_HLEN;
+
+	if (plget->flags & PLF_PTP)
+		plget->off_sid_wr = off + OFF_PTP_SEQUENCE_ID;
+	else
+		plget->off_sid_wr = 0;
 
 	if (!(plget->flags & PLF_TS_ID_ALLOWED)) {
-		if (plget->mod != ECHO_LAT) {
-			off = 0;
-			if (plget->flags & PLF_PTP)
-				off += ptp_header_size;
+		if (plget->flags & PLF_PTP)
+			off += sizeof(ptpv2_sync_header);
 
+		off = ALIGN_ROUNDUP(off, sizeof(long));
+
+		if (plget->mod != ECHO_LAT) {
 			*(char *)(plget->pkt + off) = MAGIC;
 			plget->off_pid_wr = off + sizeof(char);
 		}
 
-		plget->off_magic_rd = 0;
+		plget->off_magic_rd = off;
 		if (plget->mod != ECHO_LAT)
 			plget->off_magic_rd -= plget->payload_size;
-
-		if (plget->flags & PLF_PTP)
-			plget->off_magic_rd += ptp_header_size;
 	}
-
-	if (plget->flags & PLF_PTP)
-		plget->off_sid_wr = OFF_PTP_SEQUENCE_ID;
-	else
-		plget->off_sid_wr = 0;
 }
 
 static int init_test(struct plgett *plget)
