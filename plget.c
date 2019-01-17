@@ -246,6 +246,16 @@ static int udp_socket(struct plgett *plget)
 	return sfd;
 }
 
+static void specify_protocol(struct plgett *plget, __u16 *protocol)
+{
+	if (plget->flags & PLF_AVTP)
+		*protocol = htons(ETH_P_TSN);
+	else if (plget->flags & PLF_PTP)
+		*protocol = htons(ETH_P_1588);
+	else
+		*protocol = 0;
+}
+
 static int packet_socket(struct plgett *plget)
 {
 	struct sockaddr_ll *addr = &plget->sk_addr;
@@ -254,12 +264,7 @@ static int packet_socket(struct plgett *plget)
 	__u16 protocol;
 	int sfd, ret;
 
-	if (plget->flags & PLF_AVTP)
-		protocol = htons(ETH_P_TSN);
-	else if (plget->flags & PLF_PTP)
-		protocol = htons(ETH_P_1588);
-	else
-		protocol = 0;
+	specify_protocol(plget, &protocol);
 
 	sfd = socket(AF_PACKET, SOCK_DGRAM, protocol);
 	if (sfd < 0)
@@ -357,13 +362,7 @@ static void fill_in_packets(struct plgett *plget)
 			eth = (struct ether_header *)plget->packet;
 			memcpy(eth->ether_dhost, plget->macaddr, ETH_ALEN);
 			memcpy(eth->ether_shost, plget->macaddr, ETH_ALEN);
-
-			if (plget->flags & PLF_AVTP)
-				eth->ether_type = htons(ETH_P_TSN);
-			else if (plget->flags & PLF_PTP)
-				eth->ether_type = htons(ETH_P_1588);
-			else
-				eth->ether_type = 0;
+			specify_protocol(plget, &eth->ether_type);
 
 			dp = plget->packet + ETH_HLEN;
 		} else {
