@@ -342,9 +342,31 @@ static int plget_create_socket(struct plgett *plget)
 	return 0;
 }
 
-static void fill_in_packets(struct plgett *plget)
+static void init_pkt_ether_header(struct plgett *plget)
 {
 	struct ether_header *eth;
+	struct ifreq ifr;
+	int ret;
+
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, plget->if_name, sizeof(ifr.ifr_name));
+
+	eth = (struct ether_header *)plget->packet;
+	memcpy(eth->ether_dhost, plget->macaddr, ETH_ALEN);
+
+	ret = ioctl(plget->sfd, SIOCGIFHWADDR, &ifr);
+	if (ret) {
+		memcpy(eth->ether_shost, plget->macaddr, ETH_ALEN);
+		printf("cann't get interface hw address\n");
+	} else {
+		memcpy(eth->ether_shost, ifr.ifr_hwaddr.sa_data, ETH_ALEN);
+	}
+
+	specify_protocol(plget, &eth->ether_type);
+}
+
+static void fill_in_packets(struct plgett *plget)
+{
 	int payload_size;
 	int n, i, j;
 	char *dp;
@@ -359,11 +381,7 @@ static void fill_in_packets(struct plgett *plget)
 			j = FRAME_SIZE * i;
 			plget->packet = &plget->xsk->umem->frames[j];
 
-			eth = (struct ether_header *)plget->packet;
-			memcpy(eth->ether_dhost, plget->macaddr, ETH_ALEN);
-			memcpy(eth->ether_shost, plget->macaddr, ETH_ALEN);
-			specify_protocol(plget, &eth->ether_type);
-
+			init_pkt_ether_header(plget);
 			dp = plget->packet + ETH_HLEN;
 		} else {
 			dp = plget->packet;
