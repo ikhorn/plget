@@ -169,7 +169,7 @@ static int txlat_proc_packets(struct plgett *plget, int pkt_num)
 				goto err;
 			}
 
-			*(__u16 *)(plget->off_sid_wr + plget->pkt) =
+			*sid_wr_ptr(plget) =
 				htons((tx_cnt & SEQ_ID_MASK) | sid);
 			if (!(plget->flags & PLF_TS_ID_ALLOWED))
 				*pid_wr_ptr(plget) = tx_cnt;

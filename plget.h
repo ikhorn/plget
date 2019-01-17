@@ -134,4 +134,9 @@ static inline unsigned int *pid_wr_ptr(struct plgett *plget)
 	return (unsigned int *)(plget->off_pid_wr + plget->pkt);
 }
 
+static inline __u16 *sid_wr_ptr(struct plgett *plget)
+{
+	return (__u16 *)(plget->off_sid_wr + plget->pkt);
+}
+
 #endif
