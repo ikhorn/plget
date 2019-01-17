@@ -351,7 +351,7 @@ static void init_pkt_ether_header(struct plgett *plget)
 	memset(&ifr, 0, sizeof(ifr));
 	strncpy(ifr.ifr_name, plget->if_name, sizeof(ifr.ifr_name));
 
-	eth = (struct ether_header *)plget->packet;
+	eth = (struct ether_header *)plget->pkt;
 	memcpy(eth->ether_dhost, plget->macaddr, ETH_ALEN);
 
 	ret = ioctl(plget->sfd, SIOCGIFHWADDR, &ifr);
@@ -379,12 +379,12 @@ static void fill_in_packets(struct plgett *plget)
 	for (i = 0; i < n; i++) {
 		if (plget->pkt_type == PKT_XDP) {
 			j = FRAME_SIZE * i;
-			plget->packet = &plget->xsk->umem->frames[j];
+			plget->pkt = &plget->xsk->umem->frames[j];
 
 			init_pkt_ether_header(plget);
-			dp = plget->packet + ETH_HLEN;
+			dp = plget->pkt + ETH_HLEN;
 		} else {
-			dp = plget->packet;
+			dp = plget->pkt;
 		}
 
 		if (plget->flags & PLF_PTP) {
@@ -399,7 +399,7 @@ static void fill_in_packets(struct plgett *plget)
 	}
 
 	if (plget->pkt_type == PKT_XDP)
-		plget->packet = plget->xsk->umem->frames;
+		plget->pkt = plget->xsk->umem->frames;
 }
 
 static int plget_create_packet(struct plgett *plget)
@@ -442,8 +442,8 @@ static int plget_create_packet(struct plgett *plget)
 
 	/* allocate packet */
 	plget->payload_size = payload_size;
-	plget->packet = malloc(payload_size);
-	if (!plget->packet)
+	plget->pkt = malloc(payload_size);
+	if (!plget->pkt)
 		return -ENOMEM;
 
 	/* fill in payload */
@@ -475,8 +475,8 @@ static void fill_in_data_pointers(struct plgett *plget)
 			if (plget->flags & PLF_PTP)
 				off += ptp_header_size;
 
-			*(char *)(plget->packet + off) = MAGIC;
-			plget->off_pkt_id_wr = off + sizeof(char);
+			*(char *)(plget->pkt + off) = MAGIC;
+			plget->off_pid_wr = off + sizeof(char);
 		}
 
 		plget->off_magic_rd = 0;
@@ -488,9 +488,9 @@ static void fill_in_data_pointers(struct plgett *plget)
 	}
 
 	if (plget->flags & PLF_PTP)
-		plget->off_seq_id_wr = OFF_PTP_SEQUENCE_ID;
+		plget->off_sid_wr = OFF_PTP_SEQUENCE_ID;
 	else
-		plget->off_seq_id_wr = 0;
+		plget->off_sid_wr = 0;
 }
 
 static int init_test(struct plgett *plget)
@@ -551,7 +551,7 @@ static int init_test(struct plgett *plget)
 		if (ret)
 			return ret;
 	} else if (mod == ECHO_LAT) {
-		plget->packet = plget->data;
+		plget->pkt = plget->data;
 	}
 
 	/* for simplicity and speed */

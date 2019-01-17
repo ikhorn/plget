@@ -116,7 +116,7 @@ static int txlat_sendto(struct plgett *plget, unsigned int tx_idx)
 	int ret;
 
 	if (plget->pkt_type != PKT_XDP) {
-		ret = sendto(plget->sfd, plget->packet, plget->payload_size, 0,
+		ret = sendto(plget->sfd, plget->pkt, plget->payload_size, 0,
 				(struct sockaddr *)&plget->sk_addr,
 				sizeof(plget->sk_addr));
 		return ret;
@@ -169,10 +169,10 @@ static int txlat_proc_packets(struct plgett *plget, int pkt_num)
 				goto err;
 			}
 
-			*(__u16 *)(plget->off_seq_id_wr + plget->packet) =
+			*(__u16 *)(plget->off_sid_wr + plget->pkt) =
 				htons((tx_cnt & SEQ_ID_MASK) | sid);
 			if (!(plget->flags & PLF_TS_ID_ALLOWED))
-				*(int *)(plget->off_pkt_id_wr + plget->packet) =
+				*(int *)(plget->off_pid_wr + plget->pkt) =
 					tx_cnt;
 			if (++tx_cnt >= pkt_num)
 				txlat_stop_timer(timer_fd);
@@ -224,7 +224,7 @@ void txlat_proc_packet(struct plgett *plget)
 
 	/* send packet */
 	clock_gettime(CLOCK_REALTIME, &ts);
-	ret = sendto(plget->sfd, plget->packet,
+	ret = sendto(plget->sfd, plget->pkt,
 			plget->payload_size, 0,
 			(struct sockaddr *)&plget->sk_addr,
 			sizeof(plget->sk_addr));

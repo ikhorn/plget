@@ -100,17 +100,17 @@ struct plgett {
 	int port;
 	int flags;
 	int prio;
-	int queue; /* must be used by XDP socket */
+	int queue;		/* must be used by XDP socket */
 	int busypoll_time;
 	int stream_id;
 	int dev_deep;
-	struct xsock *xsk; /* xdp soket info */
+	struct xsock *xsk;	/* xdp soket info */
 
 	/* packet related info */
-	char *packet;
-	int off_seq_id_wr;
-	int off_pkt_id_wr;
-	int off_magic_rd;
+	char *pkt;
+	int off_sid_wr;		/* PTP sequential id */
+	int off_pid_wr;		/* packet id used to identify packet */
+	int off_magic_rd;	/* magic num to validate packet */
 
 	/* rx packet related info */
 	char data[ETH_DATA_LEN];
