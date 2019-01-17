@@ -481,7 +481,7 @@ static void fill_in_data_pointers(struct plgett *plget)
 
 		if (plget->mod != ECHO_LAT) {
 			*(char *)(plget->pkt + off) = MAGIC;
-			plget->off_pid_wr = off + sizeof(char);
+			plget->off_tid_wr = off + sizeof(char);
 		}
 
 		plget->off_magic_rd = off;
