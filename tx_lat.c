@@ -115,7 +115,7 @@ static int txlat_sendto(struct plgett *plget, unsigned int tx_idx)
 {
 	int ret;
 
-	if (plget->pkt_type != PKT_XDP_ETH) {
+	if (plget->pkt_type != PKT_XDP) {
 		ret = sendto(plget->sfd, plget->packet, plget->payload_size, 0,
 				(struct sockaddr *)&plget->sk_addr,
 				sizeof(plget->sk_addr));

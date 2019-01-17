@@ -326,7 +326,7 @@ static int plget_create_socket(struct plgett *plget)
 		plget->sfd = udp_socket(plget);
 	else if (plget->pkt_type == PKT_ETH)
 		plget->sfd = packet_socket(plget);
-	else if (plget->pkt_type == PKT_XDP_ETH)
+	else if (plget->pkt_type == PKT_XDP)
 		plget->sfd = xdp_socket(plget);
 	else
 		plget_fail("uknown packet type");
@@ -339,6 +339,7 @@ static int plget_create_socket(struct plgett *plget)
 
 static void fill_in_packets(struct plgett *plget)
 {
+	struct ether_header *eth;
 	int payload_size;
 	int n, i, j;
 	char *dp;
@@ -347,27 +348,40 @@ static void fill_in_packets(struct plgett *plget)
 	if (plget->flags & PLF_PTP)
 		payload_size -= sizeof(ptpv2_sync_header);
 
-	n = (plget->pkt_type == PKT_XDP_ETH) ? FRAME_NUM : 1;
-
+	n = (plget->pkt_type == PKT_XDP) ? FRAME_NUM : 1;
 	for (i = 0; i < n; i++) {
-		if (plget->pkt_type == PKT_XDP_ETH) {
+		if (plget->pkt_type == PKT_XDP) {
 			j = FRAME_SIZE * i;
 			plget->packet = &plget->xsk->umem->frames[j];
+
+			eth = (struct ether_header *)plget->packet;
+			memcpy(eth->ether_dhost, plget->macaddr, ETH_ALEN);
+			memcpy(eth->ether_shost, plget->macaddr, ETH_ALEN);
+
+			if (plget->flags & PLF_AVTP)
+				eth->ether_type = htons(ETH_P_TSN);
+			else if (plget->flags & PLF_PTP)
+				eth->ether_type = htons(ETH_P_1588);
+			else
+				eth->ether_type = 0;
+
+			dp = plget->packet + ETH_HLEN;
+		} else {
+			dp = plget->packet;
 		}
 
 		if (plget->flags & PLF_PTP) {
-			memcpy(plget->packet, ptpv2_sync_header,
+			memcpy(dp, ptpv2_sync_header,
 			       sizeof(ptpv2_sync_header));
 
-			dp = plget->packet + sizeof(ptpv2_sync_header);
-		} else
-			dp = plget->packet;
+			dp += sizeof(ptpv2_sync_header);
+		}
 
 		for (j = 0; j < payload_size; j++)
 			*dp++ = (rand() % 230) + 1;
 	}
 
-	if (plget->pkt_type == PKT_XDP_ETH)
+	if (plget->pkt_type == PKT_XDP)
 		plget->packet = plget->xsk->umem->frames;
 }
 
@@ -406,7 +420,7 @@ static int plget_create_packet(struct plgett *plget)
 		} else if (!plget->pkt_size)
 			plget->pkt_size = 64;
 
-		payload_size = plget->pkt_size - 14;
+		payload_size = plget->pkt_size - ETH_HLEN;
 	}
 
 	/* allocate packet */

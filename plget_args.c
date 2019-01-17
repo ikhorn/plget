@@ -185,7 +185,7 @@ static void plget_check_args(struct plgett *plget)
 		if (plget->port)
 			printf("Cannot specify port for non UDP packets\n");
 		break;
-	case PKT_XDP_ETH:
+	case PKT_XDP:
 		if (plget->if_name[0] == '\0')
 			plget_fail("For XDP sockets, dev has to be specified");
 
@@ -241,7 +241,7 @@ static void plget_set_packet_type(struct plgett *plget)
 		plget->pkt_type = PKT_ETH;
 		plget->flags |= PLF_PTP;
 	} else if (!strcmp("xdp_ptpl2", optarg)) {
-		plget->pkt_type = PKT_XDP_ETH;
+		plget->pkt_type = PKT_XDP;
 		plget->flags |= PLF_PTP;
 	} else {
 		plget_fail("unsupported packet type");
@@ -273,7 +273,7 @@ static void plget_set_address(struct plgett *plget)
 	if (plget->pkt_type == PKT_UDP) {
 		inet_aton(optarg, &plget->iaddr);
 	} else if (plget->pkt_type == PKT_ETH ||
-		   plget->pkt_type == PKT_XDP_ETH) {
+		   plget->pkt_type == PKT_XDP) {
 		ret =
 		sscanf(optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
 			&plget->macaddr[0], &plget->macaddr[1],
