@@ -108,7 +108,7 @@ struct plgett {
 
 	/* packet related info */
 	char *packet;
-	__u16 *seq_id_wr;
+	int off_seq_id_wr;
 	int off_pkt_id_wr;
 	int off_magic_rd;
 

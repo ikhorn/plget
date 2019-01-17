@@ -488,12 +488,9 @@ static void fill_in_data_pointers(struct plgett *plget)
 	}
 
 	if (plget->flags & PLF_PTP)
-		plget->seq_id_wr = (__u16 *)(plget->packet +
-				   OFF_PTP_SEQUENCE_ID);
+		plget->off_seq_id_wr = OFF_PTP_SEQUENCE_ID;
 	else
-		plget->seq_id_wr = (__u16 *)plget->packet;
-
-	*plget->seq_id_wr = plget->stream_id;
+		plget->off_seq_id_wr = 0;
 }
 
 static int init_test(struct plgett *plget)

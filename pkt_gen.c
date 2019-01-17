@@ -30,7 +30,8 @@ int fast_pktgen(struct plgett *plget)
 
 	pnum = plget->pkt_num ? plget->pkt_num : ~0;
 	for (i = 0; i < pnum; i++) {
-		*plget->seq_id_wr = htons((i & SEQ_ID_MASK) | sid);
+		*(__u16 *)(plget->off_seq_id_wr + plget->packet) =
+			htons((i & SEQ_ID_MASK) | sid);
 		ret = sendto(sfd, packet, dsize, 0, addr,
 			     sizeof(plget->sk_addr));
 		if (ret != dsize) {
@@ -104,7 +105,8 @@ int pktgen(struct plgett *plget)
 				break;
 			}
 
-			*plget->seq_id_wr = htons((i & SEQ_ID_MASK) | sid);
+			*(__u16 *)(plget->off_seq_id_wr + plget->packet) =
+				htons((i & SEQ_ID_MASK) | sid);
 		}
 	}
 
