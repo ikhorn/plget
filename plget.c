@@ -454,7 +454,7 @@ static int plget_create_packet(struct plgett *plget)
 static void fill_in_data_pointers(struct plgett *plget)
 {
 	int ptp_header_size;
-	char *magic_wr;
+	int off;
 
 	plget->iov.iov_base = plget->data;
 	plget->iov.iov_len = sizeof(plget->data);
@@ -471,14 +471,12 @@ static void fill_in_data_pointers(struct plgett *plget)
 
 	if (!(plget->flags & PLF_TS_ID_ALLOWED)) {
 		if (plget->mod != ECHO_LAT) {
-			magic_wr = plget->packet;
+			off = 0;
 			if (plget->flags & PLF_PTP)
-				magic_wr += ptp_header_size;
+				off += ptp_header_size;
 
-			*magic_wr = MAGIC;
-			plget->packet_id_wr =
-				(typeof(plget->packet_id_wr))
-				(magic_wr + sizeof(*magic_wr));
+			*(char *)(plget->packet + off) = MAGIC;
+			plget->off_pkt_id_wr = off + sizeof(char);
 		}
 
 		plget->off_magic_rd = 0;
