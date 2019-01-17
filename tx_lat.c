@@ -70,7 +70,7 @@ static int get_tx_tstamps(struct plgett *plget)
 
 	if (!(plget->flags & PLF_TS_ID_ALLOWED)) {
 		/* check MAGIC number and get timestamp id */
-		magic = magic_ptr(plget, psize);
+		magic = magic_rd(plget, psize);
 		if (*magic != MAGIC) {
 			printf("incorrect MAGIC number\n");
 			return -1;
@@ -169,10 +169,9 @@ static int txlat_proc_packets(struct plgett *plget, int pkt_num)
 				goto err;
 			}
 
-			*sid_wr_ptr(plget) =
-				htons((tx_cnt & SEQ_ID_MASK) | sid);
+			*sid_wr(plget) = htons((tx_cnt & SEQ_ID_MASK) | sid);
 			if (!(plget->flags & PLF_TS_ID_ALLOWED))
-				*pid_wr_ptr(plget) = tx_cnt;
+				*pid_wr(plget) = tx_cnt;
 			if (++tx_cnt >= pkt_num)
 				txlat_stop_timer(timer_fd);
 

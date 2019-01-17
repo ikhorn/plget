@@ -124,17 +124,17 @@ int plget_setup_timer(struct plgett *plget);
 struct stats *plget_best_rx_vect(void);
 struct stats *plget_best_tx_vect(void);
 
-static inline char *magic_ptr(struct plgett *plget, int pkt_size)
+static inline char *magic_rd(struct plgett *plget, int pkt_size)
 {
 	return (char *)(plget->data + plget->off_magic_rd + pkt_size);
 }
 
-static inline unsigned int *pid_wr_ptr(struct plgett *plget)
+static inline unsigned int *pid_wr(struct plgett *plget)
 {
 	return (unsigned int *)(plget->off_pid_wr + plget->pkt);
 }
 
-static inline __u16 *sid_wr_ptr(struct plgett *plget)
+static inline __u16 *sid_wr(struct plgett *plget)
 {
 	return (__u16 *)(plget->off_sid_wr + plget->pkt);
 }

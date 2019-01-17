@@ -24,8 +24,8 @@ int extlat(struct plgett *plget)
 	unsigned int i = 0;
 
 	for (; i < plget->pkt_num; ++i) {
-		*sid_wr_ptr(plget) = htons((i & SEQ_ID_MASK) | sid);
-		*pid_wr_ptr(plget) = i;
+		*sid_wr(plget) = htons((i & SEQ_ID_MASK) | sid);
+		*pid_wr(plget) = i;
 		txlat_proc_packet(plget);
 		rxlat_proc_packet(plget);
 	}

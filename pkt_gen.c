@@ -30,7 +30,7 @@ int fast_pktgen(struct plgett *plget)
 
 	pnum = plget->pkt_num ? plget->pkt_num : ~0;
 	for (i = 0; i < pnum; i++) {
-		*sid_wr_ptr(plget) = htons((i & SEQ_ID_MASK) | sid);
+		*sid_wr(plget) = htons((i & SEQ_ID_MASK) | sid);
 		ret = sendto(sfd, packet, dsize, 0, addr,
 			     sizeof(plget->sk_addr));
 		if (ret != dsize) {
