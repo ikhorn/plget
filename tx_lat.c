@@ -76,7 +76,7 @@ static int get_tx_tstamps(struct plgett *plget)
 			return -1;
 		}
 
-		ts_id = *(typeof(unsigned int) *)++magic;
+		ts_id = tid_rd(plget, psize);
 	} else {
 		ts_id = serr->ee_data;
 	}
@@ -171,7 +171,7 @@ static int txlat_proc_packets(struct plgett *plget, int pkt_num)
 
 			*sid_wr(plget) = htons((tx_cnt & SEQ_ID_MASK) | sid);
 			if (!(plget->flags & PLF_TS_ID_ALLOWED))
-				*tid_wr(plget) = tx_cnt;
+				tid_wr(plget, tx_cnt);
 			if (++tx_cnt >= pkt_num)
 				txlat_stop_timer(timer_fd);
 

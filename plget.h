@@ -109,7 +109,8 @@ struct plgett {
 	/* packet related info */
 	char *pkt;
 	int off_sid_wr;		/* PTP sequential id */
-	int off_tid_wr;		/* timestamp id used to identify packet */
+	int off_tid_wr;		/* wr offset for ts id for identification */
+	int off_tid_rd;		/* rd offset for ts id for identification */
 	int off_magic_rd;	/* magic num to validate packet */
 
 	/* rx packet related info */
@@ -129,9 +130,31 @@ static inline char *magic_rd(struct plgett *plget, int pkt_size)
 	return (char *)(plget->data + plget->off_magic_rd + pkt_size);
 }
 
-static inline unsigned int *tid_wr(struct plgett *plget)
+static inline void tid_wr(struct plgett *plget, unsigned int tid)
 {
-	return (unsigned int *)(plget->off_tid_wr + plget->pkt);
+	int i;
+	char *p1, *p2;
+
+	p1 = (char *)&tid;
+	p2 = (char *)(plget->off_tid_wr + plget->pkt);
+
+	for (i = 0; i < sizeof(tid); i++)
+		*p2++ = *p1++;
+}
+
+static inline unsigned int tid_rd(struct plgett *plget, int pkt_size)
+{
+	unsigned int tid;
+	char *p1, *p2;
+	int i;
+
+	p1 = (char *)&tid;
+	p2 = (char *)(plget->data + plget->off_tid_rd + pkt_size);
+
+	for (i = 0; i < sizeof(tid); i++)
+		*p1++ = *p2++;
+
+	return tid;
 }
 
 static inline __u16 *sid_wr(struct plgett *plget)

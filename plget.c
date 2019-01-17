@@ -481,12 +481,18 @@ static void fill_in_data_pointers(struct plgett *plget)
 
 		if (plget->mod != ECHO_LAT) {
 			*(char *)(plget->pkt + off) = MAGIC;
-			plget->off_tid_wr = off + sizeof(char);
+
+			plget->off_tid_wr = ALIGN_ROUNDUP(off + 1,
+							  sizeof(long));
 		}
 
 		plget->off_magic_rd = off;
-		if (plget->mod != ECHO_LAT)
+		plget->off_tid_rd = ALIGN_ROUNDUP(off + 1, sizeof(long));
+
+		if (plget->mod != ECHO_LAT) {
 			plget->off_magic_rd -= plget->payload_size;
+			plget->off_tid_rd -= plget->payload_size;
+		}
 	}
 }
 
