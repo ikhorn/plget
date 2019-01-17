@@ -27,12 +27,13 @@
 int echolat(struct plgett *plget)
 {
 	int i = 0;
-	char *magic_rd_base = plget->magic_rd;
+	int off_magic_rd_base = plget->off_magic_rd;
 
 	for (; i < plget->pkt_num; ++i) {
 		rxlat_proc_packet(plget);
 		if (!(plget->flags & PLF_TS_ID_ALLOWED))
-			plget->magic_rd = magic_rd_base - plget->payload_size;
+			plget->off_magic_rd =
+				off_magic_rd_base - plget->payload_size;
 		txlat_proc_packet(plget);
 	}
 

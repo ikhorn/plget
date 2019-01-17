@@ -110,7 +110,7 @@ struct plgett {
 	char *packet;
 	__u16 *seq_id_wr;
 	unsigned int *packet_id_wr;
-	char *magic_rd;
+	int off_magic_rd;
 
 	/* rx packet related info */
 	char data[ETH_DATA_LEN];

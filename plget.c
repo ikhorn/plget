@@ -481,12 +481,12 @@ static void fill_in_data_pointers(struct plgett *plget)
 				(magic_wr + sizeof(*magic_wr));
 		}
 
-		plget->magic_rd = plget->data;
+		plget->off_magic_rd = 0;
 		if (plget->mod != ECHO_LAT)
-			plget->magic_rd -= plget->payload_size;
+			plget->off_magic_rd -= plget->payload_size;
 
 		if (plget->flags & PLF_PTP)
-			plget->magic_rd += ptp_header_size;
+			plget->off_magic_rd += ptp_header_size;
 	}
 
 	if (plget->flags & PLF_PTP)
