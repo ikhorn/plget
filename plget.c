@@ -39,6 +39,8 @@
 #define ALIGN_ROUNDUP(x, align)\
 	((align) * (((x) + align - 1) / (align)))
 
+#define ALIGN(x) ALIGN_ROUNDUP(x, sizeof(long))
+
 #define ALIGN_ROUNDUP_PTR(x, align)\
 	((void *)ALIGN_ROUNDUP((uintptr_t)(x), (uintptr_t)(align)))
 
@@ -477,17 +479,16 @@ static void fill_in_data_pointers(struct plgett *plget)
 		if (plget->flags & PLF_PTP)
 			off += sizeof(ptpv2_sync_header);
 
-		off = ALIGN_ROUNDUP(off, sizeof(long));
+		off = ALIGN(off);
 
 		if (plget->mod != ECHO_LAT) {
 			*(char *)(plget->pkt + off) = MAGIC;
 
-			plget->off_tid_wr = ALIGN_ROUNDUP(off + 1,
-							  sizeof(long));
+			plget->off_tid_wr = ALIGN(off + 1);
 		}
 
 		plget->off_magic_rd = off;
-		plget->off_tid_rd = ALIGN_ROUNDUP(off + 1, sizeof(long));
+		plget->off_tid_rd = ALIGN(off + 1);
 
 		if (plget->mod != ECHO_LAT) {
 			plget->off_magic_rd -= plget->payload_size;
