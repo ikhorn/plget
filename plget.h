@@ -124,4 +124,9 @@ int plget_setup_timer(struct plgett *plget);
 struct stats *plget_best_rx_vect(void);
 struct stats *plget_best_tx_vect(void);
 
+static inline char *magic_ptr(struct plgett *plget, int pkt_size)
+{
+	return (char *)(plget->data + plget->off_magic_rd + pkt_size);
+}
+
 #endif
