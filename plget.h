@@ -129,4 +129,9 @@ static inline char *magic_ptr(struct plgett *plget, int pkt_size)
 	return (char *)(plget->data + plget->off_magic_rd + pkt_size);
 }
 
+static inline unsigned int *pid_wr_ptr(struct plgett *plget)
+{
+	return (unsigned int *)(plget->off_pid_wr + plget->pkt);
+}
+
 #endif

@@ -172,8 +172,7 @@ static int txlat_proc_packets(struct plgett *plget, int pkt_num)
 			*(__u16 *)(plget->off_sid_wr + plget->pkt) =
 				htons((tx_cnt & SEQ_ID_MASK) | sid);
 			if (!(plget->flags & PLF_TS_ID_ALLOWED))
-				*(int *)(plget->off_pid_wr + plget->pkt) =
-					tx_cnt;
+				*pid_wr_ptr(plget) = tx_cnt;
 			if (++tx_cnt >= pkt_num)
 				txlat_stop_timer(timer_fd);
 
