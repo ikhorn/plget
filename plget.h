@@ -95,7 +95,7 @@ struct plgett {
 	enum pkt_type pkt_type;
 	int pkt_size;
 	int pkt_num;
-	int payload_size;
+	int sk_payload_size;	/* socket payload size */
 	int sfd;
 	int port;
 	int flags;

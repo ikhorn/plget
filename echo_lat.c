@@ -33,7 +33,7 @@ int echolat(struct plgett *plget)
 		rxlat_proc_packet(plget);
 		if (!(plget->flags & PLF_TS_ID_ALLOWED))
 			plget->off_magic_rd =
-				off_magic_rd_base - plget->payload_size;
+				off_magic_rd_base - plget->sk_payload_size;
 		txlat_proc_packet(plget);
 	}
 

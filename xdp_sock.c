@@ -369,5 +369,5 @@ int xsk_sendto(struct plgett *plget)
 	else
 		plget->pkt += FRAME_SIZE;
 
-	return plget->payload_size;
+	return plget->sk_payload_size;
 }

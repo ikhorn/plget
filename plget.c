@@ -369,13 +369,16 @@ static void init_pkt_ether_header(struct plgett *plget)
 
 static void fill_in_packets(struct plgett *plget)
 {
-	int payload_size;
+	int ptp_payload_size;
 	int n, i, j;
 	char *dp;
 
-	payload_size = plget->payload_size;
+	ptp_payload_size = plget->sk_payload_size;
+	if (plget->pkt_type == PKT_XDP)
+		ptp_payload_size -= ETH_HLEN;
+
 	if (plget->flags & PLF_PTP)
-		payload_size -= sizeof(ptpv2_sync_header);
+		ptp_payload_size -= sizeof(ptpv2_sync_header);
 
 	n = (plget->pkt_type == PKT_XDP) ? FRAME_NUM : 1;
 	for (i = 0; i < n; i++) {
@@ -396,7 +399,7 @@ static void fill_in_packets(struct plgett *plget)
 			dp += sizeof(ptpv2_sync_header);
 		}
 
-		for (j = 0; j < payload_size; j++)
+		for (j = 0; j < ptp_payload_size; j++)
 			*dp++ = (rand() % 230) + 1;
 	}
 
@@ -439,19 +442,19 @@ static int plget_create_packet(struct plgett *plget)
 		} else if (!plget->pkt_size)
 			plget->pkt_size = 64;
 
-		payload_size = plget->pkt_size - ETH_HLEN;
+		payload_size = plget->pkt_size;
+		if (plget->pkt_type != PKT_XDP)
+			payload_size -= ETH_HLEN;
 	}
 
 	/* allocate packet */
-	plget->payload_size = payload_size;
-
+	plget->sk_payload_size = payload_size;
 	if (plget->pkt_type != PKT_XDP) {
 		plget->pkt = malloc(payload_size);
 		if (!plget->pkt)
 			return -ENOMEM;
 	}
 
-	/* fill in payload */
 	fill_in_packets(plget);
 	return 0;
 }
@@ -494,8 +497,8 @@ static void fill_in_data_pointers(struct plgett *plget)
 		plget->off_tid_rd = ALIGN(off + 1);
 
 		if (plget->mod != ECHO_LAT) {
-			plget->off_magic_rd -= plget->payload_size;
-			plget->off_tid_rd -= plget->payload_size;
+			plget->off_magic_rd -= plget->sk_payload_size;
+			plget->off_tid_rd -= plget->sk_payload_size;
 		}
 	}
 }

@@ -67,7 +67,7 @@ void rxlat_proc_packet(struct plgett *plget)
 		return perror("recvmsg");
 
 	rxlat_handle_ts(plget, &ts);
-	plget->payload_size = pkt_size;
+	plget->sk_payload_size = pkt_size;
 }
 
 int rxlat(struct plgett *plget)

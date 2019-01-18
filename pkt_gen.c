@@ -22,7 +22,7 @@
 int fast_pktgen(struct plgett *plget)
 {
 	struct sockaddr *addr = (struct sockaddr *)&plget->sk_addr;
-	int dsize = plget->payload_size;
+	int dsize = plget->sk_payload_size;
 	char *packet = plget->pkt;
 	int sid = plget->stream_id;
 	int sfd = plget->sfd;
@@ -50,7 +50,7 @@ int fast_pktgen(struct plgett *plget)
 int pktgen(struct plgett *plget)
 {
 	struct sockaddr *addr = (struct sockaddr *)&plget->sk_addr;
-	int dsize = plget->payload_size;
+	int dsize = plget->sk_payload_size;
 	int timer_fd, pnum, ret, i = 0;
 	char *packet = plget->pkt;
 	int sid = plget->stream_id;

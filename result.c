@@ -350,7 +350,7 @@ void res_stats_print(struct plgett *plget)
 		if (plget->pkt_type == PKT_UDP)
 			header_size += 28;
 
-		plget->pkt_size = header_size + plget->payload_size;
+		plget->pkt_size = header_size + plget->sk_payload_size;
 	}
 
 	if (plget->pkt_size)
