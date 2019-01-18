@@ -72,7 +72,7 @@ static int get_tx_tstamps(struct plgett *plget)
 		/* check MAGIC number and get timestamp id */
 		magic = magic_rd(plget, psize);
 		if (*magic != MAGIC) {
-			printf("incorrect MAGIC number\n");
+			printf("incorrect MAGIC number 0x%x\n", *magic);
 			return -1;
 		}
 
