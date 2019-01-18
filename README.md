@@ -1,11 +1,11 @@
 # INTRODUCTION
 *plget* is a tool used to measure latency packets spent in network stack, NIC
 driver and on the wire, trace interpacket gap, based as on h/w as on sw
-timestamping, as for rx as for tx path. It can be used to measure complete
+timestamping, as for RX as for TX path. It can be used to measure complete
 latency from wire to an application and from an application to wire, round
-trip latency and more. The plget tool uses socket interface and works with UDP
-and PTP l2/l4 packets. Also an extension is being adding to work with AF_XDP
-sockets.
+trip time (RTT) and more. The plget tool uses socket interface and works
+with UDP and PTP l2/l4 packets. Also an extension is being adding to work
+with AF_XDP sockets.
 
 Can be useful for developers to trace hw timestamps when packets were sent or
 received in case of some shaping verification, like CBS Qdisc in both, offload
@@ -30,7 +30,7 @@ One of the possible test models:
 This tool is used for measuring the following:
 * packet latency for networking stack for RX and TX
 * NIC driver latency (hw timestamping is required) for RX and TX
-* external latency, NIC->server->NIC (hw timestamping is advisable)
+* round trip time (RTT), NIC->server->NIC (hw timestamping is advisable)
 * tracing interpacket gap (hw timestamping is required) for RX and TX
 * tracing time of sending (hw timestamping is required)
 * figuring out bottlenecks for hi priority packets
@@ -57,7 +57,7 @@ relevant, "ipgap" means time between neighbor h/w timestamps and useful to see
 how h/w shaping behaves in case of several streams etc. The "lat" is set by
 default, but only if -f option is not used. All can be used in one line
 "-f lat,hwts,ipgap". Also, if stack latency before entering packet scheduler is
-needed, -f "sched" can be ued, relevant only for modes with tx, like echo-lat,
+needed, -f "sched" can be ued, relevant only for modes with TX, like echo-lat,
 ext-lat, tx-lat.
 
 # EXAMPLES
@@ -240,7 +240,7 @@ or if vlan is used (one more sched ts):
 --format=sched,lat --pps=100 --dev-deep=2
 ~~~
 
-## EXTERNAL/ECHO LATENCY EXAMPLES
+## RTT and ECHO LATENCY EXAMPLES
 ~~~
 		     examples scheme
 +--------------------------------------------------+
@@ -284,12 +284,11 @@ or if vlan is used (one more sched ts):
 ~~~
 
 In this case plget has to be running on workstation and on testing board.
-It's called external latency mode because it measures latency of testing board
-using timestamps of workstation. But in the same time the latencies on board
-itself are also measured, both tx and rx, as packet is echoed with testing
-board. Packets are sent in order, the new packet is not sent till last packet
-has not been received back. Can be useful if tx and rx latencies should be
-measured for 2 different boards, twice faster.
+It measures round trip time based on NICs h/w timestamps. And in the same time
+the latencies on board itself are also measured, both TX and RX, as packet is
+echoed with testing board. Packets are sent in order, the new packet is not sent
+till last packet has not been received back. Can be useful if TX and RX
+latencies should be measured for 2 different boards, twice faster.
 
 For all examples run phc2sys, to keep PHC and system clock in sync, if h/w
 timestamping is supported ofc:
@@ -299,9 +298,9 @@ timestamping is supported ofc:
 
 Use "-f lat,hwts,ipgap" if more printouts are needed, see "plget -h".
 
-Example 1: UDP TX, RX and round trip latency
+Example 1: UDP TX, RX latencies and RTT
 ----------
-Measure tx, rx, external (round trip) latency for UDP packets, port 385.
+Measure TX, RX latencies and rtt for UDP packets, port 385.
 
 On board 1 (192.168.3.16):
 ~~~
@@ -313,9 +312,9 @@ On board 2 (192.168.3.20):
 :~# plget -i eth0 -t udp -u 385 -m echo-lat -n 16 -l 512 -a 192.168.3.16
 ~~~
 
-Example 2: PTP l4 TX, RX and round trip latency
+Example 2: PTP l4 TX, RX latencies and RTT
 ----------
-Measure tx, rx, external (round trip) latency for PTP l4.
+Measure TX, RX latencies and RTT for PTP l4.
 
 On workstation (client):
 ~~~
@@ -330,9 +329,9 @@ On target board:
 By default multicast 224.0.1.129 address is used. In case the other is
 needed, use smth like -a 224.0.1.130 as for taget board as for client.
 
-Example 3: AVTP TX, RX and round trip latency
+Example 3: AVTP TX, RX latencies and RTT
 ----------
-Measure tx, rx, external latencies for avtp packets (IEEE 1722)
+Measure TX, RX latencies and RTT for avtp packets (IEEE 1722)
 
 On workstation (client 74:da:ea:47:7d:9d):
 ~~~
@@ -344,9 +343,9 @@ On target board (c8:a0:30:b4:94:03):
 :~# plget -i eth0 -t avtp -m echo-lat -n 16 -l 512 -a 74:da:ea:47:7d:9d
 ~~~
 
-Example 4: PTP l2 TX, RX and RT latency
+Example 4: PTP l2 TX, RX latencies and RTT
 ----------
-Measure tx, rx, external latencies for ptpl2 packets (IEEE 1588)
+Measure TX, RX latencies and RTT for ptpl2 packets (IEEE 1588)
 
 On workstation (client 74:da:ea:47:7d:9d):
 ~~~
