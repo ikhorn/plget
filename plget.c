@@ -572,7 +572,7 @@ static int init_test(struct plgett *plget)
 
 int main(int argc, char **argv)
 {
-	struct plgett plget;
+	struct plgett *plget;
 	int ret;
 
 	if (argc == 1) {
@@ -580,10 +580,13 @@ int main(int argc, char **argv)
 		exit(0);
 	}
 
-	memset(&plget, 0, sizeof(plget));
-	plget_args(&plget, argc, argv);
+	plget = calloc(1, sizeof(struct plgett));
+	if (!plget)
+		return -ENOMEM;
 
-	ret = init_test(&plget);
+	plget_args(plget, argc, argv);
+
+	ret = init_test(plget);
 	if (ret)
 		return ret;
 
@@ -591,24 +594,24 @@ int main(int argc, char **argv)
 	if (mlockall(MCL_CURRENT | MCL_FUTURE))
 		perror("mlockall failed");
 
-	switch (plget.mod) {
+	switch (plget->mod) {
 	case RX_LAT:
-		ret = rxlat(&plget);
+		ret = rxlat(plget);
 		break;
 	case TX_LAT:
-		ret = txlat(&plget);
+		ret = txlat(plget);
 		break;
 	case EXT_LAT:
-		ret = extlat(&plget);
+		ret = extlat(plget);
 		break;
 	case ECHO_LAT:
-		ret = echolat(&plget);
+		ret = echolat(plget);
 		break;
 	case PKT_GEN:
-		ret = pktgen(&plget);
+		ret = pktgen(plget);
 		break;
 	case RX_RATE:
-		ret = rxrate(&plget);
+		ret = rxrate(plget);
 		break;
 	default:
 		plget_fail("didn't set mode with -m");
@@ -618,6 +621,6 @@ int main(int argc, char **argv)
 	if (ret)
 		return ret;
 
-	res_stats_print(&plget);
+	res_stats_print(plget);
 	exit(0);
 }
