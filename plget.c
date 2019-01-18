@@ -136,10 +136,10 @@ static int enable_hw_timestamping(struct plgett *plget)
 	ifreq_ts.ifr_data = (void *)&hwconfig;
 
 	need_tx_hwts = plget->mod == TX_LAT ||
-		       plget->mod == EXT_LAT ||
+		       plget->mod == RTT_MOD ||
 		       plget->mod == ECHO_LAT;
 	need_rx_hwts = plget->mod == RX_LAT ||
-		       plget->mod == EXT_LAT ||
+		       plget->mod == RTT_MOD ||
 		       plget->mod == RX_RATE ||
 		       plget->mod == ECHO_LAT;
 
@@ -514,12 +514,12 @@ static int init_test(struct plgett *plget)
 	enable_hw_timestamping(plget);
 	res_title_print(plget);
 
-	if (mod == EXT_LAT || mod == ECHO_LAT || mod == TX_LAT ||
+	if (mod == RTT_MOD || mod == ECHO_LAT || mod == TX_LAT ||
 	    mod == RX_LAT)
 		stats_reserve(&temp, plget->pkt_num);
 
 	/* reserve stats memory and set ts flags */
-	if (mod == EXT_LAT || mod == ECHO_LAT || mod == TX_LAT) {
+	if (mod == RTT_MOD || mod == ECHO_LAT || mod == TX_LAT) {
 		if (plget->flags & PLF_PRINTOUT) {
 			stats_reserve(&tx_app_v, plget->pkt_num);
 			stats_reserve(&tx_sw_v, plget->pkt_num);
@@ -541,7 +541,7 @@ static int init_test(struct plgett *plget)
 		}
 	}
 
-	if (mod == EXT_LAT || mod == ECHO_LAT || mod == RX_LAT ||
+	if (mod == RTT_MOD || mod == ECHO_LAT || mod == RX_LAT ||
 	    mod == RX_RATE) {
 		if (plget->flags & PLF_PRINTOUT) {
 			stats_reserve(&rx_app_v, plget->pkt_num);
@@ -555,7 +555,7 @@ static int init_test(struct plgett *plget)
 	ts_flags |= SOF_TIMESTAMPING_RAW_HARDWARE;
 
 	/* create and fill in packet */
-	if (mod == EXT_LAT || mod == TX_LAT || mod == PKT_GEN) {
+	if (mod == RTT_MOD || mod == TX_LAT || mod == PKT_GEN) {
 		ret = plget_create_packet(plget);
 		if (ret)
 			return ret;
@@ -601,7 +601,7 @@ int main(int argc, char **argv)
 	case TX_LAT:
 		ret = txlat(plget);
 		break;
-	case EXT_LAT:
+	case RTT_MOD:
 		ret = extlat(plget);
 		break;
 	case ECHO_LAT:

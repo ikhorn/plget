@@ -176,7 +176,7 @@ static int res_rx_lat_print(struct plgett *plget)
 		if (ts_correct(&plget->rtime))
 			rtime = &plget->rtime;
 		else
-			rtime = plget->mod == EXT_LAT ? tx_hw_v.start_ts :
+			rtime = plget->mod == RTT_MOD ? tx_hw_v.start_ts :
 							rx_hw_v.start_ts;
 
 		n |= stats_print("\nhw rx time, us", &rx_hw_v, print_flags,
@@ -318,7 +318,7 @@ void res_print_time(void)
 void res_stats_print(struct plgett *plget)
 {
 	int mod = plget->mod;
-	int rx_tx_lat = mod == ECHO_LAT || mod == EXT_LAT;
+	int rx_tx_lat = mod == ECHO_LAT || mod == RTT_MOD;
 	int print_rx_lat = mod == RX_LAT || rx_tx_lat;
 	int print_tx_lat = mod == TX_LAT || rx_tx_lat;
 	int header_size = ETH_HLEN;
@@ -332,13 +332,13 @@ void res_stats_print(struct plgett *plget)
 	if (print_rx_lat)
 		n = res_rx_lat_print(plget);
 
-	if (mod == ECHO_LAT || mod == EXT_LAT) {
+	if (mod == ECHO_LAT || mod == RTT_MOD) {
 		if (n != n2)
 			printf("rx ts num != tx ts num: %d != %d\n", n, n2);
 
 		pnum = n > n2 ? n2 : n;
 
-		if (mod == EXT_LAT)
+		if (mod == RTT_MOD)
 			res_ext_lat_print(plget);
 	} else if (mod == PKT_GEN) {
 		pnum = plget->pkt_num;
@@ -358,7 +358,7 @@ void res_stats_print(struct plgett *plget)
 
 	printf("number of packets: %d\n", pnum);
 
-	if (mod == TX_LAT || mod == EXT_LAT)
+	if (mod == TX_LAT || mod == RTT_MOD)
 		stats_vrate_print(res_best_tx_vect(), plget->pkt_size);
 
 	if (mod == RX_LAT || mod == ECHO_LAT)

@@ -82,7 +82,7 @@ static int get_tx_tstamps(struct plgett *plget)
 	}
 
 	if (!tss)
-		return plget->mod == EXT_LAT ? 0 : -1;
+		return plget->mod == RTT_MOD ? 0 : -1;
 
 	ts = tss->ts;
 	if (ts_type == SCM_TSTAMP_SCHED) {

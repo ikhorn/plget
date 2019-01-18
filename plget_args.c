@@ -115,7 +115,7 @@ static void plget_check_args(struct plgett *plget)
 
 	/* set default lat printout */
 	if ((mod == TX_LAT || mod == RX_LAT || mod == ECHO_LAT ||
-	     mod == EXT_LAT) && !(plget->flags & PLF_PRINTOUT))
+	     mod == RTT_MOD) && !(plget->flags & PLF_PRINTOUT))
 		plget->flags |= PLF_LATENCY_STAT;
 
 	if (mod == RX_RATE && plget->flags & PLF_PRINTOUT) {
@@ -152,14 +152,14 @@ static void plget_check_args(struct plgett *plget)
 		}
 
 		need_addr = (!plget->iaddr.s_addr) && (mod == TX_LAT ||
-			    mod == ECHO_LAT || mod == EXT_LAT ||
+			    mod == ECHO_LAT || mod == RTT_MOD ||
 			    mod == PKT_GEN);
 
 		plget->flags |= PLF_TS_ID_ALLOWED;
 		break;
 	case PKT_ETH:
 		if (plget->macaddr[0] == '\0' && (plget->flags & PLF_PTP)) {
-			if (mod == TX_LAT || mod == PKT_GEN || mod == EXT_LAT ||
+			if (mod == TX_LAT || mod == PKT_GEN || mod == RTT_MOD ||
 			    mod == ECHO_LAT) {
 				sscanf(PTP_PRIMARY_MCAST_MACADDR,
 				       "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
@@ -180,7 +180,7 @@ static void plget_check_args(struct plgett *plget)
 		}
 
 		need_addr = (plget->macaddr[0] == '\0') &&
-			    (mod == TX_LAT || mod == EXT_LAT || mod == PKT_GEN);
+			    (mod == TX_LAT || mod == RTT_MOD || mod == PKT_GEN);
 
 		if (plget->port)
 			printf("Cannot specify port for non UDP packets\n");
@@ -193,7 +193,7 @@ static void plget_check_args(struct plgett *plget)
 			plget->queue = 0;
 
 		need_addr = (plget->macaddr[0] == '\0') &&
-			    (mod == TX_LAT || mod == EXT_LAT || mod == PKT_GEN);
+			    (mod == TX_LAT || mod == RTT_MOD || mod == PKT_GEN);
 		break;
 	default:
 		plget_fail("Please, specify packet_type");
@@ -255,7 +255,7 @@ static void plget_set_mode(struct plgett *plget)
 	else if (!strcmp("rx-lat", optarg))
 		plget->mod = RX_LAT;
 	else if (!strcmp("ext-lat", optarg))
-		plget->mod = EXT_LAT;
+		plget->mod = RTT_MOD;
 	else if (!strcmp("echo-lat", optarg))
 		plget->mod = ECHO_LAT;
 	else if (!strcmp("pkt-gen", optarg))

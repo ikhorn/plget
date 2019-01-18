@@ -74,7 +74,7 @@ enum pkt_type {
 enum test_mod {
 	RX_LAT = 1,
 	TX_LAT = 2,
-	EXT_LAT = 3,
+	RTT_MOD = 3, 	/* round trip time mode (external latency) */
 	ECHO_LAT = 4,
 	PKT_GEN = 5,
 	RX_RATE = 6,
