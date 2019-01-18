@@ -63,6 +63,8 @@ static unsigned char ptpv2_sync_header[] = {
 	0x00, 0x74, 0x00, 0x00
 };
 
+#define PTP_HSIZE	sizeof(ptpv2_sync_header)
+
 int plget_setup_timer(struct plgett *plget)
 {
 	int fd, ret;
@@ -378,7 +380,7 @@ static void fill_in_packets(struct plgett *plget)
 		ptp_payload_size -= ETH_HLEN;
 
 	if (plget->flags & PLF_PTP)
-		ptp_payload_size -= sizeof(ptpv2_sync_header);
+		ptp_payload_size -= PTP_HSIZE;
 
 	n = (plget->pkt_type == PKT_XDP) ? FRAME_NUM : 1;
 	for (i = 0; i < n; i++) {
@@ -393,10 +395,8 @@ static void fill_in_packets(struct plgett *plget)
 		}
 
 		if (plget->flags & PLF_PTP) {
-			memcpy(dp, ptpv2_sync_header,
-			       sizeof(ptpv2_sync_header));
-
-			dp += sizeof(ptpv2_sync_header);
+			memcpy(dp, ptpv2_sync_header, PTP_HSIZE);
+			dp += PTP_HSIZE;
 		}
 
 		for (j = 0; j < ptp_payload_size; j++)
@@ -483,7 +483,7 @@ static void fill_in_data_pointers(struct plgett *plget)
 
 	if (!(plget->flags & PLF_TS_ID_ALLOWED)) {
 		if (plget->flags & PLF_PTP)
-			off += sizeof(ptpv2_sync_header);
+			off += PTP_HSIZE;
 
 		off = ALIGN(off);
 
