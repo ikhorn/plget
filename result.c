@@ -205,7 +205,7 @@ static int res_rx_lat_print(struct plgett *plget)
 	return n;
 }
 
-static void res_ext_lat_print(struct plgett *plget)
+static void res_rtt_print(struct plgett *plget)
 {
 	struct stats *a_stat, *b_stat;
 	char *a_ts_base, *b_ts_base;
@@ -235,13 +235,13 @@ static void res_ext_lat_print(struct plgett *plget)
 		b_ts_base = "app";
 	}
 
-	printf("extarnal latency measurements based on "
+	printf("round trip time measurements based on "
 		"tx %s ts and rx %s ts\n", a_ts_base, b_ts_base);
 
 	stats_diff(b_stat, a_stat, &temp);
-	stats_print("\nexternal latency (doesn't include rx and "
+	stats_print("\nround trip time (doesn't include rx and "
 		    "tx latencies printed above, based on "
-		    "send/receive h/w or closest s/w "
+		    "send/receive NICs h/w or closest s/w "
 		    "timestamps), us", &temp, print_flags, NULL);
 }
 
@@ -339,7 +339,7 @@ void res_stats_print(struct plgett *plget)
 		pnum = n > n2 ? n2 : n;
 
 		if (mod == RTT_MOD)
-			res_ext_lat_print(plget);
+			res_rtt_print(plget);
 	} else if (mod == PKT_GEN) {
 		pnum = plget->pkt_num;
 	} else {

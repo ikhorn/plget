@@ -58,7 +58,7 @@ how h/w shaping behaves in case of several streams etc. The "lat" is set by
 default, but only if -f option is not used. All can be used in one line
 "-f lat,hwts,ipgap". Also, if stack latency before entering packet scheduler is
 needed, -f "sched" can be ued, relevant only for modes with TX, like echo-lat,
-ext-lat, tx-lat.
+rtt, tx-lat.
 
 # EXAMPLES
 
@@ -251,7 +251,7 @@ or if vlan is used (one more sched ts):
 | RT app               | Net stack    | NIC driver |
 |                  +---|          +---|        +---|
 |                  |ts1|          |ts2|        |ts3|
-| plget -m ext-lat |   |--------->|   |------->|   |
+| plget -m rtt     |   |--------->|   |------->|   |
 |                  |SYS|          |SYS|        |PHC|<===> Eth
 |                  |CLK|<---------|CLK|<-------|CLK|
 |                  |   |          |   |        |   |
@@ -304,7 +304,7 @@ Measure TX, RX latencies and rtt for UDP packets, port 385.
 
 On board 1 (192.168.3.16):
 ~~~
-:~# plget -i eth0 -t udp -u 385 -m ext-lat -n 16 -l 512 -a 192.168.3.20
+:~# plget -i eth0 -t udp -u 385 -m rtt -n 16 -l 512 -a 192.168.3.20
 ~~~
 
 On board 2 (192.168.3.20):
@@ -318,7 +318,7 @@ Measure TX, RX latencies and RTT for PTP l4.
 
 On workstation (client):
 ~~~
-:~# plget -i eth0 -t udp -u 319 -m ext-lat -n 16 -l 512
+:~# plget -i eth0 -t udp -u 319 -m rtt -n 16 -l 512
 ~~~
 
 On target board:
@@ -335,7 +335,7 @@ Measure TX, RX latencies and RTT for avtp packets (IEEE 1722)
 
 On workstation (client 74:da:ea:47:7d:9d):
 ~~~
-:~# plget -i eth0 -t avtp -m ext-lat -n 16 -l 512 -a c8:a0:30:b4:94:03
+:~# plget -i eth0 -t avtp -m rtt -n 16 -l 512 -a c8:a0:30:b4:94:03
 ~~~
 
 On target board (c8:a0:30:b4:94:03):
@@ -349,7 +349,7 @@ Measure TX, RX latencies and RTT for ptpl2 packets (IEEE 1588)
 
 On workstation (client 74:da:ea:47:7d:9d):
 ~~~
-:~# plget -i eth0 -t ptpl2 -m ext-lat -n 16 -l 512 -a c8:a0:30:b4:94:03
+:~# plget -i eth0 -t ptpl2 -m rtt -n 16 -l 512 -a c8:a0:30:b4:94:03
 ~~~
 
 On target board (c8:a0:30:b4:94:03):
@@ -359,7 +359,7 @@ On target board (c8:a0:30:b4:94:03):
 
 Or use default multicast group and run appropriately:
 ~~~
-:~# plget -i eth0 -t ptpl2 -m ext-lat -n 16 -l 512
+:~# plget -i eth0 -t ptpl2 -m rtt -n 16 -l 512
 :~# plget -i eth0 -t ptpl2 -m echo-lat -n 16
 ~~~
 

@@ -41,7 +41,7 @@ static void plget_usage(void)
 	       "ptpl2, ptpl4, xdp_ptpl2\n");
 	printf("\ti NAME\t\t--if=NAME\t\t:interface name\n");
 	printf("\tm MODE\t\t--mode=MODE\t\t:\"rx-lat\" or \"tx-lat\" or "
-	       "\"echo-lat\" or \"pkt-gen\" or \"ext-lat\" or \"rx-rate\" "
+	       "\"echo-lat\" or \"pkt-gen\" or \"rtt\" or \"rx-rate\" "
 	       "mode\n");
 	printf("\tn NUM\t\t--pkt-num=NUM\t\t:number of packets to be sent or "
 	       "received\n");
@@ -254,7 +254,7 @@ static void plget_set_mode(struct plgett *plget)
 		plget->mod = TX_LAT;
 	else if (!strcmp("rx-lat", optarg))
 		plget->mod = RX_LAT;
-	else if (!strcmp("ext-lat", optarg))
+	else if (!strcmp("rtt", optarg))
 		plget->mod = RTT_MOD;
 	else if (!strcmp("echo-lat", optarg))
 		plget->mod = ECHO_LAT;
