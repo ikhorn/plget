@@ -111,7 +111,7 @@ static void txlat_stop_timer(int fd)
 	timerfd_settime(fd, 0, &tspec, NULL);
 }
 
-static int txlat_sendto(struct plgett *plget, unsigned int tx_idx)
+static int txlat_sendto(struct plgett *plget)
 {
 	int ret;
 
@@ -122,7 +122,7 @@ static int txlat_sendto(struct plgett *plget, unsigned int tx_idx)
 		return ret;
 	}
 
-	ret = xsk_sendto(plget, tx_idx);
+	ret = xsk_sendto(plget);
 	return ret;
 }
 
@@ -177,7 +177,7 @@ static int txlat_proc_packets(struct plgett *plget, int pkt_num)
 
 			/* send packet */
 			clock_gettime(CLOCK_REALTIME, &ts);
-			ret = txlat_sendto(plget, tx_cnt);
+			ret = txlat_sendto(plget);
 
 			stats_push(&tx_app_v, &ts);
 			if (ret != plget->payload_size) {

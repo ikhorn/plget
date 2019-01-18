@@ -338,11 +338,12 @@ static int xsk_tx_complete(struct xsock *xsk, __u32 ndescs)
 	return ret;
 }
 
-int xsk_sendto(struct plgett *plget, unsigned int frame_idx)
+int xsk_sendto(struct plgett *plget)
 {
 	struct xsock *xsk = plget->xsk;
 	struct sock_queue *tq = &xsk->tq;
 	struct xdp_desc *ring = tq->ring;
+	unsigned int frame_idx;
 	__u32 ret, desc_idx;
 
 	/* prepare frame */
@@ -350,7 +351,8 @@ int xsk_sendto(struct plgett *plget, unsigned int frame_idx)
 	if (!ret)
 		return 0;
 
-	frame_idx %= FRAME_NUM;
+	frame_idx = (plget->pkt - xsk->umem->frames) >> FRAME_SHIFT;
+
 	desc_idx = tq->cached_prod++ & tq->mask;
 	ring[desc_idx].addr = frame_idx << FRAME_SHIFT;
 	ring[desc_idx].len = plget->pkt_size;
@@ -361,6 +363,11 @@ int xsk_sendto(struct plgett *plget, unsigned int frame_idx)
 
 	/* kick */
 	xsk_tx_complete(xsk, 1);
+
+	if (frame_idx >= FRAME_NUM - 1)
+		plget->pkt = xsk->umem->frames;
+	else
+		plget->pkt += FRAME_SIZE;
 
 	return plget->payload_size;
 }
