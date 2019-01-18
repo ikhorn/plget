@@ -444,9 +444,12 @@ static int plget_create_packet(struct plgett *plget)
 
 	/* allocate packet */
 	plget->payload_size = payload_size;
-	plget->pkt = malloc(payload_size);
-	if (!plget->pkt)
-		return -ENOMEM;
+
+	if (plget->pkt_type != PKT_XDP) {
+		plget->pkt = malloc(payload_size);
+		if (!plget->pkt)
+			return -ENOMEM;
+	}
 
 	/* fill in payload */
 	fill_in_packets(plget);
