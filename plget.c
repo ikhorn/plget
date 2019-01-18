@@ -167,8 +167,9 @@ static int enable_hw_timestamping(struct plgett *plget)
 		    hwconfig_requested.rx_filter == HWTSTAMP_FILTER_NONE)
 			printf("SIOCSHWTSTAMP: disabling h/w time stamping not possible\n");
 		else
-			printf("%s: %d\n", "SIOCSHWTSTAMP", ret);
-		ret = -errno;
+			printf("SIOCSHWTSTAMP: NIC h/w ts seems like is not supported: %d\n", ret);
+
+		return -errno;
 	}
 
 	printf("SIOCSHWTSTAMP: tx_type %d requested, got %d; rx_filter %d requested, got %d\n",
