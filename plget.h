@@ -157,9 +157,15 @@ static inline unsigned int tid_rd(struct plgett *plget, int pkt_size)
 	return tid;
 }
 
-static inline __u16 *sid_wr(struct plgett *plget)
+static inline void sid_wr(struct plgett *plget, __u16 sid)
 {
-	return (__u16 *)(plget->off_sid_wr + plget->pkt);
+	char *p1, *p2;
+
+	p1 = (char *)&sid;
+	p2 = plget->off_sid_wr + plget->pkt;
+
+	*p2++ = *p1++;
+	*p2 = *p1;
 }
 
 #endif
