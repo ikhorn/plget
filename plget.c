@@ -399,6 +399,10 @@ static void fill_in_packets(struct plgett *plget)
 			dp += PTP_HSIZE;
 		}
 
+		if (!(plget->flags & PLF_TS_ID_ALLOWED) &&
+		    plget->mod != ECHO_LAT)
+			*dp++ = MAGIC;
+
 		for (j = 0; j < ptp_payload_size; j++)
 			*dp++ = (rand() % 230) + 1;
 	}
@@ -485,13 +489,8 @@ static void fill_in_data_pointers(struct plgett *plget)
 		if (plget->flags & PLF_PTP)
 			off += PTP_HSIZE;
 
-		off = ALIGN(off);
-
-		if (plget->mod != ECHO_LAT) {
-			*(char *)(plget->pkt + off) = MAGIC;
-
+		if (plget->mod != ECHO_LAT)
 			plget->off_tid_wr = ALIGN(off + 1);
-		}
 
 		plget->off_magic_rd = off;
 		plget->off_tid_rd = ALIGN(off + 1);
