@@ -33,7 +33,7 @@ static void res_print_clock_info(int clock, char *clock_name)
 	if (ret < 0)
 		perror("clock_getres");
 
-	printf("-----------------------------------------|\n");
+	printf("-----------------------------------------\n");
 	printf("%s info:\n", clock_name);
 	printf("Declared resolution: %ldns\n", ts1.tv_nsec);
 
@@ -287,7 +287,7 @@ void res_title_print(struct plgett *plget)
 	}
 
 	res_print_clock_info(ptp_fd, "PHC");
-	printf("-----------------------------------------|\n");
+	printf("-----------------------------------------\n");
 
 	/* Check roughly if timeline is same for Sys and PHC */
 	clock_gettime(ptp_fd, &ts1);
@@ -297,11 +297,11 @@ void res_title_print(struct plgett *plget)
 	if (res.tv_sec || usec_diff > 5000)
 		printf("You need to run phc2sys in order to align timeline\n");
 
-	printf("PHC vs CLOCK MONOTONIC= %lus %luns\n", res.tv_sec, res.tv_nsec);
+	printf("PHC vs CLOCK MONOTONIC = %lus %luns\n", res.tv_sec, res.tv_nsec);
 
 	close(ptp_fd);
 ptp_err:
-	printf("-----------------------------------------|\n");
+	printf("-----------------------------------------\n");
 }
 
 void res_print_time(void)
