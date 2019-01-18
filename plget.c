@@ -29,7 +29,7 @@
 #include "plget.h"
 #include "rx_lat.h"
 #include "tx_lat.h"
-#include "ext_lat.h"
+#include "rtt.h"
 #include "echo_lat.h"
 #include <sys/mman.h>
 #include "pkt_gen.h"
@@ -602,7 +602,7 @@ int main(int argc, char **argv)
 		ret = txlat(plget);
 		break;
 	case RTT_MOD:
-		ret = extlat(plget);
+		ret = rtt(plget);
 		break;
 	case ECHO_LAT:
 		ret = echolat(plget);

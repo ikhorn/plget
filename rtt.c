@@ -12,11 +12,23 @@
  * GNU General Public License for more details.
  */
 
-#ifndef EXT_LAT_H
-#define EXT_LAT_H
+#include <linux/net_tstamp.h>
+#include <time.h>
+#include "rx_lat.h"
+#include "tx_lat.h"
+#include "rtt.h"
 
-#include "plget.h"
+int rtt(struct plgett *plget)
+{
+	int sid = plget->stream_id;
+	unsigned int i = 0;
 
-int extlat(struct plgett *plget);
+	for (; i < plget->pkt_num; ++i) {
+		sid_wr(plget, htons((i & SEQ_ID_MASK) | sid));
+		tid_wr(plget, i);
+		txlat_proc_packet(plget);
+		rxlat_proc_packet(plget);
+	}
 
-#endif
+	return 0;
+}
