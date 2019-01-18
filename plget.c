@@ -467,7 +467,7 @@ static void fill_in_data_pointers(struct plgett *plget)
 	if (plget->mod == RX_LAT || plget->mod == RX_RATE)
 		return;
 
-	if (plget->flags & PKT_XDP)
+	if (plget->pkt_type == PKT_XDP)
 		off += ETH_HLEN;
 
 	if (plget->flags & PLF_PTP)
