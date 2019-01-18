@@ -92,7 +92,7 @@ timestamping is supported ofc:
 Use "-f lat,hwts,ipgap" if more printouts are needed, see "plget -h", as for
 the target board as for the server (if you need server latency too).
 
-### Example 1:
+### Example 1: UDP RX latency
 Measure RX latency for UDP packets, port 385.
 
 On target board (192.168.3.16):
@@ -105,7 +105,7 @@ On client side generate appropriate packets:
 :~# plget -i eth0 -t udp -u 385 -m tx-lat -n 16 -s 100 -l 512 -a 192.168.3.16
 ~~~
 
-### Example 2:
+### Example 2: PTP l4 RX latency
 Measure RX latency for PTP l4 packets (port 319), useful if the driver
 supports h/w timestamping only for PTP kind packets.
 
@@ -127,7 +127,7 @@ or
 :~# plget -i eth0 -t ptpl4 -m tx-lat -n 16 -s 100 -l 512 -a 192.168.3.16
 ~~~
 
-Example 3:
+Example 3: AVTP RX latency
 ----------
 Measure RX latency for avtp packets (IEEE 1722)
 
@@ -141,7 +141,7 @@ On client side generate appropriate packets:
 :~# plget -i eth0 -t avtp -m tx-lat -n 16 -s 100 -l 512 -a c8:a0:30:b4:94:03
 ~~~
 
-Example 4:
+Example 4: PTP l2 RX latency
 ----------
 Measure RX latency for ptpl2 packets (IEEE 1588)
 
@@ -188,7 +188,7 @@ timestamping is supported ofc:
 
 Use "-f lat,hwts,ipgap" if more printouts are needed, see "plget -h".
 
-Example 1:
+Example 1: UDP TX latency
 ----------
 Measure TX latency for UDP packets, port 385.
 
@@ -196,7 +196,7 @@ Measure TX latency for UDP packets, port 385.
 :~# plget -i eth0 -t udp -u 385 -m tx-lat -n 16 -s 100 -l 512 -a 192.168.2.1
 ~~~
 
-Example 2:
+Example 2: PTP l4 TX latency
 ----------
 Measure TX latency for PTP l4 packets (port 319), useful if a driver
 supports h/w timestamping only for PTP kind packets.
@@ -205,7 +205,7 @@ supports h/w timestamping only for PTP kind packets.
 :~# plget -i eth0 -t udp -u 319 -m tx-lat -n 16 -s 100 -l 512
 ~~~
 
-Example 3:
+Example 3: AVTP TX latency
 ----------
 Measure TX latency for avtp packets (IEEE 1722).
 
@@ -213,7 +213,7 @@ Measure TX latency for avtp packets (IEEE 1722).
 :~# plget -i eth0 -t avtp -m tx-lat -n 16 -s 10 -l 512 -a 74:da:ea:47:7d:9d
 ~~~
 
-Example 4:
+Example 4: PTP l2 TX latency
 ----------
 Measure TX latency for ptpl2 packets (IEEE 1588)
 
@@ -223,7 +223,7 @@ Measure TX latency for ptpl2 packets (IEEE 1588)
 
 If address is not specified then 01:1B:19:00:00:00 is used.
 
-Example 5:
+Example 5:  PTP l2 TX latency and its packet scheduler part
 ---------
 Measure TX latency for ptpl2 packet, but also get latency in
 packet scheduler (IEEE 1588)
@@ -299,7 +299,7 @@ timestamping is supported ofc:
 
 Use "-f lat,hwts,ipgap" if more printouts are needed, see "plget -h".
 
-Example 1:
+Example 1: UDP TX, RX and round trip latency
 ----------
 Measure tx, rx, external (round trip) latency for UDP packets, port 385.
 
@@ -313,7 +313,7 @@ On board 2 (192.168.3.20):
 :~# plget -i eth0 -t udp -u 385 -m echo-lat -n 16 -l 512 -a 192.168.3.16
 ~~~
 
-Example 2:
+Example 2: PTP l4 TX, RX and round trip latency
 ----------
 Measure tx, rx, external (round trip) latency for PTP l4.
 
@@ -330,7 +330,7 @@ On target board:
 By default multicast 224.0.1.129 address is used. In case the other is
 needed, use smth like -a 224.0.1.130 as for taget board as for client.
 
-Example 3:
+Example 3: AVTP TX, RX and round trip latency
 ----------
 Measure tx, rx, external latencies for avtp packets (IEEE 1722)
 
@@ -344,7 +344,7 @@ On target board (c8:a0:30:b4:94:03):
 :~# plget -i eth0 -t avtp -m echo-lat -n 16 -l 512 -a 74:da:ea:47:7d:9d
 ~~~
 
-Example 4:
+Example 4: PTP l2 TX, RX and RT latency
 ----------
 Measure tx, rx, external latencies for ptpl2 packets (IEEE 1588)
 
