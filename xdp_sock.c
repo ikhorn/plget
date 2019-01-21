@@ -371,3 +371,95 @@ int xsk_sendto(struct plgett *plget)
 
 	return plget->sk_payload_size;
 }
+
+/* Rx part */
+
+static inline __u32 umem_get_fill_dnum(struct umem_queue *q, __u32 ndescs)
+{
+	__u32 free_entries = q->cached_cons - q->cached_prod;
+
+	if (free_entries >= ndescs)
+		return free_entries;
+
+	/* Refresh the local tail pointer */
+	q->cached_cons = *q->consumer + q->size;
+	return q->cached_cons - q->cached_prod;
+}
+
+static inline __u32 xq_get_rx_dnum(struct sock_queue *q, __u32 ndescs)
+{
+	__u32 entries = q->cached_prod - q->cached_cons;
+
+	if (entries == 0) {
+		q->cached_prod = *q->producer;
+		entries = q->cached_prod - q->cached_cons;
+	}
+
+	return (entries > ndescs) ? ndescs : entries;
+}
+
+static inline int xq_deq(struct sock_queue *rq, struct xdp_desc *descs,
+			 int ndescs)
+{
+	struct xdp_desc *r = rq->ring;
+	unsigned int idx;
+	int i, entries;
+
+	entries = xq_get_rx_dnum(rq, ndescs);
+
+	__smp_rmb();
+
+	for (i = 0; i < entries; i++) {
+		idx = rq->cached_cons++ & rq->mask;
+		descs[i] = r[idx];
+	}
+
+	if (entries > 0) {
+		__smp_wmb();
+
+		*rq->consumer = rq->cached_cons;
+	}
+
+	return entries;
+}
+static inline void *xq_get_frame(struct xsock *xsk, __u64 addr)
+
+{
+	return &xsk->umem->frames[addr];
+}
+
+static inline int umem_fill_to_kernel_ex(struct umem_queue *fq,
+					 struct xdp_desc *d, size_t num)
+{
+	__u32 i, idx;
+
+	if (umem_get_fill_dnum(fq, num) < num)
+		return -ENOSPC;
+
+	for (i = 0; i < num; i++) {
+		idx = fq->cached_prod++ & fq->mask;
+		fq->ring[idx] = d[i].addr;
+	}
+
+	__smp_wmb();
+
+	*fq->producer = fq->cached_prod;
+
+	return 0;
+}
+
+int xsk_recv(struct plgett *plget, char *pkt)
+{
+	struct xsock *xsk = plget->xsk;
+	struct xdp_desc desc;
+	unsigned int ret, i;
+
+	ret = xq_deq(&xsk->rq, &desc, 1);
+	if (!ret)
+		return 1;
+
+	pkt = xq_get_frame(xsk, desc.addr);
+	umem_fill_to_kernel_ex(&xsk->umem->fq, &desc, 1);
+
+	return desc.len;
+}
