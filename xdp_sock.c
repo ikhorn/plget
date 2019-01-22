@@ -280,8 +280,7 @@ int xdp_socket(struct plgett *plget)
 }
 
 /* API implementation */
-
-static inline __u32 xq_get_free_dnum(struct sock_queue *q, __u32 ndescs)
+static inline __u32 xq_get_tx_dnum(struct sock_queue *q, __u32 ndescs)
 {
 	__u32 entries = q->cached_cons - q->cached_prod;
 
@@ -293,7 +292,7 @@ static inline __u32 xq_get_free_dnum(struct sock_queue *q, __u32 ndescs)
 	return q->cached_cons - q->cached_prod;
 }
 
-static inline __u32 umemq_get_complete_dnum(struct umem_queue *q, __u32 ndescs)
+static inline __u32 umemq_get_comp_dnum(struct umem_queue *q, __u32 ndescs)
 {
 	__u32 entries = q->cached_prod - q->cached_cons;
 
@@ -308,7 +307,7 @@ static inline __u32 umemq_get_complete_dnum(struct umem_queue *q, __u32 ndescs)
 static inline size_t umem_complete_from_kernel(struct umem_queue *cq,
 					       __u64 *d, __u32 ndescs)
 {
-	__u32 idx, i, entries = umemq_get_complete_dnum(cq, ndescs);
+	__u32 idx, i, entries = umemq_get_comp_dnum(cq, ndescs);
 
 	__smp_rmb();
 
@@ -348,7 +347,7 @@ int xsk_sendto(struct plgett *plget)
 	__u32 ret, desc_idx;
 
 	/* prepare frame */
-	ret = xq_get_free_dnum(tq, 1);
+	ret = xq_get_tx_dnum(tq, 1);
 	if (!ret)
 		return 0;
 
@@ -374,6 +373,17 @@ int xsk_sendto(struct plgett *plget)
 }
 
 /* Rx part */
+static inline __u32 xq_get_rx_dnum(struct sock_queue *q, __u32 ndescs)
+{
+	__u32 entries = q->cached_prod - q->cached_cons;
+
+	if (entries == 0) {
+		q->cached_prod = *q->producer;
+		entries = q->cached_prod - q->cached_cons;
+	}
+
+	return (entries > ndescs) ? ndescs : entries;
+}
 
 static inline __u32 umem_get_fill_dnum(struct umem_queue *q, __u32 ndescs)
 {
@@ -387,19 +397,7 @@ static inline __u32 umem_get_fill_dnum(struct umem_queue *q, __u32 ndescs)
 	return q->cached_cons - q->cached_prod;
 }
 
-static inline __u32 xq_get_rx_dnum(struct sock_queue *q, __u32 ndescs)
-{
-	__u32 entries = q->cached_prod - q->cached_cons;
-
-	if (entries == 0) {
-		q->cached_prod = *q->producer;
-		entries = q->cached_prod - q->cached_cons;
-	}
-
-	return (entries > ndescs) ? ndescs : entries;
-}
-
-static inline int xq_deq(struct sock_queue *rq, struct xdp_desc *descs,
+static inline int rq_deq(struct sock_queue *rq, struct xdp_desc *descs,
 			 int ndescs)
 {
 	struct xdp_desc *r = rq->ring;
@@ -458,7 +456,7 @@ int xsk_recvmsg(struct plgett *plget, struct msghdr *msg)
 	struct xdp_desc desc;
 	unsigned int ret;
 
-	ret = xq_deq(&xsk->rq, &desc, 1);
+	ret = rq_deq(&xsk->rq, &desc, 1);
 	if (!ret)
 		return 1;
 
