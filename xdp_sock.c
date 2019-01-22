@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <linux/errqueue.h>
 
 #ifndef AF_XDP
 #define AF_XDP 44
@@ -448,18 +449,39 @@ static inline int umem_fill_to_kernel_ex(struct umem_queue *fq,
 	return 0;
 }
 
-int xsk_recv(struct plgett *plget, char *pkt)
+int xsk_recvmsg(struct plgett *plget, struct msghdr *msg)
 {
 	struct xsock *xsk = plget->xsk;
+	struct scm_timestamping *tss;
+	struct timespec *ts;
+	struct cmsghdr *cmsg;
 	struct xdp_desc desc;
-	unsigned int ret, i;
+	unsigned int ret;
 
 	ret = xq_deq(&xsk->rq, &desc, 1);
 	if (!ret)
 		return 1;
 
-	pkt = xq_get_frame(xsk, desc.addr);
+	plget->pkt = xq_get_frame(xsk, desc.addr); /* assign norm later */
 	umem_fill_to_kernel_ex(&xsk->umem->fq, &desc, 1);
+
+	cmsg = msg->msg_control;
+	cmsg->cmsg_len =
+		sizeof(struct cmsghdr) + sizeof(struct scm_timestamping);
+
+	cmsg->cmsg_level = SOL_SOCKET;
+	cmsg->cmsg_type = SCM_TIMESTAMPING;
+	tss = (struct scm_timestamping *)CMSG_DATA(cmsg);
+
+	ts = tss->ts;
+	ts->tv_sec = 0;
+	ts->tv_nsec = 19;
+
+	ts = &tss->ts[2];
+	ts->tv_sec = 0;
+	ts->tv_nsec = 13;
+
+	msg->msg_controllen = CMSG_ALIGN(cmsg->cmsg_len);
 
 	return desc.len;
 }
