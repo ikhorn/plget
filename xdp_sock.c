@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <sys/resource.h>
 #include <linux/errqueue.h>
 
 #ifndef AF_XDP
@@ -237,8 +238,12 @@ static struct sock_umem *umem_allocate(int sfd)
 int xdp_socket(struct plgett *plget)
 {
 	struct sockaddr_xdp *addr = (struct sockaddr_xdp *)&plget->sk_addr;
+	struct rlimit r = {RLIM_INFINITY, RLIM_INFINITY};
 	struct xsock *xsk;
 	int ret, sfd;
+
+	if (setrlimit(RLIMIT_MEMLOCK, &r))
+		return perror("setting rlimit err"), -errno;
 
 	xsk = calloc(1, sizeof(*xsk));
 	if (!xsk)
