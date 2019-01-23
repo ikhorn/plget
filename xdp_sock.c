@@ -212,6 +212,47 @@ static int tx_ring_allocate(struct xsock *xsk)
 	return 0;
 }
 
+static inline __u32 umem_get_fill_dnum(struct umem_queue *q, __u32 ndescs)
+{
+	__u32 free_entries = q->cached_cons - q->cached_prod;
+
+	if (free_entries >= ndescs)
+		return free_entries;
+
+	/* Refresh the local tail pointer */
+	q->cached_cons = *q->consumer + q->size;
+	return q->cached_cons - q->cached_prod;
+}
+
+static inline int umem_fq_populate(struct umem_queue *fq, __u64 *d, __u32 num)
+{
+	__u32 i, idx;
+
+	if (umem_get_fill_dnum(fq, num) < num)
+		return -ENOSPC;
+
+	for (i = 0; i < num; i++) {
+		idx = fq->cached_prod++ & fq->mask;
+		fq->ring[idx] = d[i];
+	}
+
+	__smp_wmb();
+
+	*fq->producer = fq->cached_prod;
+	return 0;
+}
+
+static int fq_populate(struct umem_queue *fq)
+{
+	__u64 addr;
+
+	for (addr = 0; addr < FQ_DESC_NUM*FRAME_SIZE; addr += FRAME_SIZE)
+		if (umem_fq_populate(fq, &addr, 1))
+			return perror("cannot populate fill queue"), -errno;
+
+	return 0;
+}
+
 static struct sock_umem *umem_allocate(int sfd)
 {
 	struct sock_umem *umem;
@@ -229,6 +270,9 @@ static struct sock_umem *umem_allocate(int sfd)
 	ret = fill_ring_allocate(umem);
 	if (ret)
 		return perror("cannot fill ring"), NULL;
+
+	/* populate fill queue */
+	fq_populate(&umem->fq);
 
 	ret = completion_ring_allocate(umem);
 	if (ret)
@@ -395,18 +439,6 @@ static inline __u32 xq_get_rx_dnum(struct sock_queue *q, __u32 ndescs)
 	}
 
 	return (entries > ndescs) ? ndescs : entries;
-}
-
-static inline __u32 umem_get_fill_dnum(struct umem_queue *q, __u32 ndescs)
-{
-	__u32 free_entries = q->cached_cons - q->cached_prod;
-
-	if (free_entries >= ndescs)
-		return free_entries;
-
-	/* Refresh the local tail pointer */
-	q->cached_cons = *q->consumer + q->size;
-	return q->cached_cons - q->cached_prod;
 }
 
 static inline int rq_deq(struct sock_queue *rq, struct xdp_desc *descs,
