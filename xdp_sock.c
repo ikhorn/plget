@@ -525,7 +525,7 @@ int xsk_recvmsg(struct plgett *plget, struct msghdr *msg)
 
 	ts = tss->ts;
 	ts->tv_sec = 0;
-	ts->tv_nsec = 19;
+	ts->tv_nsec = 0;
 
 	ts = &tss->ts[2];
 	ts->tv_sec = 0;
