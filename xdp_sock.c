@@ -478,7 +478,7 @@ int xsk_recvmsg(struct plgett *plget, struct msghdr *msg)
 
 	ret = rq_deq(&xsk->rq, &desc, 1);
 	if (!ret)
-		return 1;
+		return -1;
 
 	plget->pkt = xq_get_frame(xsk, desc.addr); /* assign norm later */
 	umem_fill_to_kernel_ex(&xsk->umem->fq, &desc, 1);
