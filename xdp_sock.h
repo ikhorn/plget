@@ -60,5 +60,6 @@ struct xsock {
 
 int xdp_socket(struct plgett *plget);
 int xsk_sendto(struct plgett *plget);
+int xsk_recvmsg(struct plgett *plget, struct msghdr *msg);
 
 #endif
