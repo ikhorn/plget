@@ -21,6 +21,7 @@
 #include <sys/mman.h>
 #include <sys/resource.h>
 #include <linux/errqueue.h>
+#include <poll.h>
 
 #ifndef AF_XDP
 #define AF_XDP 44
@@ -465,7 +466,15 @@ int xsk_recvmsg(struct plgett *plget, struct msghdr *msg)
 	struct timespec *ts;
 	struct cmsghdr *cmsg;
 	struct xdp_desc desc;
+	struct pollfd fds;
 	unsigned int ret;
+
+	fds.fd = plget->sfd;
+	fds.events = POLLIN;
+
+	ret = poll(&fds, 1, -1);
+	if (ret <= 0)
+		return perror("Some error on poll()"), -errno;
 
 	ret = rq_deq(&xsk->rq, &desc, 1);
 	if (!ret)
