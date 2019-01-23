@@ -22,6 +22,7 @@
 #include <sys/resource.h>
 #include <linux/errqueue.h>
 #include <poll.h>
+#include <string.h>
 
 #ifndef AF_XDP
 #define AF_XDP 44
@@ -500,6 +501,8 @@ int xsk_recvmsg(struct plgett *plget, struct msghdr *msg)
 	struct xdp_desc desc;
 	struct pollfd fds;
 	unsigned int ret;
+	char *data;
+	__u64 ns;
 
 	fds.fd = plget->sfd;
 	fds.events = POLLIN;
@@ -512,7 +515,7 @@ int xsk_recvmsg(struct plgett *plget, struct msghdr *msg)
 	if (!ret)
 		return -1;
 
-	plget->pkt = xq_get_frame(xsk, desc.addr); /* assign norm later */
+	data = xq_get_frame(xsk, desc.addr - sizeof(ns));
 	umem_fill_to_kernel_ex(&xsk->umem->fq, &desc, 1);
 
 	cmsg = msg->msg_control;
@@ -527,10 +530,14 @@ int xsk_recvmsg(struct plgett *plget, struct msghdr *msg)
 	ts->tv_sec = 0;
 	ts->tv_nsec = 0;
 
-	ts = &tss->ts[2];
-	ts->tv_sec = 0;
-	ts->tv_nsec = 13;
+	memcpy(&ns, plget->pkt, sizeof(ns));
 
+	ts = &tss->ts[2];
+
+	ts->tv_sec = ns / NSEC_PER_SEC;
+	ts->tv_nsec = ns - ts->tv_sec * NSEC_PER_SEC;
+
+	plget->pkt = data + sizeof(ns);
 	msg->msg_controllen = CMSG_ALIGN(cmsg->cmsg_len);
 
 	return desc.len;
