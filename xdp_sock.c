@@ -13,6 +13,7 @@
  */
 
 #include "xdp_sock.h"
+#include "xdp_prog_load.h"
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -281,6 +282,11 @@ int xdp_socket(struct plgett *plget)
 		return perror("cannot bind dev and queue with socket"), -errno;
 
 	plget->xsk = xsk;
+
+	ret = xdp_load_prog(plget);
+	if (ret)
+		return perror("cannot load xdp prog"), -errno;
+
 	return sfd;
 }
 
