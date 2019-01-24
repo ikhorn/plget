@@ -26,7 +26,7 @@ and echo latencies, using hw timestamps of NIC!.
 
 One of the possible test models:
 
-![](https://github.com/ikhorn/plget/blob/master/example_latency_test_model.jpg)
+![](https://github.com/ikhorn/plget/blob/master/pic/example_latency_test_model.jpg)
 
 
 # PURPOSE
