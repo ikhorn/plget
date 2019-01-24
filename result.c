@@ -68,7 +68,7 @@ static void res_print_clock_info(int clock, char *clock_name)
 
 	if (res_is_avarage) {
 		aver_res /= MEASUREMENTS_NUM;
-		printf("Average access resolution: %gns\n", aver_res);
+		printf("Average \"userspace\" access resolution: %gns\n", aver_res);
 	} else {
 		printf("Real resolution: %ldns\n", res->tv_nsec);
 	}
