@@ -492,13 +492,13 @@ static inline int umem_fill_to_kernel_ex(struct umem_queue *fq,
 	return 0;
 }
 
-int xsk_recvmsg(struct plgett *plget, struct msghdr *msg)
+int xsk_recvmsg(struct plgett *plget, struct msghdr *msg, struct timespec *ts2)
 {
 	struct xsock *xsk = plget->xsk;
 	struct scm_timestamping *tss;
-	struct timespec *ts;
 	struct cmsghdr *cmsg;
 	struct xdp_desc desc;
+	struct timespec *ts1;
 	struct pollfd fds;
 	unsigned int ret;
 	char *data;
@@ -516,6 +516,10 @@ int xsk_recvmsg(struct plgett *plget, struct msghdr *msg)
 		return -1;
 
 	data = xq_get_frame(xsk, desc.addr - sizeof(ns));
+	ret = clock_gettime(CLOCK_REALTIME, ts2);
+	if (ret)
+		return -1;
+
 	umem_fill_to_kernel_ex(&xsk->umem->fq, &desc, 1);
 
 	cmsg = msg->msg_control;
@@ -526,16 +530,15 @@ int xsk_recvmsg(struct plgett *plget, struct msghdr *msg)
 	cmsg->cmsg_type = SCM_TIMESTAMPING;
 	tss = (struct scm_timestamping *)CMSG_DATA(cmsg);
 
-	ts = tss->ts;
-	ts->tv_sec = 0;
-	ts->tv_nsec = 0;
+	ts1 = &tss->ts[2];
+	ts1->tv_sec = 0;
+	ts1->tv_nsec = 0;
 
 	memcpy(&ns, plget->pkt, sizeof(ns));
 
-	ts = &tss->ts[2];
-
-	ts->tv_sec = ns / NSEC_PER_SEC;
-	ts->tv_nsec = ns - ts->tv_sec * NSEC_PER_SEC;
+	ts1 = tss->ts;
+	ts1->tv_sec = ns / NSEC_PER_SEC;
+	ts1->tv_nsec = ns - ts1->tv_sec * NSEC_PER_SEC;
 
 	plget->pkt = data + sizeof(ns);
 	msg->msg_controllen = CMSG_ALIGN(cmsg->cmsg_len);

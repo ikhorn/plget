@@ -52,14 +52,18 @@ void rxlat_handle_ts(struct plgett *plget, struct timespec *ts)
 	stats_push(&rx_app_v, ts);
 }
 
-static int rxlat_recvmsg(struct plgett *plget)
+static int rxlat_recvmsg(struct plgett *plget, struct timespec *ts)
 {
-	int pkt_size;
+	int pkt_size, err;
 
-	if (plget->pkt_type != PKT_XDP)
+	if (plget->pkt_type != PKT_XDP) {
 		pkt_size = recvmsg(plget->sfd, &plget->msg, 0);
-	else
-		pkt_size = xsk_recvmsg(plget, &plget->msg);
+		err = clock_gettime(CLOCK_REALTIME, ts);
+		if (err)
+			return -1;
+	} else {
+		pkt_size = xsk_recvmsg(plget, &plget->msg, ts);
+	}
 
 	return pkt_size;
 }
@@ -67,14 +71,10 @@ static int rxlat_recvmsg(struct plgett *plget)
 void rxlat_proc_packet(struct plgett *plget)
 {
 	struct timespec ts;
-	int pkt_size, err;
+	int pkt_size;
 
 	plget->msg.msg_controllen = sizeof(plget->control);
-	pkt_size = rxlat_recvmsg(plget);
-
-	err = clock_gettime(CLOCK_REALTIME, &ts);
-	if (err)
-		perror("gettimeofday");
+	pkt_size = rxlat_recvmsg(plget, &ts);
 
 	if (pkt_size < 0)
 		return perror("recvmsg");
