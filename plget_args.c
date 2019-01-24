@@ -241,8 +241,12 @@ static void plget_set_packet_type(struct plgett *plget)
 		plget->pkt_type = PKT_ETH;
 		plget->flags |= PLF_PTP;
 	} else if (!strcmp("xdp_ptpl2", optarg)) {
+#ifdef CONF_AFXDP
 		plget->pkt_type = PKT_XDP;
 		plget->flags |= PLF_PTP;
+#else
+		plget_fail("use \"make AFXDP=1\" to build have xdp_ptpl2");
+#endif
 	} else {
 		plget_fail("unsupported packet type");
 	}

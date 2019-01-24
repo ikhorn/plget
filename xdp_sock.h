@@ -58,8 +58,27 @@ struct xsock {
 	int sfd;
 };
 
+#ifdef CONF_AFXDP
+
 int xdp_socket(struct plgett *plget);
 int xsk_sendto(struct plgett *plget);
 int xsk_recvmsg(struct plgett *plget, struct msghdr *msg, struct timespec *ts);
+
+#else
+inline static int xdp_socket(struct plgett *plget)
+{
+	return 1;
+}
+
+inline static int xsk_sendto(struct plgett *plget)
+{
+	return 1;
+}
+
+inline static int xsk_recvmsg(struct plgett *plget, struct msghdr *msg, struct timespec *ts)
+{
+	return 1;
+}
+#endif
 
 #endif
