@@ -42,11 +42,22 @@ This tool can do the following:
 * can prove itself (monomodes rx/tx) by using RTT + hwts + echo latencies
 * ...
 
-# COMPILATION
+# HOW TO BUILD
 ~~~
 :~# make #for native
 :~# export ARCH=arm; export CROSS_COMPILE=arm-linux-gnueabihf-; make #for cross
 :~# export ARCH=arm; export CC=arm-linux-gnueabihf-gcc; make #for cross
+
+With AF_XDP sockets it requires at least libbpf library, so should be
+integrated in FS environment, thus for cross-compilation SYSROOT address
+should be provided:
+
+:~# make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- \
+	AFXDP=1 SYSROOT="address to RFS"
+
+Or, if your RFS doesn't have libbpf installed, then libbpf can be built along
+with plget by:
+:~# will add later
 ~~~
 
 # HELP
