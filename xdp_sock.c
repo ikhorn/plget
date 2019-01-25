@@ -515,7 +515,7 @@ int xsk_recvmsg(struct plgett *plget, struct msghdr *msg, struct timespec *ts2)
 	if (!ret)
 		return -1;
 
-	data = xq_get_frame(xsk, desc.addr - sizeof(ns));
+	data = xq_get_frame(xsk, desc.addr - 2 * sizeof(ns));
 	ret = clock_gettime(CLOCK_REALTIME, ts2);
 	if (ret)
 		return -1;
@@ -526,21 +526,23 @@ int xsk_recvmsg(struct plgett *plget, struct msghdr *msg, struct timespec *ts2)
 	cmsg->cmsg_len =
 		sizeof(struct cmsghdr) + sizeof(struct scm_timestamping);
 
+
 	cmsg->cmsg_level = SOL_SOCKET;
 	cmsg->cmsg_type = SCM_TIMESTAMPING;
 	tss = (struct scm_timestamping *)CMSG_DATA(cmsg);
 
+	memcpy(&ns, data, sizeof(ns));
 	ts1 = &tss->ts[2];
-	ts1->tv_sec = 0;
-	ts1->tv_nsec = 0;
+	ts1->tv_sec = ns / NSEC_PER_SEC;
+	ts1->tv_nsec = ns - ts1->tv_sec * NSEC_PER_SEC;
 
-	memcpy(&ns, plget->pkt, sizeof(ns));
-
+	memcpy(&ns, data + sizeof(ns), sizeof(ns));
 	ts1 = tss->ts;
 	ts1->tv_sec = ns / NSEC_PER_SEC;
 	ts1->tv_nsec = ns - ts1->tv_sec * NSEC_PER_SEC;
 
-	plget->pkt = data + sizeof(ns);
+	plget->pkt = data + 2 * sizeof(ns);
+
 	msg->msg_controllen = CMSG_ALIGN(cmsg->cmsg_len);
 
 	return desc.len;
