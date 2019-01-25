@@ -15,8 +15,16 @@ rx_lat.c stat.c tx_lat.c
 ifdef AFXDP
 AFXDP_SOURCES := xdp_prog_load.c xdp_sock.c
 ALL_SOURCES += ${AFXDP_SOURCES}
+
 CFLAGS += -DCONF_AFXDP
+
 CFLAGS += -I${SYSROOT}/usr/include
+CFLAGS += -Ilibbpf/src/
+
+LDFLAGS += -L${SYSROOT}/usr/lib
+LDFLAGS += -Llibbpf/src
+LDFLAGS += -lz -lelf
+LDFLAGS += -lbpf
 endif
 
 plget: %: $(ALL_SOURCES:.c=.o)

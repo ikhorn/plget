@@ -14,8 +14,8 @@
 
 #include <linux/if_link.h>
 #include "xdp_prog_load.h"
-#include "libbpf/libbpf.h"
-#include "libbpf/bpf.h"
+#include <libbpf.h>
+#include <bpf.h>
 #include "xdp_sock.h"
 #include <errno.h>
 
