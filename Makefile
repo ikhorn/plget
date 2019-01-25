@@ -2,7 +2,7 @@ CFLAGS += -g -Wall
 LDFLAGS += -lm
 
 ifdef SYSROOT
-CFLAGS += --sysroot=$(SYSROOT)
+CFLAGS += --sysroot=${SYSROOT}
 endif
 
 CC=$(CROSS_COMPILE)gcc
@@ -16,6 +16,7 @@ ifdef AFXDP
 AFXDP_SOURCES := xdp_prog_load.c xdp_sock.c
 ALL_SOURCES += ${AFXDP_SOURCES}
 CFLAGS += -DCONF_AFXDP
+CFLAGS += -I${SYSROOT}/usr/include
 endif
 
 plget: %: $(ALL_SOURCES:.c=.o)
