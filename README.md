@@ -50,14 +50,18 @@ This tool can do the following:
 
 With AF_XDP sockets it requires at least libbpf library, so should be
 integrated in FS environment, thus for cross-compilation SYSROOT address
-should be provided:
+should be provided.
+Or, if your RFS doesn't have libbpf installed, then libbpf can be built along
+with plget but to do this first fetch sources doing the following and try again:
+(unless you cloned with --recurse-submodules):
+
+:~# git submodule init
+:~# git submodule update
+
+Build with AFXDP support looks like:
 
 :~# make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- \
-	AFXDP=1 SYSROOT="address to RFS"
-
-Or, if your RFS doesn't have libbpf installed, then libbpf can be built along
-with plget by:
-:~# will add later
+	AFXDP=1 SYSROOT="path to RFS"
 ~~~
 
 # HELP
