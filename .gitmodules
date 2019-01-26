@@ -1,4 +1,4 @@
 [submodule "libbpf"]
 	path = libbpf
-	url = git@github.com:libbpf/libbpf.git
+	url = git@github.com:ikhorn/libbpf.git
 	branch = master
