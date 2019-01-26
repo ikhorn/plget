@@ -7,10 +7,16 @@ endif
 
 CC=$(CROSS_COMPILE)gcc
 
-all: plget
-
 ALL_SOURCES := echo_lat.c pkt_gen.c plget_args.c plget.c result.c rtt.c \
 rx_lat.c stat.c tx_lat.c
+
+ifdef AFXDP
+all: sub_libbpf plget
+else
+all: plget
+endif
+
+LIBBPF_SRC=./libbpf/src
 
 ifdef AFXDP
 AFXDP_SOURCES := xdp_prog_load.c xdp_sock.c
@@ -19,12 +25,23 @@ ALL_SOURCES += ${AFXDP_SOURCES}
 CFLAGS += -DCONF_AFXDP
 
 CFLAGS += -I${SYSROOT}/usr/include
-CFLAGS += -Ilibbpf/src/
-
 LDFLAGS += -L${SYSROOT}/usr/lib
+
+LIBBPF_STATUS := $(shell ./scripts/check-libbpf.sh $(SYSROOT))
+
+CFLAGS += -Ilibbpf/src/
 LDFLAGS += -Llibbpf/src
 LDFLAGS += -lz -lelf
 LDFLAGS += -lbpf
+
+export CROSS_COMPILE
+export ARCH
+export CC
+endif # AFXDP
+
+sub_libbpf:
+ifneq ($(LIBBPF_STATUS),)
+	$(MAKE) -C $(LIBBPF_SRC)
 endif
 
 plget: %: $(ALL_SOURCES:.c=.o)
@@ -41,8 +58,11 @@ include $(wildcard *.d)
 
 clean:
 	rm -f *.o *.d plget
+	@if [ -e $(LIBBPF_SRC)/Makefile ]; then\
+		$(MAKE) -C $(LIBBPF_SRC) clean;\
+	fi
 
 distclean: clean
 	rm -rf cscope* tags
 
-.PHONY: clean distclean
+.PHONY: clean distclean sub_libbpf
