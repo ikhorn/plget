@@ -57,7 +57,7 @@ plget: %: $(ALL_SOURCES:.c=.o)
 include $(wildcard *.d)
 
 clean:
-	rm -f *.o *.d plget
+	rm -f $$(ls *.o | sed '/xsock_dispatch.o/d') *.d plget
 	@if [ -e $(LIBBPF_SRC)/Makefile ]; then\
 		$(MAKE) -C $(LIBBPF_SRC) clean;\
 	fi
