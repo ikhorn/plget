@@ -54,6 +54,10 @@ int xdp_load_prog(struct plgett *plget)
 	if (plget->mod == TX_LAT)
 		return 0;
 
+	signal(SIGINT, sig_exit);
+	signal(SIGTERM, sig_exit);
+	signal(SIGABRT, sig_exit);
+
 	prog_attr.file = xdp_file_name;
 
 	if (bpf_prog_load_xattr(&prog_attr, &obj, &prog_fd))
@@ -61,10 +65,6 @@ int xdp_load_prog(struct plgett *plget)
 
 	if (prog_fd < 0)
 		return perror("no program found"), -errno;
-
-	signal(SIGINT, sig_exit);
-	signal(SIGTERM, sig_exit);
-	signal(SIGABRT, sig_exit);
 
 	map = bpf_object__find_map_by_name(obj, "qidconf_map");
 	qidconf_map = bpf_map__fd(map);
