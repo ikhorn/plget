@@ -19,7 +19,7 @@
 
 #define MAX_LATENCY			5000
 
-int fast_pktgen(struct plgett *plget)
+static int fast_pktgen(struct plgett *plget)
 {
 	struct sockaddr *addr = (struct sockaddr *)&plget->sk_addr;
 	int dsize = plget->sk_payload_size;
