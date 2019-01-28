@@ -14,13 +14,31 @@
 
 #include <linux/if_link.h>
 #include "xdp_prog_load.h"
+#include <stdlib.h>
 #include <libbpf.h>
 #include <bpf.h>
 #include "xdp_sock.h"
 #include <errno.h>
+#include <signal.h>
+#include "plget_args.h"
 
 const char *xdp_file_name = "xsock_dispatch.o";
 #define XDP_FLAGS_DRV_MODE		(1U << 2)
+
+void xdp_unload_prog(void)
+{
+	if (bpf_set_link_xdp_fd(plget->ifidx, -1, XDP_FLAGS_DRV_MODE))
+		perror("link unset xdp prog failed");
+}
+
+static void sig_exit(int sig)
+{
+	if (plget->pkt_type == PKT_XDP)
+		xdp_unload_prog();
+
+	printf("   exit, prog unloaded\n");
+	exit(EXIT_SUCCESS);
+}
 
 int xdp_load_prog(struct plgett *plget)
 {
@@ -43,6 +61,10 @@ int xdp_load_prog(struct plgett *plget)
 
 	if (prog_fd < 0)
 		return perror("no program found"), -errno;
+
+	signal(SIGINT, sig_exit);
+	signal(SIGTERM, sig_exit);
+	signal(SIGABRT, sig_exit);
 
 	map = bpf_object__find_map_by_name(obj, "qidconf_map");
 	qidconf_map = bpf_map__fd(map);
