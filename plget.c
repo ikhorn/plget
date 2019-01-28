@@ -46,6 +46,8 @@
 
 #define OFF_PTP_SEQUENCE_ID		30
 
+struct plgett *plget;
+
 struct stats tx_app_v;
 struct stats *tx_sch_v;
 struct stats tx_sw_v;
@@ -573,7 +575,6 @@ static int init_test(struct plgett *plget)
 
 int main(int argc, char **argv)
 {
-	struct plgett *plget;
 	int ret;
 
 	if (argc == 1) {

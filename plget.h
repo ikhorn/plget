@@ -43,6 +43,8 @@ extern struct stats rx_hw_v;
 
 extern struct stats temp;
 
+extern struct plgett *plget;
+
 #define BIT(X)				(1 << (X))
 #define PLF_TITLE			BIT(0)
 #define PLF_PTP				BIT(2)
