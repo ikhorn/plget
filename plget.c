@@ -35,6 +35,7 @@
 #include "pkt_gen.h"
 #include "result.h"
 #include "xdp_sock.h"
+#include "xdp_prog_load.h"
 
 #define ALIGN_ROUNDUP(x, align)\
 	((align) * (((x) + align - 1) / (align)))
@@ -623,6 +624,8 @@ int main(int argc, char **argv)
 	if (ret)
 		return ret;
 
+	xdp_unload_prog();
 	res_stats_print(plget);
+	free(plget);
 	exit(0);
 }

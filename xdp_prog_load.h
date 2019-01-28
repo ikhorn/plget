@@ -18,5 +18,6 @@
 #include "plget.h"
 
 int xdp_load_prog(struct plgett *plget);
+void xdp_unload_prog(void);
 
 #endif
