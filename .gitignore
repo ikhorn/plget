@@ -1,5 +1,6 @@
 cscope*
 *.o
+!xsock_dispatch.o
 plget
 tags
 *.d
