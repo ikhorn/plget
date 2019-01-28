@@ -17,7 +17,22 @@
 
 #include "plget.h"
 
+#ifdef CONF_AFXDP
+
 int xdp_load_prog(struct plgett *plget);
 void xdp_unload_prog(void);
+
+#else
+
+inline static int xdp_load_prog(struct plgett *plget)
+{
+	return 0;
+}
+
+inline static void xdp_unload_prog(void)
+{
+}
+
+#endif
 
 #endif
