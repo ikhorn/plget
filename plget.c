@@ -228,7 +228,7 @@ static int udp_socket(struct plgett *plget)
 	/* set multicast group for outgoing packets */
 	mreq.imr_multiaddr = plget->iaddr;
 	mreq.imr_address.s_addr = htonl(INADDR_ANY);
-	mreq.imr_ifindex = if_nametoindex(plget->if_name);
+	mreq.imr_ifindex = plget->ifidx;
 	ret = setsockopt(sfd, IPPROTO_IP, IP_MULTICAST_IF, &mreq,
 			 sizeof(mreq));
 	if (ret < 0)
@@ -282,7 +282,7 @@ static int packet_socket(struct plgett *plget)
 
 	/* If user provided a network interface, bind() to it. */
 	if (plget->if_name[0] != '\0')
-		addr->sll_ifindex = if_nametoindex(plget->if_name);
+		addr->sll_ifindex = plget->ifidx;
 
 	ret = bind(sfd, (struct sockaddr *)addr, sizeof(struct sockaddr_ll));
 	if (ret < 0)

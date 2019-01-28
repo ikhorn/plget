@@ -353,6 +353,7 @@ static void read_args(struct plgett *plget, int argc, char **argv)
 			break;
 		case 'i':
 			strncpy(plget->if_name, optarg, sizeof(plget->if_name));
+			plget->ifidx = if_nametoindex(plget->if_name);
 			break;
 		case 'n':
 			plget->pkt_num = atoi(optarg);

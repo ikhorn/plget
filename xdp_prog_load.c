@@ -30,8 +30,7 @@ int xdp_load_prog(struct plgett *plget)
 	int qidconf_map, xsks_map;
 	struct bpf_object *obj;
 	struct bpf_map *map;
-	int prog_fd, ifidx;
-	int key = 0;
+	int prog_fd, key = 0;
 	int ret;
 
 	if (plget->mod == TX_LAT)
@@ -55,8 +54,7 @@ int xdp_load_prog(struct plgett *plget)
 	if (xsks_map < 0)
 		return perror("no xsks map found"), -errno;
 
-	ifidx = if_nametoindex(plget->if_name);
-	if (bpf_set_link_xdp_fd(ifidx, prog_fd, XDP_FLAGS_DRV_MODE) < 0)
+	if (bpf_set_link_xdp_fd(plget->ifidx, prog_fd, XDP_FLAGS_DRV_MODE) < 0)
 		return perror("link set xdp fd failed"), -errno;
 
 	ret = bpf_map_update_elem(qidconf_map, &key, &plget->queue, 0);

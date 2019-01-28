@@ -315,7 +315,7 @@ int xdp_socket(struct plgett *plget)
 
 	/* bind socket with interface and queue */
 	addr->sxdp_family = AF_XDP;
-	addr->sxdp_ifindex = if_nametoindex(plget->if_name);
+	addr->sxdp_ifindex = plget->ifidx;
 	addr->sxdp_queue_id = plget->queue;
 
 	if (plget->flags & PLF_ZERO_COPY)

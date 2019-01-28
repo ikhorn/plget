@@ -94,6 +94,7 @@ struct plgett {
 	struct timespec interval;
 	struct timespec rtime;
 	char if_name[IFNAMSIZ];
+	int ifidx;
 	enum pkt_type pkt_type;
 	int pkt_size;
 	int pkt_num;
