@@ -466,7 +466,7 @@ static inline int rq_deq(struct sock_queue *rq, struct xdp_desc *descs,
 
 	return entries;
 }
-static inline void *xq_get_frame(struct xsock *xsk, __u64 addr)
+static inline void *xq_get_data(struct xsock *xsk, __u64 addr)
 
 {
 	return &xsk->umem->frames[addr];
@@ -492,17 +492,13 @@ static inline int umem_fill_to_kernel_ex(struct umem_queue *fq,
 	return 0;
 }
 
-int xsk_recvmsg(struct plgett *plget, struct msghdr *msg, struct timespec *ts2)
+int xsk_poll(struct xdp_desc *desc, struct timespec *ts2)
 {
 	struct xsock *xsk = plget->xsk;
-	struct scm_timestamping *tss;
-	struct cmsghdr *cmsg;
-	struct xdp_desc desc;
-	struct timespec *ts1;
 	struct pollfd fds;
+	char *data, *temp;
 	unsigned int ret;
-	char *data;
-	__u64 ns;
+	__u16 proto;
 
 	fds.fd = plget->sfd;
 	fds.events = POLLIN;
@@ -511,21 +507,50 @@ int xsk_recvmsg(struct plgett *plget, struct msghdr *msg, struct timespec *ts2)
 	if (ret <= 0)
 		return perror("Some error on poll()"), -errno;
 
-	ret = rq_deq(&xsk->rq, &desc, 1);
+	ret = rq_deq(&xsk->rq, desc, 1);
 	if (!ret)
 		return -1;
 
-	data = xq_get_frame(xsk, desc.addr - 2 * sizeof(ns));
-	ret = clock_gettime(CLOCK_REALTIME, ts2);
-	if (ret)
-		return -1;
+	data = xq_get_data(xsk, desc->addr - 2 * sizeof(__u64));
+	clock_gettime(CLOCK_REALTIME, ts2);
 
-	umem_fill_to_kernel_ex(&xsk->umem->fq, &desc, 1);
+	/* to be sure, drop not compatible packets */
+	if (desc->len < ETH_HLEN)
+		goto err;
+
+	temp = data + 2 * sizeof(__u64) + ETH_ALEN * 2;
+	proto = *temp | (*(temp + 1) << 8);
+	if (plget->flags & PLF_PTP && proto != htons(ETH_P_1588))
+		goto err;
+
+	plget->pkt = data;
+
+	return desc->len;
+
+err:
+	umem_fill_to_kernel_ex(&xsk->umem->fq, desc, 1);
+	return -1;
+}
+
+int xsk_recvmsg(struct plgett *plget, struct msghdr *msg, struct timespec *ts2)
+{
+	struct scm_timestamping *tss;
+	struct cmsghdr *cmsg;
+	struct timespec *ts1;
+	struct xdp_desc desc;
+	char *data;
+	__u64 ns;
+	int len;
+
+	do {
+		len = xsk_poll(&desc, ts2);
+	} while (len <= 0);
+
+	data = plget->pkt;
 
 	cmsg = msg->msg_control;
 	cmsg->cmsg_len =
 		sizeof(struct cmsghdr) + sizeof(struct scm_timestamping);
-
 
 	cmsg->cmsg_level = SOL_SOCKET;
 	cmsg->cmsg_type = SCM_TIMESTAMPING;
@@ -541,9 +566,11 @@ int xsk_recvmsg(struct plgett *plget, struct msghdr *msg, struct timespec *ts2)
 	ts1->tv_sec = ns / NSEC_PER_SEC;
 	ts1->tv_nsec = ns - ts1->tv_sec * NSEC_PER_SEC;
 
-	plget->pkt = data + 2 * sizeof(ns);
+	plget->pkt += 2 * sizeof(ns);
+
+	umem_fill_to_kernel_ex(&plget->xsk->umem->fq, &desc, 1);
 
 	msg->msg_controllen = CMSG_ALIGN(cmsg->cmsg_len);
 
-	return desc.len;
+	return len;
 }
