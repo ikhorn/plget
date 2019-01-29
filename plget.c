@@ -274,7 +274,10 @@ static int packet_socket(struct plgett *plget)
 
 	specify_protocol(plget, &protocol);
 
-	sfd = socket(AF_PACKET, SOCK_DGRAM, protocol);
+	if (plget->pkt_type == PKT_RAW)
+		sfd = socket(AF_PACKET, SOCK_RAW, 0);
+	else
+		sfd = socket(AF_PACKET, SOCK_DGRAM, protocol);
 	if (sfd < 0)
 		return perror("socket"), -errno;
 
@@ -337,7 +340,7 @@ static int plget_create_socket(struct plgett *plget)
 {
 	if (plget->pkt_type == PKT_UDP)
 		plget->sfd = udp_socket(plget);
-	else if (plget->pkt_type == PKT_ETH)
+	else if (plget->pkt_type == PKT_ETH || plget->pkt_type == PKT_RAW)
 		plget->sfd = packet_socket(plget);
 	else if (plget->pkt_type == PKT_XDP)
 		plget->sfd = xdp_socket(plget);
@@ -380,7 +383,7 @@ static void fill_in_packets(struct plgett *plget)
 	char *dp;
 
 	ptp_payload_size = plget->sk_payload_size;
-	if (plget->pkt_type == PKT_XDP)
+	if (plget->pkt_type == PKT_XDP || plget->pkt_type == PKT_RAW)
 		ptp_payload_size -= ETH_HLEN;
 
 	if (plget->flags & PLF_PTP)
@@ -391,7 +394,9 @@ static void fill_in_packets(struct plgett *plget)
 		if (plget->pkt_type == PKT_XDP) {
 			j = FRAME_SIZE * i;
 			plget->pkt = &plget->xsk->umem->frames[j];
+		}
 
+		if (plget->pkt_type == PKT_RAW || plget->pkt_type == PKT_XDP) {
 			init_pkt_ether_header(plget);
 			dp = plget->pkt + ETH_HLEN;
 		} else {
@@ -451,7 +456,7 @@ static int plget_create_packet(struct plgett *plget)
 			plget->pkt_size = 64;
 
 		payload_size = plget->pkt_size;
-		if (plget->pkt_type != PKT_XDP)
+		if (plget->pkt_type != PKT_XDP && plget->pkt_type != PKT_RAW)
 			payload_size -= ETH_HLEN;
 	}
 
@@ -481,7 +486,7 @@ static void fill_in_data_pointers(struct plgett *plget)
 	if (plget->mod == RX_LAT || plget->mod == RX_RATE)
 		return;
 
-	if (plget->pkt_type == PKT_XDP)
+	if (plget->pkt_type == PKT_XDP || plget->pkt_type == PKT_RAW)
 		off += ETH_HLEN;
 
 	if (plget->flags & PLF_PTP)

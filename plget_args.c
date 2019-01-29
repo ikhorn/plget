@@ -195,6 +195,13 @@ static void plget_check_args(struct plgett *plget)
 		need_addr = (plget->macaddr[0] == '\0') &&
 			    (mod == TX_LAT || mod == RTT_MOD || mod == PKT_GEN);
 		break;
+	case PKT_RAW:
+		if (plget->if_name[0] == '\0')
+			plget_fail("For RAW sockets, dev has to be specified");
+
+		need_addr = (plget->macaddr[0] == '\0') &&
+			    (mod == TX_LAT || mod == RTT_MOD || mod == PKT_GEN);
+		break;
 	default:
 		plget_fail("Please, specify packet_type");
 	}
@@ -247,6 +254,9 @@ static void plget_set_packet_type(struct plgett *plget)
 #else
 		plget_fail("use \"make AFXDP=1\" to build have xdp_ptpl2");
 #endif
+	} else if (!strcmp("raw_ptpl2", optarg)) {
+		plget->pkt_type = PKT_RAW;
+		plget->flags |= PLF_PTP;
 	} else {
 		plget_fail("unsupported packet type");
 	}
@@ -277,7 +287,8 @@ static void plget_set_address(struct plgett *plget)
 	if (plget->pkt_type == PKT_UDP) {
 		inet_aton(optarg, &plget->iaddr);
 	} else if (plget->pkt_type == PKT_ETH ||
-		   plget->pkt_type == PKT_XDP) {
+		   plget->pkt_type == PKT_XDP ||
+		   plget->pkt_type == PKT_RAW) {
 		ret =
 		sscanf(optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
 			&plget->macaddr[0], &plget->macaddr[1],

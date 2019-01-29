@@ -71,6 +71,7 @@ enum pkt_type {
 	PKT_UDP,
 	PKT_ETH,
 	PKT_XDP,
+	PKT_RAW,
 };
 
 enum test_mod {
