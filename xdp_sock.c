@@ -32,14 +32,11 @@
 #define SOL_XDP 283
 #endif
 
-#define RQ_DESC_NUM	1024
-#define TQ_DESC_NUM	1024
-#define FQ_DESC_NUM	1024
-#define CQ_DESC_NUM	1024
+#define RQ_DESC_NUM	256
+#define TQ_DESC_NUM	256
+#define FQ_DESC_NUM	256
+#define CQ_DESC_NUM	256
 
-#define FRAME_SHIFT	11
-#define FRAME_SIZE	(1 << FRAME_SHIFT)	/* 2 frames per page */
-#define FRAME_NUM	256	/* number of frames to operate on */
 #define FRAME_HEADROOM	0
 
 #define barrier() __asm__ __volatile__("": : :"memory")
@@ -247,7 +244,7 @@ static int fq_populate(struct umem_queue *fq)
 {
 	__u64 addr;
 
-	for (addr = 0; addr < FQ_DESC_NUM*FRAME_SIZE; addr += FRAME_SIZE)
+	for (addr = 0; addr < FQ_DESC_NUM * FRAME_SIZE; addr += FRAME_SIZE)
 		if (umem_fq_populate(fq, &addr, 1))
 			return perror("cannot populate fill queue"), -errno;
 
