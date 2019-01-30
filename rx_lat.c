@@ -52,17 +52,44 @@ void rxlat_handle_ts(struct plgett *plget, struct timespec *ts)
 	stats_push(&rx_app_v, ts);
 }
 
-static int rxlat_recvmsg(struct plgett *plget, struct timespec *ts)
+static int rxlat_recvmsg_raw(struct plgett *plget, struct timespec *ts)
 {
 	int pkt_size, err;
+	__u16 proto;
+	char *temp;
 
-	if (plget->pkt_type != PKT_XDP) {
+	do {
 		pkt_size = recvmsg(plget->sfd, &plget->msg, 0);
 		err = clock_gettime(CLOCK_REALTIME, ts);
 		if (err)
 			return -1;
-	} else {
+
+		if (pkt_size < 0)
+			return -errno;
+
+		temp = plget->pkt + 2 * sizeof(__u64) + ETH_ALEN * 2;
+		proto = *temp | (*(temp + 1) << 8);
+
+		if (plget->flags & PLF_PTP && proto == htons(ETH_P_1588))
+			break;
+	} while (0);
+
+	return pkt_size;
+}
+
+static int rxlat_recvmsg(struct plgett *plget, struct timespec *ts)
+{
+	int pkt_size, err;
+
+	if (plget->pkt_type == PKT_XDP)
 		pkt_size = xsk_recvmsg(plget, &plget->msg, ts);
+	else if (plget->pkt_type == PKT_RAW) {
+		pkt_size = rxlat_recvmsg_raw(plget, ts);
+	} else {
+		pkt_size = recvmsg(plget->sfd, &plget->msg, 0);
+		err = clock_gettime(CLOCK_REALTIME, ts);
+		if (err)
+			return -1;
 	}
 
 	return pkt_size;
