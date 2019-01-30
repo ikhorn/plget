@@ -385,8 +385,8 @@ static int xsk_tx_complete(struct xsock *xsk, __u32 ndescs)
 	__u64 desc;
 
 	ret = sendto(xsk->sfd, NULL, 0, MSG_DONTWAIT, NULL, 0);
-	if (ret >= 0 || errno == ENOBUFS || errno == EAGAIN || errno == EBUSY)
-		return 0;
+	if (ret < 0)
+		return ret;
 
 	ret = umem_complete_from_kernel(&xsk->umem->cq, &desc, ndescs);
 	return ret;
@@ -405,6 +405,7 @@ int xsk_sendto(struct plgett *plget)
 	if (!ret)
 		return 0;
 
+	/* enqueue */
 	frame_idx = (plget->pkt - xsk->umem->frames) >> FRAME_SHIFT;
 
 	desc_idx = tq->cached_prod++ & tq->mask;
@@ -416,7 +417,9 @@ int xsk_sendto(struct plgett *plget)
 	*tq->producer = tq->cached_prod;
 
 	/* kick */
-	xsk_tx_complete(xsk, 1);
+	ret = xsk_tx_complete(xsk, 1);
+	if (ret < 0)
+		return perror("sendto"), ret;
 
 	if (frame_idx >= FRAME_NUM - 1)
 		plget->pkt = xsk->umem->frames;
