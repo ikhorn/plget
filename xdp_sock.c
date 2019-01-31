@@ -222,8 +222,8 @@ static inline __u32 umem_get_fill_dnum(struct umem_queue *q, __u32 ndescs)
 	return q->cached_cons - q->cached_prod;
 }
 
-static inline int umem_fill_to_kernel_ex(struct umem_queue *fq,
-					 struct xdp_desc *d, __u32 num)
+static inline int umem_fq_enqueue(struct umem_queue *fq, struct xdp_desc *d,
+				  __u32 num)
 {
 	__u32 i, idx;
 
@@ -250,7 +250,7 @@ static int fq_populate(struct umem_queue *fq)
 	max_addr = FQ_DESC_NUM * FRAME_SIZE;
 
 	for (*addr = 0; *addr < max_addr; *addr += FRAME_SIZE)
-		if (umem_fill_to_kernel_ex(fq, &desc, 1))
+		if (umem_fq_enqueue(fq, &desc, 1))
 			return perror("cannot populate fill queue"), -errno;
 
 	return 0;
@@ -513,7 +513,7 @@ int xsk_poll(struct xdp_desc *desc, struct timespec *ts2)
 	return desc->len;
 
 err:
-	umem_fill_to_kernel_ex(&xsk->umem->fq, desc, 1);
+	umem_fq_enqueue(&xsk->umem->fq, desc, 1);
 	return -1;
 }
 
@@ -553,7 +553,7 @@ int xsk_recvmsg(struct plgett *plget, struct msghdr *msg, struct timespec *ts2)
 
 	plget->pkt += 2 * sizeof(ns);
 
-	umem_fill_to_kernel_ex(&plget->xsk->umem->fq, &desc, 1);
+	umem_fq_enqueue(&plget->xsk->umem->fq, &desc, 1);
 
 	msg->msg_controllen = CMSG_ALIGN(cmsg->cmsg_len);
 
