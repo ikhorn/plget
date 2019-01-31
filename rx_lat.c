@@ -67,7 +67,7 @@ static int rxlat_recvmsg_raw(struct plgett *plget, struct timespec *ts)
 		if (pkt_size < 0)
 			return -errno;
 
-		temp = plget->data + 2 * sizeof(__u64) + ETH_ALEN * 2;
+		temp = plget->data + ETH_ALEN * 2;
 		proto = *temp | (*(temp + 1) << 8);
 
 		if (plget->flags & PLF_PTP && proto == htons(ETH_P_1588))
