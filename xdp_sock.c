@@ -364,7 +364,7 @@ static inline __u32 xq_get_tx_dnum(struct queue *q, __u32 ndescs)
 	return q->cached_cons - q->cached_prod;
 }
 
-static inline __u32 umemq_get_comp_dnum(struct queue *q, __u32 num)
+static inline __u32 queue_get_num(struct queue *q, __u32 num)
 {
 	__u32 entries = q->cached_prod - q->cached_cons;
 
@@ -379,7 +379,7 @@ static inline __u32 umemq_get_comp_dnum(struct queue *q, __u32 num)
 static inline size_t umem_complete_from_kernel(struct queue *cq, __u64 *d,
 					       __u32 num)
 {
-	__u32 entries = umemq_get_comp_dnum(cq, num);
+	__u32 entries = queue_get_num(cq, num);
 	umem_desc *desc = cq->ring;
 	__u32 idx, i;
 
@@ -450,25 +450,13 @@ int xsk_sendto(struct plgett *plget)
 }
 
 /* Rx part */
-static inline __u32 xq_get_rx_dnum(struct queue *q, __u32 num)
-{
-	__u32 entries = q->cached_prod - q->cached_cons;
-
-	if (entries == 0) {
-		q->cached_prod = *q->producer;
-		entries = q->cached_prod - q->cached_cons;
-	}
-
-	return (entries > num) ? num : entries;
-}
-
 static inline int rq_deq(struct queue *rq, struct xdp_desc *descs, int num)
 {
 	struct xdp_desc *r = rq->ring;
 	unsigned int idx;
 	int i, entries;
 
-	entries = xq_get_rx_dnum(rq, num);
+	entries = queue_get_num(rq, num);
 
 	__smp_rmb();
 
