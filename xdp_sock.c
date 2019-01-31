@@ -473,7 +473,7 @@ static inline void *xq_get_data(struct xsock *xsk, __u64 addr)
 }
 
 static inline int umem_fill_to_kernel_ex(struct umem_queue *fq,
-					 struct xdp_desc *d, size_t num)
+					 struct xdp_desc *d, __u32 num)
 {
 	__u32 i, idx;
 
@@ -488,7 +488,6 @@ static inline int umem_fill_to_kernel_ex(struct umem_queue *fq,
 	__smp_wmb();
 
 	*fq->producer = fq->cached_prod;
-
 	return 0;
 }
 
