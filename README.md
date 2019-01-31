@@ -62,6 +62,9 @@ Build with AF_XDP support adding AFXDP=1:
 
 :~# make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- \
 	AFXDP=1 SYSROOT="path to RFS"
+
+Along with plget binary, the xsock_dispatch.o prog has to be copied on target
+board, if rx-lat mode is beeing used.
 ~~~
 
 # HELP
@@ -186,6 +189,25 @@ On client side generate appropriate packets:
 If address is not set for pkt-gen or tx-lat modes then default multicast address
 is used: 01:1B:19:00:00:00 in this case rx-lat should set address explicitly.
 
+Example 5: PTP l2 RX latency using raw sockets
+----------
+Measure RX latency for ptpl2 packets (IEEE 1588)
+
+On target board (c8:a0:30:b4:94:03):
+~~~
+:~# plget -i eth0 -t raw_ptpl2 -m rx-lat -n 1600
+or
+:~# plget -i eth0 -t xdp_ptpl2 -m rx-lat -n 1600
+~~~
+
+On client side generate appropriate packets:
+~~~
+:~# plget -i eth0 -t ptpl2 -m pkt-gen -n 1600 -l 512 -s 400 -a 74:da:ea:47:7d:9d
+~~~
+
+If address is not set for pkt-gen or tx-lat modes then default multicast address
+is used: 01:1B:19:00:00:00 in this case rx-lat should set address explicitly.
+
 ## TX LATENCY EXAMPLES
 ~~~
 		  examples scheme
@@ -267,6 +289,18 @@ or if vlan is used (one more sched ts):
 :~# plget -if=eth0.100 --type=ptpl2 --mode=tx-lat --pkt-num=16 --pkt-size=512 \
 --format=sched,lat --pps=100 --dev-deep=2
 ~~~
+
+Example 6: PTP l2 TX latency using raw sockets
+----------
+Measure TX latency for ptpl2 packets (IEEE 1588)
+
+~~~
+:~# plget -i eth0 -t raw_ptpl2 -m tx-lat -n 160 -l 512 -s 10 -a 74:da:ea:47:7d:9d
+or
+:~# plget -i eth0 -t xdp_ptpl2 -m tx-lat -n 160 -l 512 -s 10 -a 74:da:ea:47:7d:9d
+~~~
+
+If address is not specified then 01:1B:19:00:00:00 is used.
 
 ## RTT and ECHO LATENCY EXAMPLES
 ~~~
