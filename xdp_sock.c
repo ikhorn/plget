@@ -222,7 +222,8 @@ static inline __u32 umem_get_fill_dnum(struct umem_queue *q, __u32 ndescs)
 	return q->cached_cons - q->cached_prod;
 }
 
-static inline int umem_fq_populate(struct umem_queue *fq, __u64 *d, __u32 num)
+static inline int umem_fill_to_kernel_ex(struct umem_queue *fq,
+					 struct xdp_desc *d, __u32 num)
 {
 	__u32 i, idx;
 
@@ -231,7 +232,7 @@ static inline int umem_fq_populate(struct umem_queue *fq, __u64 *d, __u32 num)
 
 	for (i = 0; i < num; i++) {
 		idx = fq->cached_prod++ & fq->mask;
-		fq->ring[idx] = d[i];
+		fq->ring[idx] = d[i].addr;
 	}
 
 	__smp_wmb();
@@ -242,10 +243,14 @@ static inline int umem_fq_populate(struct umem_queue *fq, __u64 *d, __u32 num)
 
 static int fq_populate(struct umem_queue *fq)
 {
-	__u64 addr;
+	struct xdp_desc desc;
+	__u64 max_addr, *addr;
 
-	for (addr = 0; addr < FQ_DESC_NUM * FRAME_SIZE; addr += FRAME_SIZE)
-		if (umem_fq_populate(fq, &addr, 1))
+	addr = &desc.addr;
+	max_addr = FQ_DESC_NUM * FRAME_SIZE;
+
+	for (*addr = 0; *addr < max_addr; *addr += FRAME_SIZE)
+		if (umem_fill_to_kernel_ex(fq, &desc, 1))
 			return perror("cannot populate fill queue"), -errno;
 
 	return 0;
@@ -470,25 +475,6 @@ static inline void *xq_get_data(struct xsock *xsk, __u64 addr)
 
 {
 	return &xsk->umem->frames[addr];
-}
-
-static inline int umem_fill_to_kernel_ex(struct umem_queue *fq,
-					 struct xdp_desc *d, __u32 num)
-{
-	__u32 i, idx;
-
-	if (umem_get_fill_dnum(fq, num) < num)
-		return -ENOSPC;
-
-	for (i = 0; i < num; i++) {
-		idx = fq->cached_prod++ & fq->mask;
-		fq->ring[idx] = d[i].addr;
-	}
-
-	__smp_wmb();
-
-	*fq->producer = fq->cached_prod;
-	return 0;
 }
 
 int xsk_poll(struct xdp_desc *desc, struct timespec *ts2)
