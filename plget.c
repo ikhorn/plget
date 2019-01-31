@@ -622,7 +622,7 @@ int main(int argc, char **argv)
 		ret = rxrate(plget);
 		break;
 	default:
-		plget_fail("didn't set mode with -m");
+		plget_fail("provid mode with -m");
 		break;
 	}
 
