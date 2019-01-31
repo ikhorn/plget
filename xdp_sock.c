@@ -471,14 +471,14 @@ int xsk_poll(struct xdp_desc *desc, struct timespec *ts2)
 	if (!ret)
 		return -1;
 
-	data = xq_get_data(xsk, desc->addr - 2 * sizeof(__u64));
+	data = xq_get_data(xsk, desc->addr);
 	clock_gettime(CLOCK_REALTIME, ts2);
 
 	/* to be sure, drop not compatible packets */
 	if (desc->len < ETH_HLEN)
 		goto err;
 
-	temp = data + 2 * sizeof(__u64) + ETH_ALEN * 2;
+	temp = data + ETH_ALEN * 2;
 	proto = *temp | (*(temp + 1) << 8);
 	if (plget->flags & PLF_PTP && proto != htons(ETH_P_1588))
 		goto err;
@@ -492,21 +492,15 @@ err:
 	return -1;
 }
 
-int xsk_recvmsg(struct plgett *plget, struct msghdr *msg, struct timespec *ts2)
+static void xsk_get_tx(struct msghdr *msg)
 {
 	struct scm_timestamping *tss;
-	struct cmsghdr *cmsg;
 	struct timespec *ts1;
-	struct xdp_desc desc;
+	struct cmsghdr *cmsg;
 	char *data;
 	__u64 ns;
-	int len;
 
-	do {
-		len = xsk_poll(&desc, ts2);
-	} while (len <= 0);
-
-	data = plget->pkt;
+	data = plget->pkt - 2 * sizeof(ns);
 
 	cmsg = msg->msg_control;
 	cmsg->cmsg_len =
@@ -526,11 +520,21 @@ int xsk_recvmsg(struct plgett *plget, struct msghdr *msg, struct timespec *ts2)
 	ts1->tv_sec = ns / NSEC_PER_SEC;
 	ts1->tv_nsec = ns - ts1->tv_sec * NSEC_PER_SEC;
 
-	plget->pkt += 2 * sizeof(ns);
+	msg->msg_controllen = CMSG_ALIGN(cmsg->cmsg_len);
+}
+
+int xsk_recvmsg(struct plgett *plget, struct msghdr *msg, struct timespec *ts2)
+{
+	struct xdp_desc desc;
+	int len;
+
+	do {
+		len = xsk_poll(&desc, ts2);
+	} while (len <= 0);
+
+	xsk_get_tx(msg);
 
 	fq_enq(&plget->xsk->umem->fq, &desc, 1);
-
-	msg->msg_controllen = CMSG_ALIGN(cmsg->cmsg_len);
 
 	return len;
 }
