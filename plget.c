@@ -274,10 +274,13 @@ static int packet_socket(struct plgett *plget)
 
 	specify_protocol(plget, &protocol);
 
-	if (plget->pkt_type == PKT_RAW)
-		sfd = socket(AF_PACKET, SOCK_RAW, 0);
-	else
+	if (plget->pkt_type == PKT_RAW) {
+		protocol = htons(ETH_P_ALL);
+		sfd = socket(AF_PACKET, SOCK_RAW, protocol);
+	} else {
 		sfd = socket(AF_PACKET, SOCK_DGRAM, protocol);
+	}
+
 	if (sfd < 0)
 		return perror("socket"), -errno;
 
