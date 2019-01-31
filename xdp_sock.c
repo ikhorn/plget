@@ -119,6 +119,44 @@ static inline __u32 rq_deq(struct queue *q, struct xdp_desc *descs, int num)
 	return entries;
 }
 
+static inline int fq_enq(struct queue *q, struct xdp_desc *descs, __u32 num)
+{
+	__u32 i, idx;
+	umem_desc *r = q->ring;
+
+	if (queue_get_free_num(q, num) < num)
+		return -ENOSPC;
+
+	for (i = 0; i < num; i++) {
+		idx = q->cached_prod++ & q->mask;
+		r[idx] = descs[i].addr;
+	}
+
+	__smp_wmb();
+
+	*q->producer = q->cached_prod;
+	return 0;
+}
+
+static inline int tq_enq(struct queue *q, struct xdp_desc *descs, __u32 num)
+{
+	__u32 i, idx;
+	struct xdp_desc *r = q->ring;
+
+	if (queue_get_free_num(q, num) < num)
+		return -ENOSPC;
+
+	for (i = 0; i < num; i++) {
+		idx = q->cached_prod++ & q->mask;
+		r[idx] = descs[i];
+	}
+
+	__smp_wmb();
+
+	*q->producer = q->cached_prod;
+	return 0;
+}
+
 static int get_ring_offsets(int sfd, struct xdp_mmap_offsets *offsets)
 {
 	socklen_t opt_len;
@@ -277,44 +315,6 @@ static int tx_ring_allocate(struct xsock *xsk)
 	xsk->tq.ring = xsk->tq.map + offsets.tx.desc;
 	xsk->tq.cached_cons = TQ_DESC_NUM;
 
-	return 0;
-}
-
-static inline int fq_enq(struct queue *q, struct xdp_desc *descs, __u32 num)
-{
-	__u32 i, idx;
-	umem_desc *r = q->ring;
-
-	if (queue_get_free_num(q, num) < num)
-		return -ENOSPC;
-
-	for (i = 0; i < num; i++) {
-		idx = q->cached_prod++ & q->mask;
-		r[idx] = descs[i].addr;
-	}
-
-	__smp_wmb();
-
-	*q->producer = q->cached_prod;
-	return 0;
-}
-
-static inline int tq_enq(struct queue *q, struct xdp_desc *descs, __u32 num)
-{
-	__u32 i, idx;
-	struct xdp_desc *r = q->ring;
-
-	if (queue_get_free_num(q, num) < num)
-		return -ENOSPC;
-
-	for (i = 0; i < num; i++) {
-		idx = q->cached_prod++ & q->mask;
-		r[idx] = descs[i];
-	}
-
-	__smp_wmb();
-
-	*q->producer = q->cached_prod;
 	return 0;
 }
 
