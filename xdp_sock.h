@@ -22,38 +22,30 @@
 #define FRAME_NUM	256	/* number of frames to operate on */
 #define FRAME_HEADROOM	0
 
-struct umem_queue {
+typedef __u64 umem_desc;
+typedef struct xdp_desc sock_desc;
+
+struct queue {
 	__u32 cached_prod;
 	__u32 cached_cons;
 	__u32 mask;
 	__u32 size;
 	__u32 *producer;
 	__u32 *consumer;
-	__u64 *ring;
+	void *ring;
 	void *map;
 };
 
 struct sock_umem {
 	char *frames;
-	struct umem_queue fq;
-	struct umem_queue cq;
+	struct queue fq;
+	struct queue cq;
 	int fd;
 };
 
-struct sock_queue {
-	__u32 cached_prod;
-	__u32 cached_cons;
-	__u32 mask;
-	__u32 size;
-	__u32 *producer;
-	__u32 *consumer;
-	struct xdp_desc *ring;
-	void *map;
-};
-
 struct xsock {
-	struct sock_queue rq;
-	struct sock_queue tq;
+	struct queue rq;
+	struct queue tq;
 	struct sock_umem *umem;
 	int sfd;
 };

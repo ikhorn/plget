@@ -210,11 +210,11 @@ static int tx_ring_allocate(struct xsock *xsk)
 	return 0;
 }
 
-static inline __u32 umem_get_fill_dnum(struct umem_queue *q, __u32 ndescs)
+static inline __u32 queue_get_free_num(struct queue *q, __u32 num)
 {
 	__u32 free_entries = q->cached_cons - q->cached_prod;
 
-	if (free_entries >= ndescs)
+	if (free_entries >= num)
 		return free_entries;
 
 	/* Refresh the local tail pointer */
@@ -222,17 +222,30 @@ static inline __u32 umem_get_fill_dnum(struct umem_queue *q, __u32 ndescs)
 	return q->cached_cons - q->cached_prod;
 }
 
-static inline int umem_fq_enqueue(struct umem_queue *fq, struct xdp_desc *d,
+static inline __u32 umem_fq_get_dnum(struct queue *q, __u32 num)
+{
+	__u32 free_entries = q->cached_cons - q->cached_prod;
+
+	if (free_entries >= num)
+		return free_entries;
+
+	/* Refresh the local tail pointer */
+	q->cached_cons = *q->consumer + q->size;
+	return q->cached_cons - q->cached_prod;
+}
+
+static inline int umem_fq_enqueue(struct queue *fq, struct xdp_desc *d,
 				  __u32 num)
 {
 	__u32 i, idx;
+	umem_desc *desc = fq->ring;
 
-	if (umem_get_fill_dnum(fq, num) < num)
+	if (umem_fq_get_dnum(fq, num) < num)
 		return -ENOSPC;
 
 	for (i = 0; i < num; i++) {
 		idx = fq->cached_prod++ & fq->mask;
-		fq->ring[idx] = d[i].addr;
+		desc[idx] = d[i].addr;
 	}
 
 	__smp_wmb();
@@ -241,7 +254,7 @@ static inline int umem_fq_enqueue(struct umem_queue *fq, struct xdp_desc *d,
 	return 0;
 }
 
-static int fq_populate(struct umem_queue *fq)
+static int fq_populate(struct queue *fq)
 {
 	struct xdp_desc desc;
 	__u64 max_addr, *addr;
@@ -339,7 +352,7 @@ int xdp_socket(struct plgett *plget)
 }
 
 /* API implementation */
-static inline __u32 xq_get_tx_dnum(struct sock_queue *q, __u32 ndescs)
+static inline __u32 xq_get_tx_dnum(struct queue *q, __u32 ndescs)
 {
 	__u32 entries = q->cached_cons - q->cached_prod;
 
@@ -351,7 +364,7 @@ static inline __u32 xq_get_tx_dnum(struct sock_queue *q, __u32 ndescs)
 	return q->cached_cons - q->cached_prod;
 }
 
-static inline __u32 umemq_get_comp_dnum(struct umem_queue *q, __u32 ndescs)
+static inline __u32 umemq_get_comp_dnum(struct queue *q, __u32 num)
 {
 	__u32 entries = q->cached_prod - q->cached_cons;
 
@@ -360,19 +373,21 @@ static inline __u32 umemq_get_comp_dnum(struct umem_queue *q, __u32 ndescs)
 		entries = q->cached_prod - q->cached_cons;
 	}
 
-	return (entries > ndescs) ? ndescs : entries;
+	return (entries > num) ? num : entries;
 }
 
-static inline size_t umem_complete_from_kernel(struct umem_queue *cq,
-					       __u64 *d, __u32 ndescs)
+static inline size_t umem_complete_from_kernel(struct queue *cq, __u64 *d,
+					       __u32 num)
 {
-	__u32 idx, i, entries = umemq_get_comp_dnum(cq, ndescs);
+	__u32 entries = umemq_get_comp_dnum(cq, num);
+	umem_desc *desc = cq->ring;
+	__u32 idx, i;
 
 	__smp_rmb();
 
 	for (i = 0; i < entries; i++) {
 		idx = cq->cached_cons++ & cq->mask;
-		d[i] = cq->ring[idx];
+		d[i] = desc[idx];
 	}
 
 	if (entries > 0) {
@@ -384,7 +399,7 @@ static inline size_t umem_complete_from_kernel(struct umem_queue *cq,
 	return entries;
 }
 
-static int xsk_tx_complete(struct xsock *xsk, __u32 ndescs)
+static int xsk_tx_complete(struct xsock *xsk, __u32 num)
 {
 	int ret;
 	__u64 desc;
@@ -393,14 +408,14 @@ static int xsk_tx_complete(struct xsock *xsk, __u32 ndescs)
 	if (ret < 0)
 		return ret;
 
-	ret = umem_complete_from_kernel(&xsk->umem->cq, &desc, ndescs);
+	ret = umem_complete_from_kernel(&xsk->umem->cq, &desc, num);
 	return ret;
 }
 
 int xsk_sendto(struct plgett *plget)
 {
 	struct xsock *xsk = plget->xsk;
-	struct sock_queue *tq = &xsk->tq;
+	struct queue *tq = &xsk->tq;
 	struct xdp_desc *ring = tq->ring;
 	unsigned int frame_idx;
 	__u32 ret, desc_idx;
@@ -435,7 +450,7 @@ int xsk_sendto(struct plgett *plget)
 }
 
 /* Rx part */
-static inline __u32 xq_get_rx_dnum(struct sock_queue *q, __u32 ndescs)
+static inline __u32 xq_get_rx_dnum(struct queue *q, __u32 num)
 {
 	__u32 entries = q->cached_prod - q->cached_cons;
 
@@ -444,17 +459,16 @@ static inline __u32 xq_get_rx_dnum(struct sock_queue *q, __u32 ndescs)
 		entries = q->cached_prod - q->cached_cons;
 	}
 
-	return (entries > ndescs) ? ndescs : entries;
+	return (entries > num) ? num : entries;
 }
 
-static inline int rq_deq(struct sock_queue *rq, struct xdp_desc *descs,
-			 int ndescs)
+static inline int rq_deq(struct queue *rq, struct xdp_desc *descs, int num)
 {
 	struct xdp_desc *r = rq->ring;
 	unsigned int idx;
 	int i, entries;
 
-	entries = xq_get_rx_dnum(rq, ndescs);
+	entries = xq_get_rx_dnum(rq, num);
 
 	__smp_rmb();
 
