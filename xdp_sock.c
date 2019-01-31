@@ -73,6 +73,52 @@ static inline __u32 queue_get_free_num(struct queue *q, __u32 num)
 	return q->cached_cons - q->cached_prod;
 }
 
+static inline __u32 cq_deq(struct queue *q, __u64 *descs, __u32 num)
+{
+	umem_desc *r = q->ring;
+	__u32 idx, i, entries;
+
+	entries = queue_get_num(q, num);
+
+	__smp_rmb();
+
+	for (i = 0; i < entries; i++) {
+		idx = q->cached_cons++ & q->mask;
+		descs[i] = r[idx];
+	}
+
+	if (entries > 0) {
+		__smp_wmb();
+
+		*q->consumer = q->cached_cons;
+	}
+
+	return entries;
+}
+
+static inline __u32 rq_deq(struct queue *q, struct xdp_desc *descs, int num)
+{
+	struct xdp_desc *r = q->ring;
+	__u32 idx, i, entries;
+
+	entries = queue_get_num(q, num);
+
+	__smp_rmb();
+
+	for (i = 0; i < entries; i++) {
+		idx = q->cached_cons++ & q->mask;
+		descs[i] = r[idx];
+	}
+
+	if (entries > 0) {
+		__smp_wmb();
+
+		*q->consumer = q->cached_cons;
+	}
+
+	return entries;
+}
+
 static int get_ring_offsets(int sfd, struct xdp_mmap_offsets *offsets)
 {
 	socklen_t opt_len;
@@ -349,52 +395,6 @@ int xdp_socket(struct plgett *plget)
 		return perror("cannot load xdp prog"), -errno;
 
 	return sfd;
-}
-
-static inline __u32 cq_deq(struct queue *q, __u64 *descs, __u32 num)
-{
-	umem_desc *r = q->ring;
-	__u32 idx, i, entries;
-
-	entries = queue_get_num(q, num);
-
-	__smp_rmb();
-
-	for (i = 0; i < entries; i++) {
-		idx = q->cached_cons++ & q->mask;
-		descs[i] = r[idx];
-	}
-
-	if (entries > 0) {
-		__smp_wmb();
-
-		*q->consumer = q->cached_cons;
-	}
-
-	return entries;
-}
-
-static inline __u32 rq_deq(struct queue *q, struct xdp_desc *descs, int num)
-{
-	struct xdp_desc *r = q->ring;
-	__u32 idx, i, entries;
-
-	entries = queue_get_num(q, num);
-
-	__smp_rmb();
-
-	for (i = 0; i < entries; i++) {
-		idx = q->cached_cons++ & q->mask;
-		descs[i] = r[idx];
-	}
-
-	if (entries > 0) {
-		__smp_wmb();
-
-		*q->consumer = q->cached_cons;
-	}
-
-	return entries;
 }
 
 static int xsk_tx_complete(struct xsock *xsk, __u32 num)
