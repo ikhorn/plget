@@ -280,23 +280,41 @@ static int tx_ring_allocate(struct xsock *xsk)
 	return 0;
 }
 
-static inline int umem_fq_enqueue(struct queue *fq, struct xdp_desc *d,
-				  __u32 num)
+static inline int fq_enq(struct queue *q, struct xdp_desc *descs, __u32 num)
 {
 	__u32 i, idx;
-	umem_desc *desc = fq->ring;
+	umem_desc *r = q->ring;
 
-	if (queue_get_free_num(fq, num) < num)
+	if (queue_get_free_num(q, num) < num)
 		return -ENOSPC;
 
 	for (i = 0; i < num; i++) {
-		idx = fq->cached_prod++ & fq->mask;
-		desc[idx] = d[i].addr;
+		idx = q->cached_prod++ & q->mask;
+		r[idx] = descs[i].addr;
 	}
 
 	__smp_wmb();
 
-	*fq->producer = fq->cached_prod;
+	*q->producer = q->cached_prod;
+	return 0;
+}
+
+static inline int tq_enq(struct queue *q, struct xdp_desc *descs, __u32 num)
+{
+	__u32 i, idx;
+	struct xdp_desc *r = q->ring;
+
+	if (queue_get_free_num(q, num) < num)
+		return -ENOSPC;
+
+	for (i = 0; i < num; i++) {
+		idx = q->cached_prod++ & q->mask;
+		r[idx] = descs[i];
+	}
+
+	__smp_wmb();
+
+	*q->producer = q->cached_prod;
 	return 0;
 }
 
@@ -309,7 +327,7 @@ static int fq_populate(struct queue *fq)
 	max_addr = FQ_DESC_NUM * FRAME_SIZE;
 
 	for (*addr = 0; *addr < max_addr; *addr += FRAME_SIZE)
-		if (umem_fq_enqueue(fq, &desc, 1))
+		if (fq_enq(fq, &desc, 1))
 			return perror("cannot populate fill queue"), -errno;
 
 	return 0;
@@ -414,32 +432,23 @@ int xsk_sendto(struct plgett *plget)
 {
 	struct xsock *xsk = plget->xsk;
 	struct queue *tq = &xsk->tq;
-	struct xdp_desc *ring = tq->ring;
-	unsigned int frame_idx;
-	__u32 ret, desc_idx;
+	struct xdp_desc desc;
+	__u64 addr;
+	__u32 ret;
 
-	/* prepare frame */
-	ret = queue_get_free_num(tq, 1);
-	if (!ret)
+	addr = plget->pkt - xsk->umem->frames;
+	desc.addr = addr;
+	desc.len = plget->pkt_size;
+	desc.options = 0;
+	if (tq_enq(tq, &desc, 1) == -ENOSPC)
 		return 0;
-
-	/* enqueue */
-	frame_idx = (plget->pkt - xsk->umem->frames) >> FRAME_SHIFT;
-
-	desc_idx = tq->cached_prod++ & tq->mask;
-	ring[desc_idx].addr = frame_idx << FRAME_SHIFT;
-	ring[desc_idx].len = plget->pkt_size;
-
-	__smp_wmb();
-
-	*tq->producer = tq->cached_prod;
 
 	/* kick */
 	ret = xsk_tx_complete(xsk, 1);
 	if (ret < 0)
 		return perror("sendto"), ret;
 
-	if (frame_idx >= FRAME_NUM - 1)
+	if ((addr >> FRAME_SHIFT) >= FRAME_NUM - 1)
 		plget->pkt = xsk->umem->frames;
 	else
 		plget->pkt += FRAME_SIZE;
@@ -490,7 +499,7 @@ int xsk_poll(struct xdp_desc *desc, struct timespec *ts2)
 	return desc->len;
 
 err:
-	umem_fq_enqueue(&xsk->umem->fq, desc, 1);
+	fq_enq(&xsk->umem->fq, desc, 1);
 	return -1;
 }
 
@@ -530,7 +539,7 @@ int xsk_recvmsg(struct plgett *plget, struct msghdr *msg, struct timespec *ts2)
 
 	plget->pkt += 2 * sizeof(ns);
 
-	umem_fq_enqueue(&plget->xsk->umem->fq, &desc, 1);
+	fq_enq(&plget->xsk->umem->fq, &desc, 1);
 
 	msg->msg_controllen = CMSG_ALIGN(cmsg->cmsg_len);
 
