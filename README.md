@@ -67,6 +67,15 @@ Build with AF_XDP support adding AFXDP=1:
 # HELP
 ~~~
 :~# plget -h
+
+Possible packet/sock types, set with -t key
+-t raw_ptpl2	socket(AF_PACKET, SOCK_RAW, 0)
+-t xdp_ptpl2	socket(AF_XDP, SOCK_RAW, 0)
+-t ptpl2	socket(AF_PACKET, SOCK_DGRAM, ETH_P_1588)
+-t avtp		socket(AF_PACKET, SOCK_DGRAM, ETH_P_TSN)
+-t ptpl4	socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
+-t udp		socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
+
 ~~~
 
 # PRINTOUTS
