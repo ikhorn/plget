@@ -97,6 +97,33 @@ static struct option plget_options[] = {
 	{NULL, 0, NULL, 0},
 };
 
+static void plget_set_ptp_default_macaddr(void)
+{
+	int mod = plget->mod;
+
+	if (plget->macaddr[0] != '\0' || !(plget->flags & PLF_PTP))
+		return;
+
+	if (mod == TX_LAT || mod == PKT_GEN || mod == RTT_MOD ||
+	    mod == ECHO_LAT) {
+		sscanf(PTP_PRIMARY_MCAST_MACADDR,
+		       "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+		       &plget->macaddr[0], &plget->macaddr[1],
+		       &plget->macaddr[2], &plget->macaddr[3],
+		       &plget->macaddr[4], &plget->macaddr[5]);
+
+		printf("Destination address set to %s\n",
+				PTP_PRIMARY_MCAST_MACADDR);
+		printf("Defaults: %s or %s\n",
+				PTP_PRIMARY_MCAST_MACADDR,
+				PTP_FILTERED_MCAST_MACADDR);
+	} else {
+		printf("Default address can be specified: %s "
+		       "or %s\n", PTP_PRIMARY_MCAST_MACADDR,
+		       PTP_FILTERED_MCAST_MACADDR);
+	}
+}
+
 static void plget_check_args(struct plgett *plget)
 {
 	int mod = plget->mod;
@@ -158,26 +185,7 @@ static void plget_check_args(struct plgett *plget)
 		plget->flags |= PLF_TS_ID_ALLOWED;
 		break;
 	case PKT_ETH:
-		if (plget->macaddr[0] == '\0' && (plget->flags & PLF_PTP)) {
-			if (mod == TX_LAT || mod == PKT_GEN || mod == RTT_MOD ||
-			    mod == ECHO_LAT) {
-				sscanf(PTP_PRIMARY_MCAST_MACADDR,
-				       "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
-				       &plget->macaddr[0], &plget->macaddr[1],
-				       &plget->macaddr[2], &plget->macaddr[3],
-				       &plget->macaddr[4], &plget->macaddr[5]);
-
-				printf("Destination address set to %s\n",
-						PTP_PRIMARY_MCAST_MACADDR);
-				printf("Defaults: %s or %s\n",
-						PTP_PRIMARY_MCAST_MACADDR,
-						PTP_FILTERED_MCAST_MACADDR);
-			} else {
-				printf("Default address can be specified: %s "
-				       "or %s\n", PTP_PRIMARY_MCAST_MACADDR,
-				       PTP_FILTERED_MCAST_MACADDR);
-			}
-		}
+		plget_set_ptp_default_macaddr();
 
 		need_addr = (plget->macaddr[0] == '\0') &&
 			    (mod == TX_LAT || mod == RTT_MOD || mod == PKT_GEN);
@@ -186,6 +194,8 @@ static void plget_check_args(struct plgett *plget)
 			printf("Cannot specify port for non UDP packets\n");
 		break;
 	case PKT_XDP:
+		plget_set_ptp_default_macaddr();
+
 		if (plget->if_name[0] == '\0')
 			plget_fail("For XDP sockets, dev has to be specified");
 
@@ -196,6 +206,8 @@ static void plget_check_args(struct plgett *plget)
 			    (mod == TX_LAT || mod == RTT_MOD || mod == PKT_GEN);
 		break;
 	case PKT_RAW:
+		plget_set_ptp_default_macaddr();
+
 		if (plget->if_name[0] == '\0')
 			plget_fail("For RAW sockets, dev has to be specified");
 
