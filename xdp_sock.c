@@ -435,6 +435,7 @@ int xsk_sendto(struct plgett *plget)
 	struct xdp_desc desc;
 	__u64 addr;
 	__u32 ret;
+	int roll;
 
 	addr = plget->pkt - xsk->umem->frames;
 	desc.addr = addr;
@@ -448,7 +449,8 @@ int xsk_sendto(struct plgett *plget)
 	if (ret < 0)
 		return perror("sendto"), ret;
 
-	if ((addr >> FRAME_SHIFT) >= FRAME_NUM - 1)
+	roll = (addr >> FRAME_SHIFT) >= FRAME_NUM - 1;
+	if (roll)
 		plget->pkt = xsk->umem->frames;
 	else
 		plget->pkt += FRAME_SIZE;
