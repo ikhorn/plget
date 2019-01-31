@@ -351,24 +351,47 @@ int xdp_socket(struct plgett *plget)
 	return sfd;
 }
 
-static inline size_t umem_complete_from_kernel(struct queue *cq, __u64 *d,
-					       __u32 num)
+static inline __u32 cq_deq(struct queue *q, __u64 *descs, __u32 num)
 {
-	__u32 entries = queue_get_num(cq, num);
-	umem_desc *desc = cq->ring;
-	__u32 idx, i;
+	umem_desc *r = q->ring;
+	__u32 idx, i, entries;
+
+	entries = queue_get_num(q, num);
 
 	__smp_rmb();
 
 	for (i = 0; i < entries; i++) {
-		idx = cq->cached_cons++ & cq->mask;
-		d[i] = desc[idx];
+		idx = q->cached_cons++ & q->mask;
+		descs[i] = r[idx];
 	}
 
 	if (entries > 0) {
 		__smp_wmb();
 
-		*cq->consumer = cq->cached_cons;
+		*q->consumer = q->cached_cons;
+	}
+
+	return entries;
+}
+
+static inline __u32 rq_deq(struct queue *q, struct xdp_desc *descs, int num)
+{
+	struct xdp_desc *r = q->ring;
+	__u32 idx, i, entries;
+
+	entries = queue_get_num(q, num);
+
+	__smp_rmb();
+
+	for (i = 0; i < entries; i++) {
+		idx = q->cached_cons++ & q->mask;
+		descs[i] = r[idx];
+	}
+
+	if (entries > 0) {
+		__smp_wmb();
+
+		*q->consumer = q->cached_cons;
 	}
 
 	return entries;
@@ -383,7 +406,7 @@ static int xsk_tx_complete(struct xsock *xsk, __u32 num)
 	if (ret < 0)
 		return ret;
 
-	ret = umem_complete_from_kernel(&xsk->umem->cq, &desc, num);
+	ret = cq_deq(&xsk->umem->cq, &desc, num);
 	return ret;
 }
 
@@ -425,29 +448,6 @@ int xsk_sendto(struct plgett *plget)
 }
 
 /* Rx part */
-static inline int rq_deq(struct queue *rq, struct xdp_desc *descs, int num)
-{
-	struct xdp_desc *r = rq->ring;
-	unsigned int idx;
-	int i, entries;
-
-	entries = queue_get_num(rq, num);
-
-	__smp_rmb();
-
-	for (i = 0; i < entries; i++) {
-		idx = rq->cached_cons++ & rq->mask;
-		descs[i] = r[idx];
-	}
-
-	if (entries > 0) {
-		__smp_wmb();
-
-		*rq->consumer = rq->cached_cons;
-	}
-
-	return entries;
-}
 static inline void *xq_get_data(struct xsock *xsk, __u64 addr)
 
 {
