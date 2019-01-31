@@ -7,7 +7,7 @@ endif
 
 CC=$(CROSS_COMPILE)gcc
 
-ALL_SOURCES := echo_lat.c pkt_gen.c plget_args.c plget.c result.c rtt.c \
+ALL_SOURCES :=  debug.c echo_lat.c pkt_gen.c plget_args.c plget.c result.c rtt.c \
 rx_lat.c stat.c tx_lat.c
 
 ifdef AFXDP
