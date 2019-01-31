@@ -415,26 +415,12 @@ int xdp_socket(struct plgett *plget)
 	return sfd;
 }
 
-static int xsk_tx_complete(struct xsock *xsk, __u32 num)
-{
-	int ret;
-	__u64 desc;
-
-	ret = sendto(xsk->sfd, NULL, 0, MSG_DONTWAIT, NULL, 0);
-	if (ret < 0)
-		return ret;
-
-	ret = cq_deq(&xsk->umem->cq, &desc, num);
-	return ret;
-}
-
 int xsk_sendto(struct plgett *plget)
 {
 	struct xsock *xsk = plget->xsk;
 	struct queue *tq = &xsk->tq;
 	struct xdp_desc desc;
 	__u64 addr;
-	__u32 ret;
 	int roll;
 
 	addr = plget->pkt - xsk->umem->frames;
@@ -445,15 +431,16 @@ int xsk_sendto(struct plgett *plget)
 		return 0;
 
 	/* kick */
-	ret = xsk_tx_complete(xsk, 1);
-	if (ret < 0)
-		return perror("sendto"), ret;
+	if (sendto(xsk->sfd, NULL, 0, MSG_DONTWAIT, NULL, 0))
+		return perror("sendto"), -errno;
 
 	roll = (addr >> FRAME_SHIFT) >= FRAME_NUM - 1;
 	if (roll)
 		plget->pkt = xsk->umem->frames;
 	else
 		plget->pkt += FRAME_SIZE;
+
+	cq_deq(&xsk->umem->cq, &addr, 1);
 
 	return plget->sk_payload_size;
 }
