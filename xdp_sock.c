@@ -49,6 +49,30 @@
 #define __smp_wmb() barrier()
 #endif
 
+static inline __u32 queue_get_num(struct queue *q, __u32 num)
+{
+	__u32 entries = q->cached_prod - q->cached_cons;
+
+	if (entries == 0) {
+		q->cached_prod = *q->producer;
+		entries = q->cached_prod - q->cached_cons;
+	}
+
+	return (entries > num) ? num : entries;
+}
+
+static inline __u32 queue_get_free_num(struct queue *q, __u32 num)
+{
+	__u32 entries = q->cached_cons - q->cached_prod;
+
+	if (entries >= num)
+		return entries;
+
+	/* Refresh the local tail pointer */
+	q->cached_cons = *q->consumer + q->size;
+	return q->cached_cons - q->cached_prod;
+}
+
 static int get_ring_offsets(int sfd, struct xdp_mmap_offsets *offsets)
 {
 	socklen_t opt_len;
@@ -210,18 +234,6 @@ static int tx_ring_allocate(struct xsock *xsk)
 	return 0;
 }
 
-static inline __u32 queue_get_free_num(struct queue *q, __u32 num)
-{
-	__u32 entries = q->cached_cons - q->cached_prod;
-
-	if (entries >= num)
-		return entries;
-
-	/* Refresh the local tail pointer */
-	q->cached_cons = *q->consumer + q->size;
-	return q->cached_cons - q->cached_prod;
-}
-
 static inline int umem_fq_enqueue(struct queue *fq, struct xdp_desc *d,
 				  __u32 num)
 {
@@ -337,19 +349,6 @@ int xdp_socket(struct plgett *plget)
 		return perror("cannot load xdp prog"), -errno;
 
 	return sfd;
-}
-
-/* API implementation */
-static inline __u32 queue_get_num(struct queue *q, __u32 num)
-{
-	__u32 entries = q->cached_prod - q->cached_cons;
-
-	if (entries == 0) {
-		q->cached_prod = *q->producer;
-		entries = q->cached_prod - q->cached_cons;
-	}
-
-	return (entries > num) ? num : entries;
 }
 
 static inline size_t umem_complete_from_kernel(struct queue *cq, __u64 *d,
