@@ -212,22 +212,10 @@ static int tx_ring_allocate(struct xsock *xsk)
 
 static inline __u32 queue_get_free_num(struct queue *q, __u32 num)
 {
-	__u32 free_entries = q->cached_cons - q->cached_prod;
+	__u32 entries = q->cached_cons - q->cached_prod;
 
-	if (free_entries >= num)
-		return free_entries;
-
-	/* Refresh the local tail pointer */
-	q->cached_cons = *q->consumer + q->size;
-	return q->cached_cons - q->cached_prod;
-}
-
-static inline __u32 umem_fq_get_dnum(struct queue *q, __u32 num)
-{
-	__u32 free_entries = q->cached_cons - q->cached_prod;
-
-	if (free_entries >= num)
-		return free_entries;
+	if (entries >= num)
+		return entries;
 
 	/* Refresh the local tail pointer */
 	q->cached_cons = *q->consumer + q->size;
@@ -240,7 +228,7 @@ static inline int umem_fq_enqueue(struct queue *fq, struct xdp_desc *d,
 	__u32 i, idx;
 	umem_desc *desc = fq->ring;
 
-	if (umem_fq_get_dnum(fq, num) < num)
+	if (queue_get_free_num(fq, num) < num)
 		return -ENOSPC;
 
 	for (i = 0; i < num; i++) {
@@ -352,18 +340,6 @@ int xdp_socket(struct plgett *plget)
 }
 
 /* API implementation */
-static inline __u32 xq_get_tx_dnum(struct queue *q, __u32 ndescs)
-{
-	__u32 entries = q->cached_cons - q->cached_prod;
-
-	if (entries >= ndescs)
-		return entries;
-
-	/* Refresh the local tail pointer */
-	q->cached_cons = *q->consumer + q->size;
-	return q->cached_cons - q->cached_prod;
-}
-
 static inline __u32 queue_get_num(struct queue *q, __u32 num)
 {
 	__u32 entries = q->cached_prod - q->cached_cons;
@@ -421,7 +397,7 @@ int xsk_sendto(struct plgett *plget)
 	__u32 ret, desc_idx;
 
 	/* prepare frame */
-	ret = xq_get_tx_dnum(tq, 1);
+	ret = queue_get_free_num(tq, 1);
 	if (!ret)
 		return 0;
 
