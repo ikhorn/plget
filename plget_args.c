@@ -38,7 +38,7 @@ static void plget_usage(void)
 	printf("\t\t\t\t\t\tport 319 or 320 is special and address 224.0.1.29 "
 	       "by default if not overwritten\n");
 	printf("\tt TYPE\t\t--type=TYPE\t\t:type of packet, can be udp, avtp, "
-	       "ptpl2, ptpl4, xdp_ptpl2\n");
+	       "ptpl2, ptpl4, xdp_ptpl2, raw_ptpl2\n");
 	printf("\ti NAME\t\t--if=NAME\t\t:interface name\n");
 	printf("\tm MODE\t\t--mode=MODE\t\t:\"rx-lat\" or \"tx-lat\" or "
 	       "\"echo-lat\" or \"pkt-gen\" or \"rtt\" or \"rx-rate\" "
