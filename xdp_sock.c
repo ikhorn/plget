@@ -445,9 +445,7 @@ int xsk_sendto(struct plgett *plget)
 	return plget->sk_payload_size;
 }
 
-/* Rx part */
-static inline void *xq_get_data(struct xsock *xsk, __u64 addr)
-
+static inline void *umem_get_data(struct xsock *xsk, __u64 addr)
 {
 	return &xsk->umem->frames[addr];
 }
@@ -471,7 +469,7 @@ int xsk_poll(struct xdp_desc *desc, struct timespec *ts2)
 	if (!ret)
 		return -1;
 
-	data = xq_get_data(xsk, desc->addr);
+	data = umem_get_data(xsk, desc->addr);
 	clock_gettime(CLOCK_REALTIME, ts2);
 
 	/* to be sure, drop not compatible packets */
