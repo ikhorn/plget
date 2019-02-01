@@ -202,21 +202,6 @@ static int udp_socket(struct plgett *plget)
 
 	addr->sin_addr = plget->iaddr;
 
-	if (plget->flags & PLF_PRIO) {
-		ret = setsockopt(sfd, SOL_SOCKET, SO_PRIORITY, &plget->prio,
-				 sizeof(plget->prio));
-		if (ret < 0)
-			return perror("Couldn't set priority"), -errno;
-	}
-
-	if (plget->flags & PLF_BUSYPOLL) {
-		ret = setsockopt(sfd, SOL_SOCKET, SO_BUSY_POLL,
-				 &plget->busypoll_time,
-				 sizeof(plget->busypoll_time));
-		if (ret < 0)
-			return perror("Couldn't set busy poll time"), -errno;
-	}
-
 	/* bind socket to the interface */
 	ret = setsockopt(sfd, SOL_SOCKET, SO_BINDTODEVICE, plget->if_name,
 			 sizeof(plget->if_name));
@@ -298,21 +283,6 @@ static int packet_socket(struct plgett *plget)
 	addr->sll_halen = ETH_ALEN;
 	memcpy(addr->sll_addr, mac, ETH_ALEN);
 
-	if (plget->flags & PLF_PRIO) {
-		ret = setsockopt(sfd, SOL_SOCKET, SO_PRIORITY, &plget->prio,
-				 sizeof(plget->prio));
-		if (ret < 0)
-			return perror("Couldn't set priority"), -errno;
-	}
-
-	if (plget->flags & PLF_BUSYPOLL) {
-		ret = setsockopt(sfd, SOL_SOCKET, SO_BUSY_POLL,
-				 &plget->busypoll_time,
-				 sizeof(plget->busypoll_time));
-		if (ret < 0)
-			return perror("Couldn't set busy poll time"), -errno;
-	}
-
 	if (plget->mod == TX_LAT || plget->mod == PKT_GEN)
 		return sfd;
 
@@ -339,6 +309,30 @@ static int packet_socket(struct plgett *plget)
 	return sfd;
 }
 
+
+static int plget_more_sock_options(void)
+{
+	int sfd = plget->sfd;
+	int ret;
+
+	if (plget->flags & PLF_PRIO) {
+		ret = setsockopt(sfd, SOL_SOCKET, SO_PRIORITY, &plget->prio,
+				 sizeof(plget->prio));
+		if (ret < 0)
+			return perror("Couldn't set priority"), -errno;
+	}
+
+	if (plget->flags & PLF_BUSYPOLL) {
+		ret = setsockopt(sfd, SOL_SOCKET, SO_BUSY_POLL,
+				 &plget->busypoll_time,
+				 sizeof(plget->busypoll_time));
+		if (ret < 0)
+			return perror("Couldn't set busy poll time"), -errno;
+	}
+
+	return 0;
+}
+
 static int plget_create_socket(struct plgett *plget)
 {
 	if (plget->pkt_type == PKT_UDP)
@@ -352,6 +346,10 @@ static int plget_create_socket(struct plgett *plget)
 
 	if (plget->sfd < 0)
 		return 1;
+
+	/* set more socket options */
+	if (plget_more_sock_options())
+		return -errno;
 
 	return 0;
 }
