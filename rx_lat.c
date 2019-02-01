@@ -54,17 +54,17 @@ void rxlat_handle_ts(struct plgett *plget, struct timespec *ts)
 
 static int rxlat_recvmsg_raw(struct plgett *plget, struct timespec *ts)
 {
-	int pkt_size, err;
+	int psize, err;
 	__u16 proto;
 	char *temp;
 
 	do {
-		pkt_size = recvmsg(plget->sfd, &plget->msg, 0);
+		psize = recvmsg(plget->sfd, &plget->msg, 0);
 		err = clock_gettime(CLOCK_REALTIME, ts);
 		if (err)
 			return -1;
 
-		if (pkt_size < 0)
+		if (psize < 0)
 			return -errno;
 
 		temp = plget->data + ETH_ALEN * 2;
@@ -74,40 +74,40 @@ static int rxlat_recvmsg_raw(struct plgett *plget, struct timespec *ts)
 			break;
 	} while (0);
 
-	return pkt_size;
+	return psize;
 }
 
 static int rxlat_recvmsg(struct plgett *plget, struct timespec *ts)
 {
-	int pkt_size, err;
+	int psize, err;
 
 	if (plget->pkt_type == PKT_XDP)
-		pkt_size = xsk_recvmsg(plget, &plget->msg, ts);
+		psize = xsk_recvmsg(plget, &plget->msg, ts);
 	else if (plget->pkt_type == PKT_RAW) {
-		pkt_size = rxlat_recvmsg_raw(plget, ts);
+		psize = rxlat_recvmsg_raw(plget, ts);
 	} else {
-		pkt_size = recvmsg(plget->sfd, &plget->msg, 0);
+		psize = recvmsg(plget->sfd, &plget->msg, 0);
 		err = clock_gettime(CLOCK_REALTIME, ts);
 		if (err)
 			return -1;
 	}
 
-	return pkt_size;
+	return psize;
 }
 
 void rxlat_proc_packet(struct plgett *plget)
 {
 	struct timespec ts;
-	int pkt_size;
+	int psize;
 
 	plget->msg.msg_controllen = sizeof(plget->control);
-	pkt_size = rxlat_recvmsg(plget, &ts);
+	psize = rxlat_recvmsg(plget, &ts);
 
-	if (pkt_size < 0)
+	if (psize < 0)
 		return perror("recvmsg");
 
 	rxlat_handle_ts(plget, &ts);
-	plget->sk_payload_size = pkt_size;
+	plget->sk_payload_size = psize;
 }
 
 int rxlat(struct plgett *plget)
@@ -125,15 +125,15 @@ static int rxrate_proc_packet(struct plgett *plget, struct timespec *ts)
 	struct msghdr *msg = &plget->msg;
 	struct scm_timestamping *tss = NULL;
 	struct cmsghdr *cmsg;
-	int pkt_size;
+	int psize;
 
 	msg->msg_controllen = sizeof(plget->control);
-	pkt_size = recvmsg(plget->sfd, msg, 0);
-	if (pkt_size < 0) {
+	psize = recvmsg(plget->sfd, msg, 0);
+	if (psize < 0) {
 		return perror("recvmsg"), -errno;
 	}
 
-	plget->pkt_size = pkt_size;
+	plget->frame_size = psize;
 	for (cmsg = CMSG_FIRSTHDR(msg); cmsg; cmsg = CMSG_NXTHDR(msg, cmsg)) {
 		if (cmsg->cmsg_level != SOL_SOCKET ||
 			cmsg->cmsg_type != SCM_TIMESTAMPING)
@@ -195,7 +195,7 @@ int rxrate(struct plgett *plget)
 		if (fds[0].revents & POLLIN) {
 			hw = rxrate_proc_packet(plget, &last);
 			if (hw >= 0) {
-				dsize += plget->pkt_size;
+				dsize += plget->frame_size;
 				if (!pnum++)
 					first = last;
 			}
@@ -213,7 +213,7 @@ int rxrate(struct plgett *plget)
 				interval = plget->interval;
 			} else {
 				ts_sub(&last, &first, &interval);
-				dsize -= plget->pkt_size;
+				dsize -= plget->frame_size;
 				pnum--;
 			}
 

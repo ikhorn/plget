@@ -97,7 +97,7 @@ struct plgett {
 	char if_name[IFNAMSIZ];
 	int ifidx;
 	enum pkt_type pkt_type;
-	int pkt_size;
+	int frame_size;
 	int pkt_num;
 	int sk_payload_size;	/* socket payload size */
 	int sfd;
@@ -129,9 +129,9 @@ int plget_setup_timer(struct plgett *plget);
 struct stats *plget_best_rx_vect(void);
 struct stats *plget_best_tx_vect(void);
 
-static inline char *magic_rd(struct plgett *plget, int pkt_size)
+static inline char *magic_rd(struct plgett *plget, int payload_size)
 {
-	return (char *)(plget->data + plget->off_magic_rd + pkt_size);
+	return (char *)(plget->data + plget->off_magic_rd + payload_size);
 }
 
 static inline void tid_wr(struct plgett *plget, unsigned int tid)
@@ -146,14 +146,14 @@ static inline void tid_wr(struct plgett *plget, unsigned int tid)
 		*p2++ = *p1++;
 }
 
-static inline unsigned int tid_rd(struct plgett *plget, int pkt_size)
+static inline unsigned int tid_rd(struct plgett *plget, int payload_size)
 {
 	unsigned int tid;
 	char *p1, *p2;
 	int i;
 
 	p1 = (char *)&tid;
-	p2 = (char *)(plget->data + plget->off_tid_rd + pkt_size);
+	p2 = (char *)(plget->data + plget->off_tid_rd + payload_size);
 
 	for (i = 0; i < sizeof(tid); i++)
 		*p1++ = *p2++;

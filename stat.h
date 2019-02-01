@@ -36,8 +36,8 @@ int stats_reserve(struct stats *ss, int entry_num);
 void stats_diff(struct stats *a, struct stats *b, struct stats *res);
 int stats_correct_id(struct stats *ss, __u32 id);
 
-void stats_vrate_print(struct stats *ss, int pkt_size);
-void stats_rate_print(struct timespec *interval, int pkt_num, int pkt_size);
+void stats_vrate_print(struct stats *ss, int frame_size);
+void stats_rate_print(struct timespec *interval, int pkt_num, int frame_size);
 void stats_drate_print(struct timespec *interval, int pkt_num, int data_size);
 
 #endif

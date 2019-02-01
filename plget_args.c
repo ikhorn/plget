@@ -45,7 +45,8 @@ static void plget_usage(void)
 	       "mode\n");
 	printf("\tn NUM\t\t--pkt-num=NUM\t\t:number of packets to be sent or "
 	       "received\n");
-	printf("\tl SIZE\t\t--pkt-size=SIZE\t\t:packet size in bytes\n");
+	printf("\tl SIZE\t\t--frame-size=SIZE\t\t:packet frame size (total) in "
+	       "bytes\n");
 	printf("\ta IPADDR\t--address=IPADDR\t:ip address in send mode\n");
 	printf("\tc \t\t--clock-check\t\t:print title showing clocks involved "
 	       "in test, no arguments\n");
@@ -83,7 +84,7 @@ static struct option plget_options[] = {
 	{"if",		required_argument,	0, 'i'},
 	{"mode",	required_argument,	0, 'm'},
 	{"pkt-num",	required_argument,	0, 'n'},
-	{"pkt-size",	required_argument,	0, 'l'},
+	{"frame-size",	required_argument,	0, 'l'},
 	{"address",	required_argument,	0, 'a'},
 	{"clock-check",	no_argument,		0, 'c'},
 	{"format",	required_argument,	0, 'f'},
@@ -158,7 +159,7 @@ static void plget_check_args(struct plgett *plget)
 		plget_fail("priority cannot be set int this mode");
 
 	if ((mod == ECHO_LAT || mod == RX_LAT || mod == RX_RATE) &&
-	    plget->pkt_size)
+	    plget->frame_size)
 		plget_fail("packet size can't be set in this mode");
 
 	/* check if packet type is set */
@@ -385,7 +386,7 @@ static void read_args(struct plgett *plget, int argc, char **argv)
 			plget_set_mode(plget);
 			break;
 		case 'l':
-			plget->pkt_size = atoi(optarg);
+			plget->frame_size = atoi(optarg);
 			break;
 		case 'a':
 			plget_set_address(plget);

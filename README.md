@@ -279,15 +279,15 @@ Measure TX latency for ptpl2 packet, but also get latency in
 packet scheduler (IEEE 1588)
 
 ~~~
-:~# plget -if=eth0 --type=ptpl2 --mode=tx-lat --pkt-num=16 --pkt-size=512 \
+:~# plget -if=eth0 --type=ptpl2 --mode=tx-lat --pkt-num=16 --frame-size=512 \
 --format=sched,lat --pps=100
 ~~~
 
 or if vlan is used (one more sched ts):
 
 ~~~
-:~# plget -if=eth0.100 --type=ptpl2 --mode=tx-lat --pkt-num=16 --pkt-size=512 \
---format=sched,lat --pps=100 --dev-deep=2
+:~# plget -if=eth0.100 --type=ptpl2 --mode=tx-lat --pkt-num=16 \
+--frame-size=512 --format=sched,lat --pps=100 --dev-deep=2
 ~~~
 
 Example 6: PTP l2 TX latency using raw sockets

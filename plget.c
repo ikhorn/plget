@@ -439,8 +439,8 @@ static int plget_create_packet(struct plgett *plget)
 	int payload_size;
 
 	/* check settings */
-	if (plget->pkt_size &&
-	    (plget->pkt_size < 64 || plget->pkt_size > ETH_DATA_LEN)) {
+	if (plget->frame_size &&
+	    (plget->frame_size < 64 || plget->frame_size > ETH_DATA_LEN)) {
 			printf("incorrect packet size: 64 <= size <= 1500\n");
 			return -EINVAL;
 	}
@@ -448,28 +448,28 @@ static int plget_create_packet(struct plgett *plget)
 	/* adjust size and payload for packet */
 	if (plget->pkt_type == PKT_UDP) {
 		if (plget->flags & PLF_PTP) {
-			if (plget->pkt_size &&
-			    plget->pkt_size < 100) {
+			if (plget->frame_size &&
+			    plget->frame_size < 100) {
 				printf("packet size should be > 99\n");
 				return -EINVAL;
-			} else if (!plget->pkt_size)
-				plget->pkt_size = 100;
-		} else if (!plget->pkt_size)
-			plget->pkt_size = 66;
+			} else if (!plget->frame_size)
+				plget->frame_size = 100;
+		} else if (!plget->frame_size)
+			plget->frame_size = 66;
 
-		payload_size = plget->pkt_size - 42;
+		payload_size = plget->frame_size - 42;
 	} else {
 		if (plget->flags & PLF_PTP) {
-			if (plget->pkt_size &&
-			    plget->pkt_size < 72) {
+			if (plget->frame_size &&
+			    plget->frame_size < 72) {
 				printf("packet size should be > 71\n");
 				return -EINVAL;
-			} else if (!plget->pkt_size)
-				plget->pkt_size = 72;
-		} else if (!plget->pkt_size)
-			plget->pkt_size = 64;
+			} else if (!plget->frame_size)
+				plget->frame_size = 72;
+		} else if (!plget->frame_size)
+			plget->frame_size = 64;
 
-		payload_size = plget->pkt_size;
+		payload_size = plget->frame_size;
 		if (plget->pkt_type != PKT_XDP && plget->pkt_type != PKT_RAW)
 			payload_size -= ETH_HLEN;
 	}

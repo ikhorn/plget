@@ -277,18 +277,18 @@ void stats_drate_print(struct timespec *interval, int pkt_num, int data_size)
 	pps = (double)pkt_num * NSEC_PER_SEC / to_val(interval);
 	rate = (double)data_size * 8 * USEC_PER_SEC / to_val(interval);
 
-	printf("RATE = %.2fkbps, PPS = %.1f\n", rate, pps);
+	printf("RAW RATE = %.2fkbps, PPS = %.1f\n", rate, pps);
 }
 
-void stats_rate_print(struct timespec *interval, int pkt_num, int pkt_size)
+void stats_rate_print(struct timespec *interval, int pkt_num, int frame_size)
 {
 	int dsize;
 
-	dsize = pkt_size * pkt_num;
+	dsize = frame_size * pkt_num;
 	stats_drate_print(interval, pkt_num, dsize);
 }
 
-void stats_vrate_print(struct stats *ss, int pkt_size)
+void stats_vrate_print(struct stats *ss, int frame_size)
 {
 	struct timespec interval;
 	unsigned int pkt_num;
@@ -298,7 +298,7 @@ void stats_vrate_print(struct stats *ss, int pkt_size)
 		return;
 
 	ts_sub(ss->next_ts - 1, ss->start_ts, &interval);
-	stats_rate_print(&interval, pkt_num, pkt_size);
+	stats_rate_print(&interval, pkt_num, frame_size);
 }
 
 int stats_print(char *str, struct stats *ss, int flags, struct timespec *rtime)

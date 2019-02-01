@@ -425,7 +425,7 @@ int xsk_sendto(struct plgett *plget)
 
 	addr = plget->pkt - xsk->umem->frames;
 	desc.addr = addr;
-	desc.len = plget->pkt_size;
+	desc.len = plget->frame_size;
 	desc.options = 0;
 	if (tq_enq(tq, &desc, 1) == -ENOSPC)
 		return 0;

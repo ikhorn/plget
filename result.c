@@ -353,17 +353,17 @@ void res_stats_print(struct plgett *plget)
 		if (plget->pkt_type == PKT_UDP)
 			header_size += 28;
 
-		plget->pkt_size = header_size + plget->sk_payload_size;
+		plget->frame_size = header_size + plget->sk_payload_size;
 	}
 
-	if (plget->pkt_size)
-		printf("packet size: %d\n", plget->pkt_size);
+	if (plget->frame_size)
+		printf("frame size: %d\n", plget->frame_size);
 
 	printf("number of packets: %d\n", pnum);
 
 	if (mod == TX_LAT || mod == RTT_MOD)
-		stats_vrate_print(res_best_tx_vect(), plget->pkt_size);
+		stats_vrate_print(res_best_tx_vect(), plget->frame_size);
 
 	if (mod == RX_LAT || mod == ECHO_LAT)
-		stats_vrate_print(res_best_rx_vect(), plget->pkt_size);
+		stats_vrate_print(res_best_rx_vect(), plget->frame_size);
 }
