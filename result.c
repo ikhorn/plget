@@ -321,8 +321,8 @@ void res_stats_print(struct plgett *plget)
 	int rx_tx_lat = mod == ECHO_LAT || mod == RTT_MOD;
 	int print_rx_lat = mod == RX_LAT || rx_tx_lat;
 	int print_tx_lat = mod == TX_LAT || rx_tx_lat;
-	int header_size = ETH_HLEN;
 	int n = 0, n2 = 0;
+	int header_size;
 	int pnum;
 
 	printf("\n");
@@ -347,6 +347,9 @@ void res_stats_print(struct plgett *plget)
 	}
 
 	if (mod == RX_LAT) {
+		header_size = (plget->pkt_type == PKT_RAW ||
+			       plget->pkt_type == PKT_XDP) ? 0 : ETH_HLEN;
+
 		if (plget->pkt_type == PKT_UDP)
 			header_size += 28;
 
