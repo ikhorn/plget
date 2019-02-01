@@ -44,7 +44,6 @@ static int get_tx_tstamps(struct plgett *plget)
 		perror("recvmsg error occured");
 		return -1;
 	}
-	plget->pkt_size = psize;
 
 	/* get end timestamps */
 	for (cmsg = CMSG_FIRSTHDR(msg); cmsg; cmsg = CMSG_NXTHDR(msg, cmsg)) {
