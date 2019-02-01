@@ -195,6 +195,7 @@ int rxrate(struct plgett *plget)
 		if (fds[0].revents & POLLIN) {
 			hw = rxrate_proc_packet(plget, &last);
 			if (hw >= 0) {
+				plget->frame_size += hsize;
 				dsize += plget->frame_size;
 				if (!pnum++)
 					first = last;
@@ -217,7 +218,6 @@ int rxrate(struct plgett *plget)
 				pnum--;
 			}
 
-			dsize = dsize + hsize * pnum;
 			hw ? printf("H/W ") : printf("S/W ");
 			stats_drate_print(&interval, pnum, dsize);
 			dsize = 0;
