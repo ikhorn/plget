@@ -95,7 +95,7 @@ int plget_setup_timer(struct plgett *plget)
 	return fd;
 }
 
-int setup_sock_ts(int sfd, int flags)
+static int setup_sock_ts(int sfd, int flags)
 {
 	int val, err;
 	unsigned int len = sizeof(val);
@@ -138,13 +138,18 @@ static int enable_hw_timestamping(struct plgett *plget)
 	strncpy(ifreq_ts.ifr_name, plget->if_name, sizeof(ifreq_ts.ifr_name));
 	ifreq_ts.ifr_data = (void *)&hwconfig;
 
-	need_tx_hwts = plget->mod == TX_LAT ||
-		       plget->mod == RTT_MOD ||
-		       plget->mod == ECHO_LAT;
-	need_rx_hwts = plget->mod == RX_LAT ||
-		       plget->mod == RTT_MOD ||
-		       plget->mod == RX_RATE ||
-		       plget->mod == ECHO_LAT;
+	if (plget->flags & PLF_DIS_HW_TS) {
+		need_tx_hwts = 0;
+		need_rx_hwts = 0;
+	} else {
+		need_tx_hwts = plget->mod == TX_LAT ||
+			       plget->mod == RTT_MOD ||
+			       plget->mod == ECHO_LAT;
+		need_rx_hwts = plget->mod == RX_LAT ||
+			       plget->mod == RTT_MOD ||
+			       plget->mod == RX_RATE ||
+			       plget->mod == ECHO_LAT;
+	}
 
 	hwconfig.tx_type = need_tx_hwts ? HWTSTAMP_TX_ON :
 					  HWTSTAMP_TX_OFF;

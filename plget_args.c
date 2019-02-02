@@ -33,10 +33,12 @@ static void plget_usage(void)
 	printf("plget <options>:\n");
 	printf("\ts PPS \t\t--pps=PPS\t\t:packets per second, no need in "
 	       "\"rx-lat\" and \"echo-lat\" modes\n");
+
 	printf("\tu PORT\t\t--udp=PORT\t\t:udp port number for udp packet "
 	       "type\n");
 	printf("\t\t\t\t\t\tport 319 or 320 is special and address 224.0.1.29 "
 	       "by default if not overwritten\n");
+
 	printf("\tt TYPE\t\t--type=TYPE\t\t:type of packet, can be udp, avtp, "
 	       "ptpl2, ptpl4, xdp_ptpl2, raw_ptpl2\n");
 	printf("\ti NAME\t\t--if=NAME\t\t:interface name\n");
@@ -47,9 +49,11 @@ static void plget_usage(void)
 	       "received\n");
 	printf("\tl SIZE\t\t--frame-size=SIZE\t\t:packet frame size (total) in "
 	       "bytes\n");
-	printf("\ta IPADDR\t--address=IPADDR\t:ip address in send mode\n");
-	printf("\tc \t\t--clock-check\t\t:print title showing clocks involved "
-	       "in test, no arguments\n");
+	printf("\ta ADDR\t--address=ADDR\t:ip or mac address depending on the "
+	       "mode\n");
+	printf("\tc \t\t--clock-check\t\t:print title along with system and "
+	       "ptp clock counts, no arguments\n");
+
 	printf("\tf PRINTLINE\t--format=PRINTLINE\t:printout conf, \"hwts\" "
 	       "\"ipgap\" \"plain\" \"lat\", by default \"lat\" is used\n");
 	printf("\t\t\t\t\t\t\"hwts\" - print hw timesamps relatively to first "
@@ -61,6 +65,7 @@ static void plget_usage(void)
 	printf("\t\t\t\t\t\t\"lat\" - print latencies\n");
 	printf("\t\t\t\t\t\t\"sched\" - print latencies before packet "
 	       "scheduler\n");
+
 	printf("\tp PRIO\t\t--prio=PRIO\t\t:set priority for socket\n");
 	printf("\tw TIME\t\t--busy-poll=TIME\t:set SO_BUSY_POLL option for "
 	       "socket, in us\n");
@@ -74,7 +79,14 @@ static void plget_usage(void)
 	       "so on, basically it's equal to number of sched timestamps "
 	       "expected\n");
 	printf("\tq QUEUE\t\t--queue=QUEUE\t\t:set queue for xpd socket\n");
-	printf("\tz \t\t--zero-copy\t\t:force zero-copy XDP mode\n");
+	printf("\tz \t\t--zero-copy\t\t:force zero-copy XDP mode (not tested)\n");
+
+	printf("\to \t\t--option\t\t:can set the following options via comma: "
+	       "\n");
+	printf("\t\t\t\t\t\t\"dis_hwts\" - disable h/w ts, usefull to check "
+	       "possible impact of mmio calls while h/w ts retrieve\n");
+	printf("\t\t\t\t\t\t\"clock_check\" - print title along with system "
+	       "and ptp clock counts\n");
 }
 
 static struct option plget_options[] = {
@@ -95,6 +107,7 @@ static struct option plget_options[] = {
 	{"dev-deep",	required_argument,	0, 'd'},
 	{"queue",	required_argument,	0, 'q'},
 	{"zero-copy",	no_argument,		0, 'z'},
+	{"option",	required_argument,	0, 'o'},
 	{NULL, 0, NULL, 0},
 };
 
@@ -318,7 +331,6 @@ static void plget_set_address(struct plgett *plget)
 	}
 }
 
-
 static void plget_set_output_format(struct plgett *plget)
 {
 	if (strstr(optarg, "hwts"))
@@ -337,6 +349,15 @@ static void plget_set_output_format(struct plgett *plget)
 		plget->flags |= PLF_SCHED_STAT;
 		plget->flags |= PLF_LATENCY_STAT;
 	}
+}
+
+static void plget_set_option(void)
+{
+	if (strstr(optarg, "dis_hwts"))
+		plget->flags |= PLF_DIS_HW_TS;
+
+	if (strstr(optarg, "clock_check"))
+		plget->flags |= PLF_TITLE;
 }
 
 static void plget_set_relative_time(struct plgett *plget)
@@ -363,7 +384,7 @@ static void read_args(struct plgett *plget, int argc, char **argv)
 {
 	int idx, opt;
 
-	while ((opt = getopt_long(argc, argv, "s:u:p:i:m:n:l:a:t:f:b:cw:r:k:d:q:z",
+	while ((opt = getopt_long(argc, argv, "s:u:p:i:m:n:l:a:t:f:b:cw:r:k:d:q:zo:",
 	       plget_options, &idx)) != -1) {
 		switch (opt) {
 		case 's':
@@ -416,8 +437,13 @@ static void read_args(struct plgett *plget, int argc, char **argv)
 			break;
 		case 'q':
 			plget->queue = atoi(optarg);
+			break;
 		case 'z':
 			plget->flags |= PLF_ZERO_COPY;
+			break;
+		case 'o':
+			plget_set_option();
+			break;
 		default:
 			plget_fail("unknown option");
 		}
