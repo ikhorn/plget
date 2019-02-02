@@ -39,42 +39,50 @@ This tool can do the following:
 * ...
 
 # HOW TO BUILD
+## For regular sockets
 ~~~
 :~# make #for native
 :~# export ARCH=arm; export CROSS_COMPILE=arm-linux-gnueabihf-; make #for cross
 :~# export ARCH=arm; export CC=arm-linux-gnueabihf-gcc; make #for cross
+~~~
 
-In rarely case, when AF_XDP sockets supposed to be tested then it requires at
-least libbpf library, and can be integrated with FS environment so for
-cross-compilation SYSROOT address can be provided. And, if RFS doesn't have
-libbpf installed, then libbpf can be built along with plget but to do this first
-fetch sources doing the following and try again (unless it's cloned with
---recurse-submodules):
+## For regular + af_xdp sockets
+This is not required and not everywhere present.
+Except plget, it requires also kernel patching for now (no generic LK support),
+for tx the generic patch for tx can be applied (find here in github), for rx
+also NIC specific patch (for h/w ts). At this moment here is only patch for TI
+cpsw driver that can be used as an example.
 
+For AF_XDP sockets plget requires at least libbpf library, and it can be
+integrated with RFS environment so for cross-compilation SYSROOT address can be
+provided. And, if RFS doesn't have libbpf installed, then libbpf can be built
+along with plget but to do this first fetch sources doing the following (unless
+it's cloned with --recurse-submodules):
+~~~
 :~# git submodule init
 :~# git submodule update
-
+~~~
 Build with AF_XDP support adding AFXDP=1:
-
+~~~
 :~# make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- \
 	AFXDP=1 SYSROOT="path to RFS"
-
-Along with plget binary, the xsock_dispatch.o prog has to be copied on target
-board, if rx-lat mode is beeing used.
 ~~~
+
+Along with plget binary, the xsock_dispatch.o ebpf prog has to be copied on
+target board, if rx-lat mode is being used.
 
 # HELP
+Possible packet/sock types, set with -t key:
+* -t raw_ptpl2	socket(AF_PACKET, SOCK_RAW, 0)
+* -t xdp_ptpl2	socket(AF_XDP, SOCK_RAW, 0)
+* -t ptpl2	socket(AF_PACKET, SOCK_DGRAM, ETH_P_1588)
+* -t avtp	socket(AF_PACKET, SOCK_DGRAM, ETH_P_TSN)
+* -t ptpl4	socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
+* -t udp	socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
+
+More:
 ~~~
 :~# plget -h
-
-Possible packet/sock types, set with -t key
--t raw_ptpl2	socket(AF_PACKET, SOCK_RAW, 0)
--t xdp_ptpl2	socket(AF_XDP, SOCK_RAW, 0)
--t ptpl2	socket(AF_PACKET, SOCK_DGRAM, ETH_P_1588)
--t avtp		socket(AF_PACKET, SOCK_DGRAM, ETH_P_TSN)
--t ptpl4	socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
--t udp		socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
-
 ~~~
 
 # PRINTOUTS
