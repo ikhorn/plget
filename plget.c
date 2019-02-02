@@ -505,8 +505,6 @@ static void fill_in_data_pointers(struct plgett *plget)
 
 	if (plget->flags & PLF_PTP)
 		plget->off_sid_wr = off + OFF_PTP_SEQUENCE_ID;
-	else
-		plget->off_sid_wr = 0;
 
 	if (!(plget->flags & PLF_TS_ID_ALLOWED)) {
 		if (plget->flags & PLF_PTP)
