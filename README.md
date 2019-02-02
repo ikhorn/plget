@@ -21,9 +21,6 @@ the phc2sys tool from linux ptp packet should be running:
 two time counters in sub-microsecond level accuracy, for TI AM572x it was
 ~172ns in average, depends on discreteness of timers and their accuracy).
 
-One not petty detail - it can prove itself by using additional modes - RTT
-and echo latencies, using hw timestamps of NIC!.
-
 One of the possible test models:
 
 ![](https://github.com/ikhorn/plget/blob/master/pic/example_latency_test_model.jpg)
@@ -39,7 +36,6 @@ This tool can do the following:
 * figuring out bottlenecks for hi priority packets
 * figuring out interclass impact for AVB
 * speed based on h/w or s/w timestamps + packet generator
-* can prove itself (monomodes rx/tx) by using RTT + hwts + echo latencies
 * ...
 
 # HOW TO BUILD
