@@ -24,16 +24,37 @@
 #include "rx_lat.h"
 #include "echo_lat.h"
 
+
+static void swap_mac_addr(void *data)
+{
+      struct ether_header *eth = (struct ether_header *)data;
+      struct ether_addr *src_addr = (struct ether_addr *)&eth->ether_shost;
+      struct ether_addr *dst_addr = (struct ether_addr *)&eth->ether_dhost;
+      struct ether_addr tmp;
+
+      tmp = *src_addr;
+      *src_addr = *dst_addr;
+      *dst_addr = tmp;
+}
+
 int echolat(struct plgett *plget)
 {
-	int i = 0;
 	int off_magic_rd_base = plget->off_magic_rd;
+	int type = plget->pkt_type;
+	int swap_addr, i;
 
-	for (; i < plget->pkt_num; ++i) {
+	swap_addr = (type == PKT_XDP || type == PKT_RAW) &&
+		       *plget->macaddr == '\0';
+
+	for (i = 0; i < plget->pkt_num; ++i) {
 		rxlat_proc_packet(plget);
 		if (!(plget->flags & PLF_TS_ID_ALLOWED))
 			plget->off_magic_rd =
 				off_magic_rd_base - plget->sk_payload_size;
+
+		if (swap_addr)
+			swap_mac_addr(plget->pkt);
+
 		txlat_proc_packet(plget);
 	}
 
