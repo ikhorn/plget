@@ -375,24 +375,12 @@ static void init_pkt_ether_header(struct plgett *plget)
 {
 	struct ether_header *eth = (struct ether_header *)plget->pkt;
 	struct ether_addr *dst_addr, *src_addr;
-	struct ifreq ifr;
-	int ret;
 
 	dst_addr = (struct ether_addr *)eth->ether_dhost;
 	src_addr = (struct ether_addr *)eth->ether_shost;
 
-	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, plget->if_name, sizeof(ifr.ifr_name));
-
 	*dst_addr = plget->macaddr;
-
-	ret = ioctl(plget->sfd, SIOCGIFHWADDR, &ifr);
-	if (ret) {
-		*src_addr = plget->macaddr;
-		printf("cann't get interface hw address\n");
-	} else {
-		*src_addr = *((struct ether_addr *)ifr.ifr_hwaddr.sa_data);
-	}
+	*src_addr = plget->if_addr;
 
 	specify_protocol(plget, &eth->ether_type);
 }
@@ -530,6 +518,25 @@ static void fill_in_data_pointers(struct plgett *plget)
 	}
 }
 
+void get_inf_addr(void)
+{
+	int type = plget->pkt_type;
+	struct ifreq ifr;
+	int ok;
+
+	ok = type == PKT_ETH || type == PKT_RAW || type == PKT_XDP;
+	if (!ok)
+		return;
+
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, plget->if_name, sizeof(ifr.ifr_name));
+
+	if (ioctl(plget->sfd, SIOCGIFHWADDR, &ifr))
+		plget_fail("cann't get interface hw address");
+
+	plget->if_addr = *((struct ether_addr *)ifr.ifr_hwaddr.sa_data);
+}
+
 static int init_test(struct plgett *plget)
 {
 	int ts_flags = SOF_TIMESTAMPING_SOFTWARE;
@@ -538,6 +545,8 @@ static int init_test(struct plgett *plget)
 	ret = plget_create_socket(plget);
 	if (ret)
 		return ret;
+
+	get_inf_addr();
 
 	enable_hw_timestamping(plget);
 	res_title_print(plget);

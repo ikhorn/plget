@@ -91,8 +91,8 @@ struct plgett {
 		struct sockaddr_ll iaddr2;
 		struct sockaddr_xdp iaddr3;
 	};
-	//unsigned char macaddr[8];
 	struct ether_addr macaddr;
+	struct ether_addr if_addr;
 	struct sockaddr_ll sk_addr;
 	enum test_mod mod;
 	struct timespec interval;
