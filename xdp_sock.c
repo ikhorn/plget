@@ -454,9 +454,9 @@ int xsk_poll(struct xdp_desc *desc, struct timespec *ts2)
 {
 	struct xsock *xsk = plget->xsk;
 	struct pollfd fds;
-	char *data, *temp;
 	unsigned int ret;
 	__u16 proto;
+	char *data;
 
 	fds.fd = plget->sfd;
 	fds.events = POLLIN;
@@ -476,8 +476,7 @@ int xsk_poll(struct xdp_desc *desc, struct timespec *ts2)
 	if (desc->len < ETH_HLEN)
 		goto err;
 
-	temp = data + ETH_ALEN * 2;
-	proto = *temp | (*(temp + 1) << 8);
+	memcpy(&proto, data + ETH_ALEN * 2, sizeof(proto));
 	if (plget->flags & PLF_PTP && proto != htons(ETH_P_1588))
 		goto err;
 

@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <poll.h>
 #include "xdp_sock.h"
+#include <string.h>
 
 #define RATE_INERVAL			1
 
@@ -56,7 +57,6 @@ static int rxlat_recvmsg_raw(struct plgett *plget, struct timespec *ts)
 {
 	int psize, err;
 	__u16 proto;
-	char *temp;
 
 	do {
 		psize = recvmsg(plget->sfd, &plget->msg, 0);
@@ -67,9 +67,7 @@ static int rxlat_recvmsg_raw(struct plgett *plget, struct timespec *ts)
 		if (psize < 0)
 			return -errno;
 
-		temp = plget->data + ETH_ALEN * 2;
-		proto = *temp | (*(temp + 1) << 8);
-
+		memcpy(&proto, plget->data + ETH_ALEN * 2, sizeof(proto));
 		if (plget->flags & PLF_PTP && proto == htons(ETH_P_1588))
 			break;
 	} while (0);
