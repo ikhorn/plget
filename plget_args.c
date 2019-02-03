@@ -114,17 +114,16 @@ static struct option plget_options[] = {
 static void plget_set_ptp_default_macaddr(void)
 {
 	int mod = plget->mod;
+	__u8 *mac = (__u8 *)&plget->macaddr;
 
-	if (plget->macaddr[0] != '\0' || !(plget->flags & PLF_PTP))
+	if (plget->flags & PLF_ADDR_SET || !(plget->flags & PLF_PTP))
 		return;
 
 	if (mod == TX_LAT || mod == PKT_GEN || mod == RTT_MOD ||
 	    mod == ECHO_LAT) {
 		sscanf(PTP_PRIMARY_MCAST_MACADDR,
 		       "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
-		       &plget->macaddr[0], &plget->macaddr[1],
-		       &plget->macaddr[2], &plget->macaddr[3],
-		       &plget->macaddr[4], &plget->macaddr[5]);
+		       &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
 
 		printf("Destination address set to %s\n",
 				PTP_PRIMARY_MCAST_MACADDR);
@@ -201,7 +200,7 @@ static void plget_check_args(struct plgett *plget)
 	case PKT_ETH:
 		plget_set_ptp_default_macaddr();
 
-		need_addr = (plget->macaddr[0] == '\0') &&
+		need_addr = (!(plget->flags & PLF_ADDR_SET)) &&
 			    (mod == TX_LAT || mod == RTT_MOD || mod == PKT_GEN);
 
 		if (plget->port)
@@ -216,7 +215,7 @@ static void plget_check_args(struct plgett *plget)
 		if (!(plget->flags & PLF_QUEUE))
 			plget->queue = 0;
 
-		need_addr = (plget->macaddr[0] == '\0') &&
+		need_addr = (!(plget->flags & PLF_ADDR_SET)) &&
 			    (mod == TX_LAT || mod == RTT_MOD || mod == PKT_GEN);
 		break;
 	case PKT_RAW:
@@ -225,7 +224,7 @@ static void plget_check_args(struct plgett *plget)
 		if (plget->if_name[0] == '\0')
 			plget_fail("For RAW sockets, dev has to be specified");
 
-		need_addr = (plget->macaddr[0] == '\0') &&
+		need_addr = (!(plget->flags & PLF_ADDR_SET)) &&
 			    (mod == TX_LAT || mod == RTT_MOD || mod == PKT_GEN);
 		break;
 	default:
@@ -308,6 +307,7 @@ static void plget_set_mode(struct plgett *plget)
 
 static void plget_set_address(struct plgett *plget)
 {
+	__u8 *mac = (__u8 *)&plget->macaddr;
 	int ret;
 
 	if (plget->pkt_type == PKT_UDP) {
@@ -317,9 +317,7 @@ static void plget_set_address(struct plgett *plget)
 		   plget->pkt_type == PKT_RAW) {
 		ret =
 		sscanf(optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
-			&plget->macaddr[0], &plget->macaddr[1],
-			&plget->macaddr[2], &plget->macaddr[3],
-			&plget->macaddr[4], &plget->macaddr[5]);
+			&mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
 		if (ret != 6) {
 			printf("Invalid address\n");
 			exit(EXIT_FAILURE);
@@ -329,6 +327,8 @@ static void plget_set_address(struct plgett *plget)
 	} else {
 		plget_fail("unkown pkt type");
 	}
+
+	plget->flags |= PLF_ADDR_SET;
 }
 
 static void plget_set_output_format(struct plgett *plget)

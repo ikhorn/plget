@@ -60,6 +60,7 @@ extern struct plgett *plget;
 #define PLF_QUEUE			BIT(12)
 #define PLF_ZERO_COPY			BIT(13)
 #define PLF_DIS_HW_TS			BIT(14)
+#define PLF_ADDR_SET			BIT(15)
 
 #define PLF_PRINTOUT			(PLF_HW_STAT |\
 					PLF_HW_GAP_STAT |\

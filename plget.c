@@ -284,7 +284,7 @@ static int packet_socket(struct plgett *plget)
 		return perror("Couldn't bind() to interface"), -errno;
 
 	addr->sll_halen = ETH_ALEN;
-	memcpy(addr->sll_addr, plget->macaddr, ETH_ALEN);
+	memcpy(addr->sll_addr, (__u8 *)&plget->macaddr, ETH_ALEN);
 
 	return sfd;
 }
@@ -315,7 +315,7 @@ static int plget_more_sock_options(void)
 
 static int plget_mcast(void)
 {
-	__u8 *mac = plget->macaddr;
+	__u8 *mac = (__u8 *)&plget->macaddr;
 	struct packet_mreq mreq;
 	int ret;
 
@@ -326,7 +326,7 @@ static int plget_mcast(void)
 		return 0;
 
 	 /* join multicast group if address is provided */
-	if (*mac == '\0')
+	if (!(plget->flags & PLF_ADDR_SET))
 		return 0;
 
 	mreq.mr_ifindex = plget->ifidx;
@@ -373,22 +373,25 @@ static int plget_create_socket(struct plgett *plget)
 
 static void init_pkt_ether_header(struct plgett *plget)
 {
-	struct ether_header *eth;
+	struct ether_header *eth = (struct ether_header *)plget->pkt;
+	struct ether_addr *dst_addr, *src_addr;
 	struct ifreq ifr;
 	int ret;
+
+	dst_addr = (struct ether_addr *)eth->ether_dhost;
+	src_addr = (struct ether_addr *)eth->ether_shost;
 
 	memset(&ifr, 0, sizeof(ifr));
 	strncpy(ifr.ifr_name, plget->if_name, sizeof(ifr.ifr_name));
 
-	eth = (struct ether_header *)plget->pkt;
-	memcpy(eth->ether_dhost, plget->macaddr, ETH_ALEN);
+	*dst_addr = plget->macaddr;
 
 	ret = ioctl(plget->sfd, SIOCGIFHWADDR, &ifr);
 	if (ret) {
-		memcpy(eth->ether_shost, plget->macaddr, ETH_ALEN);
+		*src_addr = plget->macaddr;
 		printf("cann't get interface hw address\n");
 	} else {
-		memcpy(eth->ether_shost, ifr.ifr_hwaddr.sa_data, ETH_ALEN);
+		*src_addr = *((struct ether_addr *)ifr.ifr_hwaddr.sa_data);
 	}
 
 	specify_protocol(plget, &eth->ether_type);

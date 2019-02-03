@@ -44,7 +44,7 @@ int echolat(struct plgett *plget)
 	int swap_addr, i;
 
 	swap_addr = (type == PKT_XDP || type == PKT_RAW) &&
-		       *plget->macaddr == '\0';
+		    plget->flags & PLF_ADDR_SET;
 
 	for (i = 0; i < plget->pkt_num; ++i) {
 		rxlat_proc_packet(plget);
