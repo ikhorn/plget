@@ -69,7 +69,7 @@ extern struct plgett *plget;
 #define CONTROL_LEN			512
 
 enum pkt_type {
-	PKT_UDP,
+	PKT_UDP = 1,
 	PKT_ETH,
 	PKT_XDP,
 	PKT_RAW,
