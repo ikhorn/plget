@@ -257,7 +257,6 @@ static void specify_protocol(struct plgett *plget, __u16 *protocol)
 static int packet_socket(struct plgett *plget)
 {
 	struct sockaddr_ll *addr = &plget->sk_addr;
-	__u8 *mac = plget->macaddr;
 	__u16 protocol;
 	int sfd, ret;
 
@@ -285,7 +284,7 @@ static int packet_socket(struct plgett *plget)
 		return perror("Couldn't bind() to interface"), -errno;
 
 	addr->sll_halen = ETH_ALEN;
-	memcpy(addr->sll_addr, mac, ETH_ALEN);
+	memcpy(addr->sll_addr, plget->macaddr, ETH_ALEN);
 
 	return sfd;
 }
