@@ -501,10 +501,10 @@ static void fill_in_data_pointers(struct plgett *plget)
 			off += PTP_HSIZE;
 
 		if (plget->mod != ECHO_LAT)
-			plget->off_tid_wr = ALIGN(off + 1);
+			plget->off_tid_wr = off + 1;
 
 		plget->off_magic_rd = off;
-		plget->off_tid_rd = ALIGN(off + 1);
+		plget->off_tid_rd = off + 1;
 
 		if (plget->mod != ECHO_LAT) {
 			plget->off_magic_rd -= plget->sk_payload_size;
