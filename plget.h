@@ -26,7 +26,7 @@
 #include "linux/if_xdp.h"
 #endif
 
-#define ts_correct(ts)			((ts)->tv_sec || (ts)->tv_nsec)
+#define ts_correct(ts)			((ts)->tv_nsec || (ts)->tv_sec)
 #define NSEC_PER_SEC			1000000000ULL
 #define USEC_PER_SEC			1000000ULL
 #define MAGIC				0x34
