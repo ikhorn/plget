@@ -42,7 +42,8 @@ int rtt_proc(void)
 	for (i = 0; i < plget->pkt_num; ++i) {
 		if (plget->flags & PLF_PTP)
 			sid_wr(htons((i & SEQ_ID_MASK) | sid));
-		tid_wr(i);
+		if (!(plget->flags & PLF_TS_ID_ALLOWED))
+			tid_wr(i);
 		txlat_proc_packet();
 		rxlat_proc_packet();
 
