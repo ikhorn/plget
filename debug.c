@@ -1,17 +1,18 @@
 #include "debug.h"
 #include <stdio.h>
 
-void db_dump_buf(unsigned char *data, int size)
+void db_dump_buf(void *data, int size)
 {
+	unsigned char *arr = data;
 	char ascii[17];
 	int i, j;
 
 	ascii[16] = '\0';
 	for (i = 0; i < size; ++i) {
-		printf("%02X ", data[i]);
+		printf("%02X ", arr[i]);
 
-		if (data[i] >= ' ' && data[i] <= '~')
-			ascii[i % 16] = data[i];
+		if (arr[i] >= ' ' && arr[i] <= '~')
+			ascii[i % 16] = arr[i];
 		else
 			ascii[i % 16] = '.';
 
