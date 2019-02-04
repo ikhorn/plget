@@ -27,6 +27,9 @@ const char *xdp_file_name = "xsock_dispatch.o";
 
 void xdp_unload_prog(void)
 {
+	if (!(plget->flags & PLF_PROG_LOADED))
+		return;
+
 	if (bpf_set_link_xdp_fd(plget->ifidx, -1, XDP_FLAGS_DRV_MODE))
 		perror("link unset xdp prog failed");
 }
@@ -54,11 +57,13 @@ int xdp_load_prog(struct plgett *plget)
 	if (plget->mod == TX_LAT)
 		return 0;
 
+	prog_attr.file = xdp_file_name;
+
 	signal(SIGINT, sig_exit);
 	signal(SIGTERM, sig_exit);
 	signal(SIGABRT, sig_exit);
 
-	prog_attr.file = xdp_file_name;
+	plget->flags |= PLF_PROG_LOADED;
 
 	if (bpf_prog_load_xattr(&prog_attr, &obj, &prog_fd))
 		return perror("no program found"), -errno;

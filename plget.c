@@ -254,7 +254,7 @@ static void specify_protocol(struct plgett *plget, __u16 *protocol)
 		*protocol = 0;
 }
 
-static int plget_mcast(void)
+static int plget_mcast(int sfd)
 {
 	__u8 *mac = (__u8 *)&plget->macaddr;
 	struct packet_mreq mreq;
@@ -272,7 +272,7 @@ static int plget_mcast(void)
 	mreq.mr_alen = ETH_ALEN;
 	memcpy(&mreq.mr_address, mac, ETH_ALEN);
 
-	ret = setsockopt(plget->sfd, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mreq,
+	ret = setsockopt(sfd, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mreq,
 			 sizeof(struct packet_mreq));
 	if (ret)
 		return perror("Cannot set PACKET_MEMBERSHIP"), -errno;
@@ -315,7 +315,7 @@ static int packet_socket(struct plgett *plget)
 	addr->sll_halen = ETH_ALEN;
 	memcpy(addr->sll_addr, (__u8 *)&plget->macaddr, ETH_ALEN);
 
-	if (plget_mcast())
+	if (plget_mcast(sfd))
 		return -errno;
 
 	return sfd;

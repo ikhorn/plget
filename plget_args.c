@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <arpa/inet.h>
 #include <string.h>
+#include "xdp_prog_load.h"
 
 #define PLGET_NAME_VER			"plget v0.4"
 #define PTP_EVENT_PORT			319
@@ -318,10 +319,8 @@ static void plget_set_address(struct plgett *plget)
 		ret =
 		sscanf(optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
 			&mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
-		if (ret != 6) {
-			printf("Invalid address\n");
-			exit(EXIT_FAILURE);
-		}
+		if (ret != 6)
+			plget_fail("Invalid address");
 	} else if (!plget->pkt_type) {
 		plget_fail("Set paket type first");
 	} else {
@@ -454,6 +453,8 @@ void plget_fail(char *err)
 {
 	if (err)
 		printf("%s\n", err);
+
+	xdp_unload_prog();
 
 	plget_usage();
 	exit(EXIT_FAILURE);
