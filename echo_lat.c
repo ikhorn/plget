@@ -25,26 +25,15 @@
 #include "echo_lat.h"
 
 
-static void swap_mac_addr(void *data)
-{
-      struct ether_header *eth = (struct ether_header *)data;
-      struct ether_addr *src_addr = (struct ether_addr *)&eth->ether_shost;
-      struct ether_addr *dst_addr = (struct ether_addr *)&eth->ether_dhost;
-      struct ether_addr tmp;
-
-      tmp = *src_addr;
-      *src_addr = *dst_addr;
-      *dst_addr = tmp;
-}
-
 int echolat(struct plgett *plget)
 {
 	int off_magic_rd_base = plget->off_magic_rd;
+	struct ether_addr *dst_addr, *src_addr;
 	int type = plget->pkt_type;
+	struct ether_header *eth;
 	int swap_addr, i;
 
-	swap_addr = (type == PKT_XDP || type == PKT_RAW) &&
-		    plget->flags & PLF_ADDR_SET;
+	swap_addr = type == PKT_XDP || type == PKT_RAW;
 
 	for (i = 0; i < plget->pkt_num; ++i) {
 		rxlat_proc_packet(plget);
@@ -52,8 +41,18 @@ int echolat(struct plgett *plget)
 			plget->off_magic_rd =
 				off_magic_rd_base - plget->sk_payload_size;
 
-		if (swap_addr)
-			swap_mac_addr(plget->pkt);
+		if (swap_addr) {
+			eth = (struct ether_header *)plget->pkt;
+			dst_addr = (struct ether_addr *)&eth->ether_dhost;
+			src_addr = (struct ether_addr *)&eth->ether_shost;
+
+			if (plget->flags & PLF_ADDR_SET)
+				*dst_addr = plget->macaddr;
+			else
+				*dst_addr = *src_addr;
+
+			*src_addr = plget->if_addr;
+		}
 
 		txlat_proc_packet(plget);
 	}
