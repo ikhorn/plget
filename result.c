@@ -88,7 +88,7 @@ static void res_print_clock_info(int clock, char *clock_name)
 	printf("\n");
 }
 
-static int res_tx_lat_print(struct plgett *plget)
+static int res_tx_lat_print(void)
 {
 	struct timespec *rtime;
 	int print_flags;
@@ -164,7 +164,7 @@ static int res_tx_lat_print(struct plgett *plget)
 	return n;
 }
 
-static int res_rx_lat_print(struct plgett *plget)
+static int res_rx_lat_print(void)
 {
 	struct timespec *rtime;
 	int print_flags;
@@ -205,7 +205,7 @@ static int res_rx_lat_print(struct plgett *plget)
 	return n;
 }
 
-static void res_rtt_print(struct plgett *plget)
+static void res_rtt_print(void)
 {
 	struct stats *a_stat, *b_stat;
 	char *a_ts_base, *b_ts_base;
@@ -265,7 +265,7 @@ static struct stats *res_best_tx_vect(void)
 		return &tx_app_v;
 }
 
-void res_title_print(struct plgett *plget)
+void res_title_print(void)
 {
 	struct timespec ts1, ts2, res;
 	int ptp_fd;
@@ -315,7 +315,7 @@ void res_print_time(void)
 	printf("%llu\n", val);
 }
 
-void res_stats_print(struct plgett *plget)
+void res_stats_print(void)
 {
 	int mod = plget->mod;
 	int rx_tx_lat = mod == ECHO_LAT || mod == RTT_MOD;
@@ -327,10 +327,10 @@ void res_stats_print(struct plgett *plget)
 
 	printf("\n");
 	if (print_tx_lat)
-		n2 = res_tx_lat_print(plget);
+		n2 = res_tx_lat_print();
 
 	if (print_rx_lat)
-		n = res_rx_lat_print(plget);
+		n = res_rx_lat_print();
 
 	if (mod == ECHO_LAT || mod == RTT_MOD) {
 		if (n != n2)
@@ -339,7 +339,7 @@ void res_stats_print(struct plgett *plget)
 		pnum = n > n2 ? n2 : n;
 
 		if (mod == RTT_MOD)
-			res_rtt_print(plget);
+			res_rtt_print();
 	} else if (mod == PKT_GEN) {
 		pnum = plget->pkt_num;
 	} else {

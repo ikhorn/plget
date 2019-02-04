@@ -20,7 +20,7 @@
 
 #define MAX_LATENCY			5000
 
-static int fast_pktgen(struct plgett *plget)
+static int fast_pktgen(void)
 {
 	struct sockaddr *addr = (struct sockaddr *)&plget->sk_addr;
 	int dsize = plget->sk_payload_size;
@@ -32,7 +32,7 @@ static int fast_pktgen(struct plgett *plget)
 	pnum = plget->pkt_num ? plget->pkt_num : ~0;
 	for (i = 0; i < pnum; i++) {
 		if (plget->flags & PLF_PTP)
-			sid_wr(plget, htons((i & SEQ_ID_MASK) | sid));
+			sid_wr(htons((i & SEQ_ID_MASK) | sid));
 		ret = sendto(sfd, packet, dsize, 0, addr,
 			     sizeof(plget->sk_addr));
 		if (ret != dsize) {
@@ -111,12 +111,12 @@ err:
 	return -1;
 }
 
-int pktgen(struct plgett *plget)
+int pktgen(void)
 {
 	int ret;
 
 	if (!ts_correct(&plget->interval))
-		return fast_pktgen(plget);
+		return fast_pktgen();
 
 	ret = plget_create_timer();
 	if (ret)

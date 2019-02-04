@@ -17,6 +17,6 @@
 
 #include "plget.h"
 
-int rtt(struct plgett *plget);
+int rtt(void);
 
 #endif

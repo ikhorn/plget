@@ -138,7 +138,7 @@ static void plget_set_ptp_default_macaddr(void)
 	}
 }
 
-static void plget_check_args(struct plgett *plget)
+static void plget_check_args(void)
 {
 	int mod = plget->mod;
 	int need_addr;
@@ -236,7 +236,7 @@ static void plget_check_args(struct plgett *plget)
 		plget_fail("Please, specify the address with -a");
 }
 
-static void plget_set_pps(struct plgett *plget)
+static void plget_set_pps(void)
 {
 	struct timespec i;
 
@@ -260,7 +260,7 @@ static void plget_set_pps(struct plgett *plget)
 	plget->interval = i;
 }
 
-static void plget_set_packet_type(struct plgett *plget)
+static void plget_set_packet_type(void)
 {
 	if (!strcmp("udp", optarg)) {
 		plget->pkt_type = PKT_UDP;
@@ -288,7 +288,7 @@ static void plget_set_packet_type(struct plgett *plget)
 	}
 }
 
-static void plget_set_mode(struct plgett *plget)
+static void plget_set_mode(void)
 {
 	if (!strcmp("tx-lat", optarg))
 		plget->mod = TX_LAT;
@@ -306,7 +306,7 @@ static void plget_set_mode(struct plgett *plget)
 		plget_fail("unkown mode");
 }
 
-static void plget_set_address(struct plgett *plget)
+static void plget_set_address(void)
 {
 	__u8 *mac = (__u8 *)&plget->macaddr;
 	int ret;
@@ -330,7 +330,7 @@ static void plget_set_address(struct plgett *plget)
 	plget->flags |= PLF_ADDR_SET;
 }
 
-static void plget_set_output_format(struct plgett *plget)
+static void plget_set_output_format(void)
 {
 	if (strstr(optarg, "hwts"))
 		plget->flags |= PLF_HW_STAT;
@@ -359,7 +359,7 @@ static void plget_set_option(void)
 		plget->flags |= PLF_TITLE;
 }
 
-static void plget_set_relative_time(struct plgett *plget)
+static void plget_set_relative_time(void)
 {
 	__u64 ns;
 
@@ -369,7 +369,7 @@ static void plget_set_relative_time(struct plgett *plget)
 }
 
 
-static void plget_set_stream_id(struct plgett *plget)
+static void plget_set_stream_id(void)
 {
 	plget->stream_id = atoi(optarg);
 
@@ -379,7 +379,7 @@ static void plget_set_stream_id(struct plgett *plget)
 	plget->stream_id <<= STREAM_ID_SHIFT;
 }
 
-static void read_args(struct plgett *plget, int argc, char **argv)
+static void read_args(int argc, char **argv)
 {
 	int idx, opt;
 
@@ -387,13 +387,13 @@ static void read_args(struct plgett *plget, int argc, char **argv)
 	       plget_options, &idx)) != -1) {
 		switch (opt) {
 		case 's':
-			plget_set_pps(plget);
+			plget_set_pps();
 			break;
 		case 'u':
 			plget->port = atoi(optarg);
 			break;
 		case 't':
-			plget_set_packet_type(plget);
+			plget_set_packet_type();
 			break;
 		case 'i':
 			strncpy(plget->if_name, optarg, sizeof(plget->if_name));
@@ -403,19 +403,19 @@ static void read_args(struct plgett *plget, int argc, char **argv)
 			plget->pkt_num = atoi(optarg);
 			break;
 		case 'm':
-			plget_set_mode(plget);
+			plget_set_mode();
 			break;
 		case 'l':
 			plget->frame_size = atoi(optarg);
 			break;
 		case 'a':
-			plget_set_address(plget);
+			plget_set_address();
 			break;
 		case 'c':
 			plget->flags |= PLF_TITLE;
 			break;
 		case 'f':
-			plget_set_output_format(plget);
+			plget_set_output_format();
 			break;
 		case 'p':
 			plget->prio = atoi(optarg);
@@ -426,10 +426,10 @@ static void read_args(struct plgett *plget, int argc, char **argv)
 			plget->flags |= PLF_BUSYPOLL;
 			break;
 		case 'r':
-			plget_set_relative_time(plget);
+			plget_set_relative_time();
 			break;
 		case 'k':
-			plget_set_stream_id(plget);
+			plget_set_stream_id();
 			break;
 		case 'd':
 			plget->dev_deep = atoi(optarg);
@@ -460,8 +460,8 @@ void plget_fail(char *err)
 	exit(EXIT_FAILURE);
 }
 
-void plget_args(struct plgett *plget, int argc, char **argv)
+void plget_args(int argc, char **argv)
 {
-	read_args(plget, argc, argv);
-	plget_check_args(plget);
+	read_args(argc, argv);
+	plget_check_args();
 }

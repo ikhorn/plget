@@ -17,8 +17,8 @@
 
 #include "plget.h"
 
-int rxlat(struct plgett *plget);
-int rxrate(struct plgett *plget);
-void rxlat_proc_packet(struct plgett *plget);
+int rxlat(void);
+int rxrate(void);
+void rxlat_proc_packet(void);
 
 #endif

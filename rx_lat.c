@@ -28,7 +28,7 @@
 
 #define RATE_INERVAL			1
 
-void rxlat_handle_ts(struct plgett *plget, struct timespec *ts)
+void rxlat_handle_ts(struct timespec *ts)
 {
 	struct scm_timestamping *tss = NULL;
 	struct msghdr *msg = &plget->msg;
@@ -53,7 +53,7 @@ void rxlat_handle_ts(struct plgett *plget, struct timespec *ts)
 	stats_push(&rx_app_v, ts);
 }
 
-static int rxlat_recvmsg_raw(struct plgett *plget, struct timespec *ts)
+static int rxlat_recvmsg_raw(struct timespec *ts)
 {
 	int psize, err;
 	__u16 proto;
@@ -75,14 +75,14 @@ static int rxlat_recvmsg_raw(struct plgett *plget, struct timespec *ts)
 	return psize;
 }
 
-static int rxlat_recvmsg(struct plgett *plget, struct timespec *ts)
+static int rxlat_recvmsg(struct timespec *ts)
 {
 	int psize, err;
 
 	if (plget->pkt_type == PKT_XDP)
-		psize = xsk_recvmsg(plget, &plget->msg, ts);
+		psize = xsk_recvmsg(&plget->msg, ts);
 	else if (plget->pkt_type == PKT_RAW) {
-		psize = rxlat_recvmsg_raw(plget, ts);
+		psize = rxlat_recvmsg_raw(ts);
 	} else {
 		psize = recvmsg(plget->sfd, &plget->msg, 0);
 		err = clock_gettime(CLOCK_REALTIME, ts);
@@ -93,32 +93,32 @@ static int rxlat_recvmsg(struct plgett *plget, struct timespec *ts)
 	return psize;
 }
 
-void rxlat_proc_packet(struct plgett *plget)
+void rxlat_proc_packet(void)
 {
 	struct timespec ts;
 	int psize;
 
 	plget->msg.msg_controllen = sizeof(plget->control);
-	psize = rxlat_recvmsg(plget, &ts);
+	psize = rxlat_recvmsg(&ts);
 
 	if (psize < 0)
 		return perror("recvmsg");
 
-	rxlat_handle_ts(plget, &ts);
+	rxlat_handle_ts(&ts);
 	plget->sk_payload_size = psize;
 }
 
-int rxlat(struct plgett *plget)
+int rxlat(void)
 {
 	int i;
 
 	for (i = 0; i < plget->pkt_num; ++i)
-		rxlat_proc_packet(plget);
+		rxlat_proc_packet();
 
 	return 0;
 }
 
-static int rxrate_proc_packet(struct plgett *plget, struct timespec *ts)
+static int rxrate_proc_packet(struct timespec *ts)
 {
 	struct msghdr *msg = &plget->msg;
 	struct scm_timestamping *tss = NULL;
@@ -185,7 +185,7 @@ int rxrate_proc(void)
 
 		/* receive packet */
 		if (fds[0].revents & POLLIN) {
-			hw = rxrate_proc_packet(plget, &last);
+			hw = rxrate_proc_packet(&last);
 			if (hw >= 0) {
 				plget->frame_size += hsize;
 				dsize += plget->frame_size;
@@ -226,7 +226,7 @@ static int init_rxrate(void)
 	return plget_create_timer();
 }
 
-int rxrate(struct plgett *plget)
+int rxrate(void)
 {
 	int ret;
 

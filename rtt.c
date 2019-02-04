@@ -41,10 +41,10 @@ int rtt_proc(void)
 
 	for (i = 0; i < plget->pkt_num; ++i) {
 		if (plget->flags & PLF_PTP)
-			sid_wr(plget, htons((i & SEQ_ID_MASK) | sid));
-		tid_wr(plget, i);
-		txlat_proc_packet(plget);
-		rxlat_proc_packet(plget);
+			sid_wr(htons((i & SEQ_ID_MASK) | sid));
+		tid_wr(i);
+		txlat_proc_packet();
+		rxlat_proc_packet();
 
 		if (!timer)
 			continue;
@@ -77,7 +77,7 @@ int rtt_init(void)
 	return 0;
 }
 
-int rtt(struct plgett *plget)
+int rtt(void)
 {
 	int ret;
 

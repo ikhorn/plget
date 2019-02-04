@@ -17,6 +17,6 @@
 
 #include "plget.h"
 
-int echolat(struct plgett *plget);
+int echolat(void);
 
 #endif

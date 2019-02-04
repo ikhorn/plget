@@ -17,6 +17,6 @@
 
 #include "plget.h"
 
-int pktgen(struct plgett *plget);
+int pktgen(void);
 
 #endif

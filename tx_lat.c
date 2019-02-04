@@ -17,7 +17,7 @@
 
 #define MAX_LATENCY			5000
 
-static int init_tx_test(struct plgett *plget)
+static int init_tx_test(void)
 {
 	if (!ts_correct(&plget->interval))
 		plget->interval.tv_sec = 1;
@@ -25,7 +25,7 @@ static int init_tx_test(struct plgett *plget)
 	return plget_create_timer();
 }
 
-static int get_tx_tstamps(struct plgett *plget)
+static int get_tx_tstamps(void)
 {
 	struct scm_timestamping *tss = NULL;
 	struct msghdr *msg = &plget->msg;
@@ -68,13 +68,13 @@ static int get_tx_tstamps(struct plgett *plget)
 
 	if (!(plget->flags & PLF_TS_ID_ALLOWED)) {
 		/* check MAGIC number and get timestamp id */
-		magic = magic_rd(plget);
+		magic = magic_rd();
 		if (*magic != MAGIC) {
 			printf("incorrect MAGIC number 0x%x\n", *magic);
 			return -1;
 		}
 
-		ts_id = tid_rd(plget);
+		ts_id = tid_rd();
 	} else {
 		ts_id = serr->ee_data;
 	}
@@ -102,7 +102,7 @@ static int get_tx_tstamps(struct plgett *plget)
 	return 0;
 }
 
-static int txlat_sendto(struct plgett *plget)
+static int txlat_sendto(void)
 {
 	int ret;
 
@@ -113,11 +113,11 @@ static int txlat_sendto(struct plgett *plget)
 		return ret;
 	}
 
-	ret = xsk_sendto(plget);
+	ret = xsk_sendto();
 	return ret;
 }
 
-static int txlat_proc_packets(struct plgett *plget, int pkt_num)
+static int txlat_proc_packets(int pkt_num)
 {
 	int tx_cnt = 0, rx_cnt = 0;
 	int sid = plget->stream_id;
@@ -157,17 +157,16 @@ static int txlat_proc_packets(struct plgett *plget, int pkt_num)
 				return perror("Couldn't read timerfd"), -errno;
 
 			if (plget->flags & PLF_PTP)
-				sid_wr(plget,
-				       htons((tx_cnt & SEQ_ID_MASK) | sid));
+				sid_wr(htons((tx_cnt & SEQ_ID_MASK) | sid));
 
 			if (!(plget->flags & PLF_TS_ID_ALLOWED))
-				tid_wr(plget, tx_cnt);
+				tid_wr(tx_cnt);
 			if (++tx_cnt >= pkt_num)
 				plget_stop_timer();
 
 			/* send packet */
 			clock_gettime(CLOCK_REALTIME, &ts);
-			ret = txlat_sendto(plget);
+			ret = txlat_sendto();
 
 			stats_push(&tx_app_v, &ts);
 			if (ret != plget->sk_payload_size) {
@@ -180,7 +179,7 @@ static int txlat_proc_packets(struct plgett *plget, int pkt_num)
 
 		/* receive timestamps */
 		if (fds[0].revents & POLLERR) {
-			ret = get_tx_tstamps(plget);
+			ret = get_tx_tstamps();
 			if (ret < 0)
 				continue;
 
@@ -196,7 +195,7 @@ static int txlat_proc_packets(struct plgett *plget, int pkt_num)
  * txlat_proc_packet - send packet and receive hw or sw ts
  * @ plget - pointer on shared data
  */
-void txlat_proc_packet(struct plgett *plget)
+void txlat_proc_packet(void)
 {
 	int ts_num, rx_cnt = 0;
 	struct pollfd fds[1];
@@ -209,7 +208,7 @@ void txlat_proc_packet(struct plgett *plget)
 
 	/* send packet */
 	clock_gettime(CLOCK_REALTIME, &ts);
-	ret = txlat_sendto(plget);
+	ret = txlat_sendto();
 
 	stats_push(&tx_app_v, &ts);
 	if (ret != plget->sk_payload_size) {
@@ -233,7 +232,7 @@ void txlat_proc_packet(struct plgett *plget)
 
 		/* receive timestamps */
 		if (fds[0].revents & POLLERR) {
-			ret = get_tx_tstamps(plget);
+			ret = get_tx_tstamps();
 			if (ret < 0)
 				printf("Can't get tx timestamp\n");
 
@@ -243,15 +242,15 @@ void txlat_proc_packet(struct plgett *plget)
 	}
 }
 
-int txlat(struct plgett *plget)
+int txlat(void)
 {
 	int ret;
 
-	ret = init_tx_test(plget);
+	ret = init_tx_test();
 	if (ret)
 		return ret;
 
-	ret = txlat_proc_packets(plget, plget->pkt_num);
+	ret = txlat_proc_packets(plget->pkt_num);
 
 	close(plget->timer_fd);
 	return ret;

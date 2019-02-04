@@ -17,7 +17,7 @@
 
 #include "plget.h"
 
-int txlat(struct plgett *plget);
-void txlat_proc_packet(struct plgett *plget);
+int txlat(void);
+void txlat_proc_packet(void);
 
 #endif

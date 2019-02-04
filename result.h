@@ -15,8 +15,8 @@
 #ifndef PLGET_RES_H
 #define PLGET_RES_H
 
-void res_title_print(struct plgett *plget);
-void res_stats_print(struct plgett *plget);
+void res_title_print(void);
+void res_stats_print(void);
 void res_print_time(void);
 
 #endif

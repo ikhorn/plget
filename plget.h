@@ -139,12 +139,12 @@ void plget_stop_timer(void);
 struct stats *plget_best_rx_vect(void);
 struct stats *plget_best_tx_vect(void);
 
-static inline char *magic_rd(struct plgett *plget)
+static inline char *magic_rd(void)
 {
 	return (char *)(plget->data + plget->off_magic_rd);
 }
 
-static inline void tid_wr(struct plgett *plget, unsigned int tid)
+static inline void tid_wr(unsigned int tid)
 {
 	int i;
 	char *p1, *p2;
@@ -156,7 +156,7 @@ static inline void tid_wr(struct plgett *plget, unsigned int tid)
 		*p2++ = *p1++;
 }
 
-static inline unsigned int tid_rd(struct plgett *plget)
+static inline unsigned int tid_rd(void)
 {
 	unsigned int tid;
 	char *p1, *p2;
@@ -171,7 +171,7 @@ static inline unsigned int tid_rd(struct plgett *plget)
 	return tid;
 }
 
-static inline void sid_wr(struct plgett *plget, __u16 sid)
+static inline void sid_wr(__u16 sid)
 {
 	char *p1, *p2;
 

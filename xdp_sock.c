@@ -362,7 +362,7 @@ static struct sock_umem *umem_allocate(int sfd)
 	return umem;
 }
 
-int xdp_socket(struct plgett *plget)
+int xdp_socket(void)
 {
 	struct sockaddr_xdp *addr = (struct sockaddr_xdp *)&plget->sk_addr;
 	struct rlimit r = {RLIM_INFINITY, RLIM_INFINITY};
@@ -409,14 +409,14 @@ int xdp_socket(struct plgett *plget)
 
 	plget->xsk = xsk;
 
-	ret = xdp_load_prog(plget);
+	ret = xdp_load_prog();
 	if (ret)
 		return perror("cannot load xdp prog"), -errno;
 
 	return sfd;
 }
 
-int xsk_sendto(struct plgett *plget)
+int xsk_sendto(void)
 {
 	struct xsock *xsk = plget->xsk;
 	struct queue *tq = &xsk->tq;
@@ -530,7 +530,7 @@ static void xsk_get_ts(struct msghdr *msg)
 	msg->msg_controllen = CMSG_ALIGN(cmsg->cmsg_len);
 }
 
-int xsk_recvmsg(struct plgett *plget, struct msghdr *msg, struct timespec *ts2)
+int xsk_recvmsg(struct msghdr *msg, struct timespec *ts2)
 {
 	struct xsock *xsk = plget->xsk;
 	int len;

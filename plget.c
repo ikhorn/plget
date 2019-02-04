@@ -124,7 +124,7 @@ static int setup_sock_ts(int sfd, int flags)
 	return 0;
 }
 
-static int enable_hw_timestamping(struct plgett *plget)
+static int enable_hw_timestamping(void)
 {
 	struct hwtstamp_config hwconfig_requested;
 	struct hwtstamp_config hwconfig;
@@ -196,7 +196,7 @@ static int enable_hw_timestamping(struct plgett *plget)
 	return ret;
 }
 
-static int udp_socket(struct plgett *plget)
+static int udp_socket(void)
 {
 	struct sockaddr_in *addr = (struct sockaddr_in *)&plget->sk_addr;
 	int ip_multicast_loop = 0;
@@ -253,7 +253,7 @@ static int udp_socket(struct plgett *plget)
 	return sfd;
 }
 
-static void specify_protocol(struct plgett *plget, __u16 *protocol)
+static void specify_protocol(__u16 *protocol)
 {
 	if (plget->flags & PLF_AVTP)
 		*protocol = htons(ETH_P_TSN);
@@ -292,13 +292,13 @@ static int plget_mcast(int sfd)
 	return 0;
 }
 
-static int packet_socket(struct plgett *plget)
+static int packet_socket(void)
 {
 	struct sockaddr_ll *addr = &plget->sk_addr;
 	__u16 protocol;
 	int sfd, ret;
 
-	specify_protocol(plget, &protocol);
+	specify_protocol(&protocol);
 
 	if (plget->pkt_type == PKT_RAW) {
 		protocol = htons(ETH_P_ALL);
@@ -354,14 +354,14 @@ static int plget_more_sock_options(void)
 	return 0;
 }
 
-static int plget_create_socket(struct plgett *plget)
+static int plget_create_socket(void)
 {
 	if (plget->pkt_type == PKT_UDP)
-		plget->sfd = udp_socket(plget);
+		plget->sfd = udp_socket();
 	else if (plget->pkt_type == PKT_ETH || plget->pkt_type == PKT_RAW)
-		plget->sfd = packet_socket(plget);
+		plget->sfd = packet_socket();
 	else if (plget->pkt_type == PKT_XDP)
-		plget->sfd = xdp_socket(plget);
+		plget->sfd = xdp_socket();
 	else
 		plget_fail("uknown packet type");
 
@@ -375,7 +375,7 @@ static int plget_create_socket(struct plgett *plget)
 	return 0;
 }
 
-static void init_pkt_ether_header(struct plgett *plget)
+static void init_pkt_ether_header(void)
 {
 	struct ether_header *eth = (struct ether_header *)plget->pkt;
 	struct ether_addr *dst_addr, *src_addr;
@@ -386,10 +386,10 @@ static void init_pkt_ether_header(struct plgett *plget)
 	*dst_addr = plget->macaddr;
 	*src_addr = plget->if_addr;
 
-	specify_protocol(plget, &eth->ether_type);
+	specify_protocol(&eth->ether_type);
 }
 
-static void fill_in_packets(struct plgett *plget)
+static void fill_in_packets(void)
 {
 	int ptp_payload_size;
 	int n, i, j;
@@ -410,7 +410,7 @@ static void fill_in_packets(struct plgett *plget)
 		}
 
 		if (plget->pkt_type == PKT_RAW || plget->pkt_type == PKT_XDP) {
-			init_pkt_ether_header(plget);
+			init_pkt_ether_header();
 			dp = plget->pkt + ETH_HLEN;
 		} else {
 			dp = plget->pkt;
@@ -433,7 +433,7 @@ static void fill_in_packets(struct plgett *plget)
 		plget->pkt = plget->xsk->umem->frames;
 }
 
-static int plget_create_packet(struct plgett *plget)
+static int plget_create_packet(void)
 {
 	int payload_size;
 
@@ -481,11 +481,11 @@ static int plget_create_packet(struct plgett *plget)
 			return -ENOMEM;
 	}
 
-	fill_in_packets(plget);
+	fill_in_packets();
 	return 0;
 }
 
-static void fill_in_data_pointers(struct plgett *plget)
+static void fill_in_data_pointers(void)
 {
 	int off = 0;
 
@@ -542,19 +542,19 @@ void get_inf_addr(void)
 	plget->if_addr = *((struct ether_addr *)ifr.ifr_hwaddr.sa_data);
 }
 
-static int init_test(struct plgett *plget)
+static int init_test(void)
 {
 	int ts_flags = SOF_TIMESTAMPING_SOFTWARE;
 	int i, ret, mod = plget->mod;
 
-	ret = plget_create_socket(plget);
+	ret = plget_create_socket();
 	if (ret)
 		return ret;
 
 	get_inf_addr();
 
-	enable_hw_timestamping(plget);
-	res_title_print(plget);
+	enable_hw_timestamping();
+	res_title_print();
 
 	if (mod == RTT_MOD || mod == ECHO_LAT || mod == TX_LAT ||
 	    mod == RX_LAT)
@@ -598,7 +598,7 @@ static int init_test(struct plgett *plget)
 
 	/* create and fill in packet */
 	if (mod == RTT_MOD || mod == TX_LAT || mod == PKT_GEN) {
-		ret = plget_create_packet(plget);
+		ret = plget_create_packet();
 		if (ret)
 			return ret;
 	} else if (mod == ECHO_LAT) {
@@ -606,7 +606,7 @@ static int init_test(struct plgett *plget)
 	}
 
 	/* for simplicity and speed */
-	fill_in_data_pointers(plget);
+	fill_in_data_pointers();
 
 	ret = setup_sock_ts(plget->sfd, ts_flags);
 	return ret;
@@ -625,9 +625,9 @@ int main(int argc, char **argv)
 	if (!plget)
 		return -ENOMEM;
 
-	plget_args(plget, argc, argv);
+	plget_args(argc, argv);
 
-	ret = init_test(plget);
+	ret = init_test();
 	if (ret)
 		return ret;
 
@@ -637,22 +637,22 @@ int main(int argc, char **argv)
 
 	switch (plget->mod) {
 	case RX_LAT:
-		ret = rxlat(plget);
+		ret = rxlat();
 		break;
 	case TX_LAT:
-		ret = txlat(plget);
+		ret = txlat();
 		break;
 	case RTT_MOD:
-		ret = rtt(plget);
+		ret = rtt();
 		break;
 	case ECHO_LAT:
-		ret = echolat(plget);
+		ret = echolat();
 		break;
 	case PKT_GEN:
-		ret = pktgen(plget);
+		ret = pktgen();
 		break;
 	case RX_RATE:
-		ret = rxrate(plget);
+		ret = rxrate();
 		break;
 	default:
 		plget_fail("provid mode with -m");
@@ -663,7 +663,7 @@ int main(int argc, char **argv)
 		return ret;
 
 	xdp_unload_prog();
-	res_stats_print(plget);
+	res_stats_print();
 	free(plget);
 	exit(0);
 }

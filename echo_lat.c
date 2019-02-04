@@ -25,7 +25,7 @@
 #include "echo_lat.h"
 
 
-int echolat(struct plgett *plget)
+int echolat(void)
 {
 	struct ether_addr *dst_addr, *src_addr;
 	int type = plget->pkt_type;
@@ -35,7 +35,7 @@ int echolat(struct plgett *plget)
 	swap_addr = type == PKT_XDP || type == PKT_RAW;
 
 	for (i = 0; i < plget->pkt_num; ++i) {
-		rxlat_proc_packet(plget);
+		rxlat_proc_packet();
 
 		plget->pkt = plget->rx_pkt;
 
@@ -52,7 +52,7 @@ int echolat(struct plgett *plget)
 			*src_addr = plget->if_addr;
 		}
 
-		txlat_proc_packet(plget);
+		txlat_proc_packet();
 	}
 
 	return 0;

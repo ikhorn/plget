@@ -19,12 +19,12 @@
 
 #ifdef CONF_AFXDP
 
-int xdp_load_prog(struct plgett *plget);
+int xdp_load_prog(void);
 void xdp_unload_prog(void);
 
 #else
 
-inline static int xdp_load_prog(struct plgett *plget)
+inline static int xdp_load_prog(void)
 {
 	return 0;
 }

@@ -53,22 +53,22 @@ struct xsock {
 
 #ifdef CONF_AFXDP
 
-int xdp_socket(struct plgett *plget);
-int xsk_sendto(struct plgett *plget);
-int xsk_recvmsg(struct plgett *plget, struct msghdr *msg, struct timespec *ts);
+int xdp_socket(void);
+int xsk_sendto(void);
+int xsk_recvmsg(struct msghdr *msg, struct timespec *ts);
 
 #else
-inline static int xdp_socket(struct plgett *plget)
+inline static int xdp_socket(void)
 {
 	return 1;
 }
 
-inline static int xsk_sendto(struct plgett *plget)
+inline static int xsk_sendto(void)
 {
 	return 1;
 }
 
-inline static int xsk_recvmsg(struct plgett *plget, struct msghdr *msg, struct timespec *ts)
+inline static int xsk_recvmsg(struct msghdr *msg, struct timespec *ts)
 {
 	return 1;
 }

@@ -43,7 +43,7 @@ static void sig_exit(int sig)
 	exit(EXIT_SUCCESS);
 }
 
-int xdp_load_prog(struct plgett *plget)
+int xdp_load_prog(void)
 {
 	struct bpf_prog_load_attr prog_attr = {
 		.prog_type	= BPF_PROG_TYPE_XDP,

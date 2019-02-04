@@ -18,6 +18,6 @@
 #include "plget.h"
 
 void plget_fail(char *err);
-void plget_args(struct plgett *plget, int argc, char **argv);
+void plget_args(int argc, char **argv);
 
 #endif
