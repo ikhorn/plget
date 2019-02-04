@@ -68,16 +68,19 @@ static unsigned char ptpv2_sync_header[] = {
 
 #define PTP_HSIZE	sizeof(ptpv2_sync_header)
 
-int plget_setup_timer(struct plgett *plget)
+int plget_create_timer(void)
 {
-	int fd, ret;
-	struct itimerspec tspec = { 0 };
+	plget->timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
+	if (plget->timer_fd < 0)
+		return perror("Couldn't create timer"), -1;
 
-	fd = timerfd_create(CLOCK_MONOTONIC, 0);
-	if (fd < 0) {
-		perror("Couldn't create timer");
-		return -1;
-	}
+	return 0;
+}
+
+int plget_start_timer(void)
+{
+	struct itimerspec tspec = { 0 };
+	int ret;
 
 	tspec.it_value.tv_sec = 0;
 	tspec.it_value.tv_nsec = 100000;
@@ -85,14 +88,20 @@ int plget_setup_timer(struct plgett *plget)
 	tspec.it_interval.tv_sec = plget->interval.tv_sec;
 	tspec.it_interval.tv_nsec = plget->interval.tv_nsec;
 
-	ret = timerfd_settime(fd, 0, &tspec, NULL);
+	ret = timerfd_settime(plget->timer_fd, 0, &tspec, NULL);
 	if (ret < 0) {
 		perror("Couldn't set timer");
-		close(fd);
 		return -1;
 	}
 
-	return fd;
+	return 0;
+}
+
+void plget_stop_timer(void)
+{
+	struct itimerspec tspec = { 0 };
+
+	timerfd_settime(plget->timer_fd, 0, &tspec, NULL);
 }
 
 static int setup_sock_ts(int sfd, int flags)

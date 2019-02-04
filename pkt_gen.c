@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include "pkt_gen.h"
 #include <unistd.h>
+#include <errno.h>
 
 #define MAX_LATENCY			5000
 
@@ -48,28 +49,25 @@ static int fast_pktgen(struct plgett *plget)
 	return 0;
 }
 
-int pktgen(struct plgett *plget)
+int pktgen_proc(void)
 {
 	struct sockaddr *addr = (struct sockaddr *)&plget->sk_addr;
 	int dsize = plget->sk_payload_size;
-	int timer_fd, pnum, ret, i = 0;
 	char *packet = plget->pkt;
 	int sid = plget->stream_id;
 	int sfd = plget->sfd;
 	struct pollfd fds[1];
+	int pnum, ret, i = 0;
 	uint64_t exps;
 
-	if (!ts_correct(&plget->interval))
-		return fast_pktgen(plget);
+	ret = plget_start_timer();
+	if (ret)
+		return ret;
 
-	timer_fd = plget_setup_timer(plget);
-	if (timer_fd < 0)
-		goto err;
-
-	fds[0].fd = timer_fd;
+	fds[0].fd = plget->timer_fd;
 	fds[0].events = POLLIN;
 	pnum = plget->pkt_num ? plget->pkt_num : ~0;
-	for (i = 0;;) {
+	for (;;) {
 		ret = poll(fds, 1, MAX_LATENCY);
 		if (ret <= 0) {
 			if (!ret) {
@@ -83,11 +81,9 @@ int pktgen(struct plgett *plget)
 
 		/* time to send new packet */
 		if (fds[0].revents & POLLIN) {
-			ret = read(timer_fd, &exps, sizeof(exps));
-			if (ret < 0) {
-				perror("Couldn't read timerfd");
-				goto err;
-			}
+			ret = read(plget->timer_fd, &exps, sizeof(exps));
+			if (ret < 0)
+				return perror("Couldn't read timerfd"), -errno;
 
 			ret = sendto(sfd, packet, dsize, 0, addr,
 				     sizeof(plget->sk_addr));
@@ -100,10 +96,8 @@ int pktgen(struct plgett *plget)
 				goto err;
 			}
 
-			if (++i >= pnum) {
-				close(timer_fd);
+			if (++i >= pnum)
 				break;
-			}
 
 			*(__u16 *)(plget->off_sid_wr + plget->pkt) =
 				htons((i & SEQ_ID_MASK) | sid);
@@ -115,4 +109,21 @@ int pktgen(struct plgett *plget)
 err:
 	plget->pkt_num = i;
 	return -1;
+}
+
+int pktgen(struct plgett *plget)
+{
+	int ret;
+
+	if (!ts_correct(&plget->interval))
+		return fast_pktgen(plget);
+
+	ret = plget_create_timer();
+	if (ret)
+		return ret;
+
+	ret = pktgen_proc();
+
+	close(plget->timer_fd);
+	return ret;
 }

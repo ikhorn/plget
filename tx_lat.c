@@ -19,11 +19,10 @@
 
 static int init_tx_test(struct plgett *plget)
 {
-	if (ts_correct(&plget->interval))
-		return 0;
+	if (!ts_correct(&plget->interval))
+		plget->interval.tv_sec = 1;
 
-	plget->interval.tv_sec = 1;
-	return 0;
+	return plget_create_timer();
 }
 
 static int get_tx_tstamps(struct plgett *plget)
@@ -103,13 +102,6 @@ static int get_tx_tstamps(struct plgett *plget)
 	return 0;
 }
 
-static void txlat_stop_timer(int fd)
-{
-	struct itimerspec tspec = { 0 };
-
-	timerfd_settime(fd, 0, &tspec, NULL);
-}
-
 static int txlat_sendto(struct plgett *plget)
 {
 	int ret;
@@ -131,42 +123,38 @@ static int txlat_proc_packets(struct plgett *plget, int pkt_num)
 	int sid = plget->stream_id;
 	struct pollfd fds[2];
 	struct timespec ts;
-	int timer_fd, ret;
 	uint64_t exps;
 	int ts_num;
+	int ret;
 
 	ts_num = pkt_num * (plget->dev_deep + 1);
-	timer_fd = plget_setup_timer(plget);
-	if (timer_fd < 0)
-		return 1;
+
+	ret = plget_start_timer();
+	if (ret)
+		return ret;
 
 	fds[0].fd = plget->sfd;
 	fds[0].events = POLLERR;
-	fds[1].fd = timer_fd;
+	fds[1].fd = plget->timer_fd;
 	fds[1].events = POLLIN;
 
 	for (;;) {
 		ret = poll(fds, 2, MAX_LATENCY);
 		if (ret <= 0) {
 			if (!ret) {
-				ret = -1;
 				printf("Timed out, tx packets: %d, "
 				       "ts num: %d\n", tx_cnt, rx_cnt);
-				goto err;
+				return -1;
 			}
 
-			perror("Some error on poll()");
-			ret = -errno;
-			goto err;
+			return perror("Some error on poll()"), -errno;
 		}
 
 		/* time to send new packet */
 		if (fds[1].revents & POLLIN) {
-			ret = read(timer_fd, &exps, sizeof(exps));
-			if (ret < 0) {
-				perror("Couldn't read timerfd");
-				goto err;
-			}
+			ret = read(plget->timer_fd, &exps, sizeof(exps));
+			if (ret < 0)
+				return perror("Couldn't read timerfd"), -errno;
 
 			if (plget->flags & PLF_PTP)
 				sid_wr(plget,
@@ -175,7 +163,7 @@ static int txlat_proc_packets(struct plgett *plget, int pkt_num)
 			if (!(plget->flags & PLF_TS_ID_ALLOWED))
 				tid_wr(plget, tx_cnt);
 			if (++tx_cnt >= pkt_num)
-				txlat_stop_timer(timer_fd);
+				plget_stop_timer();
 
 			/* send packet */
 			clock_gettime(CLOCK_REALTIME, &ts);
@@ -201,10 +189,7 @@ static int txlat_proc_packets(struct plgett *plget, int pkt_num)
 		}
 	}
 
-	ret = 0;
-err:
-	close(timer_fd);
-	return ret;
+	return 0;
 }
 
 /*
@@ -267,5 +252,7 @@ int txlat(struct plgett *plget)
 		return ret;
 
 	ret = txlat_proc_packets(plget, plget->pkt_num);
+
+	close(plget->timer_fd);
 	return ret;
 }

@@ -157,37 +157,31 @@ static int rxrate_proc_packet(struct plgett *plget, struct timespec *ts)
 	return 0;
 }
 
-int rxrate(struct plgett *plget)
+int rxrate_proc(void)
 {
 	struct timespec interval, first, last;
 	int dsize = 0, pnum = 0, hw = 0;
 	int hsize = ETH_HLEN;
 	struct pollfd fds[2];
-	int timer_fd, ret;
 	uint64_t exps;
+	int ret;
 
 	if (plget->pkt_type == PKT_UDP)
 		hsize += 28;
 
-	if (!ts_correct(&plget->interval))
-		plget->interval.tv_sec = 1;
-
-	timer_fd = plget_setup_timer(plget);
-	if (timer_fd < 0)
-		return timer_fd;
+	ret = plget_start_timer();
+	if (ret)
+		return ret;
 
 	fds[0].fd = plget->sfd;
 	fds[0].events = POLLIN;
-	fds[1].fd = timer_fd;
+	fds[1].fd = plget->timer_fd;
 	fds[1].events = POLLIN;
 
 	for (;;) {
 		ret = poll(fds, 2, -1);
-		if (ret <= 0) {
-			perror("Some error on poll()");
-			ret = -errno;
-			goto err;
-		}
+		if (ret <= 0)
+			return perror("Some error on poll()"), -errno;
 
 		/* receive packet */
 		if (fds[0].revents & POLLIN) {
@@ -202,11 +196,9 @@ int rxrate(struct plgett *plget)
 
 		/* print speed */
 		if (fds[1].revents & POLLIN) {
-			ret = read(timer_fd, &exps, sizeof(uint64_t));
-			if (ret < 0) {
-				perror("Couldn't read timerfd");
-				goto err;
-			}
+			ret = read(plget->timer_fd, &exps, sizeof(uint64_t));
+			if (ret < 0)
+				return perror("Couldn't read timerfd"), -errno;
 
 			if (pnum <= 1) {
 				interval = plget->interval;
@@ -223,8 +215,27 @@ int rxrate(struct plgett *plget)
 		}
 	}
 
-	ret = 0;
-err:
-	close(timer_fd);
+	return 0;
+}
+
+static int init_rxrate(void)
+{
+	if (!ts_correct(&plget->interval))
+		plget->interval.tv_sec = 1;
+
+	return plget_create_timer();
+}
+
+int rxrate(struct plgett *plget)
+{
+	int ret;
+
+	ret = init_rxrate();
+	if (ret)
+		return ret;
+
+	ret = rxrate_proc();
+
+	close(plget->timer_fd);
 	return ret;
 }

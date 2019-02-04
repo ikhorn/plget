@@ -112,6 +112,7 @@ struct plgett {
 	int busypoll_time;
 	int stream_id;
 	int dev_deep;
+	int timer_fd;
 	struct xsock *xsk;	/* xdp soket info */
 
 	/* packet related info */
@@ -130,7 +131,11 @@ struct plgett {
 };
 
 int setup_sock(int sfd, int flags);
-int plget_setup_timer(struct plgett *plget);
+
+int plget_create_timer(void);
+int plget_start_timer(void);
+void plget_stop_timer(void);
+
 struct stats *plget_best_rx_vect(void);
 struct stats *plget_best_tx_vect(void);
 
