@@ -487,7 +487,7 @@ int xsk_poll(struct timespec *ts2)
 		goto err;
 
 	memcpy(&proto, data + ETH_ALEN * 2, sizeof(proto));
-	if (plget->flags & PLF_PTP && proto != htons(ETH_P_1588))
+	if ((plget->flags & PLF_PTP) && proto != htons(ETH_P_1588))
 		goto err;
 
 	plget->rx_pkt = data;

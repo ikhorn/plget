@@ -68,7 +68,7 @@ static int rxlat_recvmsg_raw(struct timespec *ts)
 			return -errno;
 
 		memcpy(&proto, plget->data + ETH_ALEN * 2, sizeof(proto));
-		if (plget->flags & PLF_PTP && proto == htons(ETH_P_1588))
+		if ((plget->flags & PLF_PTP) && proto == htons(ETH_P_1588))
 			break;
 	} while (0);
 
