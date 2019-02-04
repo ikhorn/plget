@@ -47,6 +47,7 @@ struct xsock {
 	struct queue rq;
 	struct queue tq;
 	struct sock_umem *umem;
+	struct xdp_desc desc; /* desc for rolling in echo-lat mode */
 	int sfd;
 };
 

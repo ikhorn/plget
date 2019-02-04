@@ -419,28 +419,34 @@ int xsk_sendto(struct plgett *plget)
 {
 	struct xsock *xsk = plget->xsk;
 	struct queue *tq = &xsk->tq;
-	struct xdp_desc desc;
-	__u64 addr;
+	struct xdp_desc *desc;
 	int roll;
 
-	addr = plget->pkt - xsk->umem->frames;
-	desc.addr = addr;
-	desc.len = plget->frame_size;
-	desc.options = 0;
-	if (tq_enq(tq, &desc, 1) == -ENOSPC)
+	desc = &xsk->desc;
+	if (plget->mod != ECHO_LAT) {
+		desc->addr = plget->pkt - xsk->umem->frames;
+		desc->len = plget->frame_size;
+		desc->options = 0;
+	}
+
+	if (tq_enq(tq, desc, 1) == -ENOSPC)
 		return 0;
 
 	/* kick */
 	if (sendto(xsk->sfd, NULL, 0, MSG_DONTWAIT, NULL, 0))
 		return perror("sendto"), -errno;
 
-	roll = (addr >> FRAME_SHIFT) >= FRAME_NUM - 1;
-	if (roll)
-		plget->pkt = xsk->umem->frames;
-	else
-		plget->pkt += FRAME_SIZE;
+	if (plget->mod != ECHO_LAT) {
+		roll = (desc->addr >> FRAME_SHIFT) >= FRAME_NUM - 1;
+		if (roll)
+			plget->pkt = xsk->umem->frames;
+		else
+			plget->pkt += FRAME_SIZE;
+	}
 
-	cq_deq(&xsk->umem->cq, &addr, 1);
+	if (cq_deq(&xsk->umem->cq, &desc->addr, 1) &&
+	    plget->mod == ECHO_LAT)
+		fq_enq(&plget->xsk->umem->fq, desc, 1);
 
 	return plget->sk_payload_size;
 }
@@ -450,13 +456,15 @@ static inline void *umem_get_data(struct xsock *xsk, __u64 addr)
 	return &xsk->umem->frames[addr];
 }
 
-int xsk_poll(struct xdp_desc *desc, struct timespec *ts2)
+int xsk_poll(struct timespec *ts2)
 {
 	struct xsock *xsk = plget->xsk;
+	struct xdp_desc *desc;
 	struct pollfd fds;
 	unsigned int ret;
 	__u16 proto;
 	char *data;
+
 
 	fds.fd = plget->sfd;
 	fds.events = POLLIN;
@@ -465,6 +473,7 @@ int xsk_poll(struct xdp_desc *desc, struct timespec *ts2)
 	if (ret <= 0)
 		return perror("Some error on poll()"), -errno;
 
+	desc = &xsk->desc;
 	ret = rq_deq(&xsk->rq, desc, 1);
 	if (!ret)
 		return -1;
@@ -489,7 +498,7 @@ err:
 	return -1;
 }
 
-static void xsk_get_tx(struct msghdr *msg)
+static void xsk_get_ts(struct msghdr *msg)
 {
 	struct scm_timestamping *tss;
 	struct timespec *ts1;
@@ -522,16 +531,17 @@ static void xsk_get_tx(struct msghdr *msg)
 
 int xsk_recvmsg(struct plgett *plget, struct msghdr *msg, struct timespec *ts2)
 {
-	struct xdp_desc desc;
+	struct xsock *xsk = plget->xsk;
 	int len;
 
 	do {
-		len = xsk_poll(&desc, ts2);
+		len = xsk_poll(ts2);
 	} while (len <= 0);
 
-	xsk_get_tx(msg);
+	xsk_get_ts(msg);
 
-	fq_enq(&plget->xsk->umem->fq, &desc, 1);
+	if (plget->mod != ECHO_LAT)
+		fq_enq(&plget->xsk->umem->fq, &xsk->desc, 1);
 
 	return len;
 }

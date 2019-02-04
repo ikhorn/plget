@@ -224,10 +224,7 @@ void txlat_proc_packet(struct plgett *plget)
 
 	/* send packet */
 	clock_gettime(CLOCK_REALTIME, &ts);
-	ret = sendto(plget->sfd, plget->pkt,
-			plget->sk_payload_size, 0,
-			(struct sockaddr *)&plget->sk_addr,
-			sizeof(plget->sk_addr));
+	ret = txlat_sendto(plget);
 
 	stats_push(&tx_app_v, &ts);
 	if (ret != plget->sk_payload_size) {
