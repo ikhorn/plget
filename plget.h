@@ -133,9 +133,9 @@ int plget_setup_timer(struct plgett *plget);
 struct stats *plget_best_rx_vect(void);
 struct stats *plget_best_tx_vect(void);
 
-static inline char *magic_rd(struct plgett *plget, int payload_size)
+static inline char *magic_rd(struct plgett *plget)
 {
-	return (char *)(plget->data + plget->off_magic_rd + payload_size);
+	return (char *)(plget->data + plget->off_magic_rd);
 }
 
 static inline void tid_wr(struct plgett *plget, unsigned int tid)
@@ -150,14 +150,14 @@ static inline void tid_wr(struct plgett *plget, unsigned int tid)
 		*p2++ = *p1++;
 }
 
-static inline unsigned int tid_rd(struct plgett *plget, int payload_size)
+static inline unsigned int tid_rd(struct plgett *plget)
 {
 	unsigned int tid;
 	char *p1, *p2;
 	int i;
 
 	p1 = (char *)&tid;
-	p2 = (char *)(plget->data + plget->off_tid_rd + payload_size);
+	p2 = (char *)(plget->data + plget->off_tid_rd);
 
 	for (i = 0; i < sizeof(tid); i++)
 		*p1++ = *p2++;

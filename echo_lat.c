@@ -27,7 +27,6 @@
 
 int echolat(struct plgett *plget)
 {
-	int off_magic_rd_base = plget->off_magic_rd;
 	struct ether_addr *dst_addr, *src_addr;
 	int type = plget->pkt_type;
 	struct ether_header *eth;
@@ -37,9 +36,6 @@ int echolat(struct plgett *plget)
 
 	for (i = 0; i < plget->pkt_num; ++i) {
 		rxlat_proc_packet(plget);
-		if (!(plget->flags & PLF_TS_ID_ALLOWED))
-			plget->off_magic_rd =
-				off_magic_rd_base - plget->sk_payload_size;
 
 		if (swap_addr) {
 			eth = (struct ether_header *)plget->pkt;

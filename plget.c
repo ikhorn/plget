@@ -506,9 +506,10 @@ static void fill_in_data_pointers(struct plgett *plget)
 		plget->off_magic_rd = off;
 		plget->off_tid_rd = off + 1;
 
-		if (plget->mod != ECHO_LAT) {
-			plget->off_magic_rd -= plget->sk_payload_size;
-			plget->off_tid_rd -= plget->sk_payload_size;
+		/* add sent_payload - sk_payload */
+		if (plget->pkt_type == PKT_ETH) {
+			plget->off_magic_rd += ETH_HLEN;
+			plget->off_tid_rd += ETH_HLEN;
 		}
 	}
 }

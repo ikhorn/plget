@@ -69,13 +69,13 @@ static int get_tx_tstamps(struct plgett *plget)
 
 	if (!(plget->flags & PLF_TS_ID_ALLOWED)) {
 		/* check MAGIC number and get timestamp id */
-		magic = magic_rd(plget, psize);
+		magic = magic_rd(plget);
 		if (*magic != MAGIC) {
 			printf("incorrect MAGIC number 0x%x\n", *magic);
 			return -1;
 		}
 
-		ts_id = tid_rd(plget, psize);
+		ts_id = tid_rd(plget);
 	} else {
 		ts_id = serr->ee_data;
 	}
