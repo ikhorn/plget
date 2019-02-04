@@ -80,7 +80,7 @@ Possible packet/sock types, set with -t key:
 * -t ptpl4	socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
 * -t udp	socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
 
-More:
+More info here:
 ~~~
 :~# plget -h
 ~~~
@@ -375,7 +375,7 @@ On board 1 (192.168.3.16):
 
 On board 2 (192.168.3.20):
 ~~~
-:~# plget -i eth0 -t udp -u 385 -m echo-lat -n 16 -l 512 -a 192.168.3.16
+:~# plget -i eth0 -t udp -u 385 -m echo-lat -n 16 -a 192.168.3.16
 ~~~
 
 Example 2: PTP l4 TX, RX latencies and RTT
@@ -389,7 +389,7 @@ On workstation (client):
 
 On target board:
 ~~~
-:~# plget -i eth0 -t udp -u 319 -m echo-lat -n 16 -l 512
+:~# plget -i eth0 -t udp -u 319 -m echo-lat -n 16
 ~~~
 
 By default multicast 224.0.1.129 address is used. In case the other is
@@ -406,7 +406,7 @@ On workstation (client 74:da:ea:47:7d:9d):
 
 On target board (c8:a0:30:b4:94:03):
 ~~~
-:~# plget -i eth0 -t avtp -m echo-lat -n 16 -l 512 -a 74:da:ea:47:7d:9d
+:~# plget -i eth0 -t avtp -m echo-lat -n 16 -a 74:da:ea:47:7d:9d
 ~~~
 
 Example 4: PTP l2 TX, RX latencies and RTT
