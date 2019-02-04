@@ -37,7 +37,7 @@ static int get_tx_tstamps(void)
 	struct stats *v;
 	char *magic;
 
-	plget->msg.msg_controllen = sizeof(plget->control);
+	msg->msg_controllen = sizeof(plget->control);
 	psize = recvmsg(plget->sfd, msg, MSG_ERRQUEUE);
 	if (psize < 0) {
 		perror("recvmsg error occured");
