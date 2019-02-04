@@ -254,6 +254,35 @@ static void specify_protocol(struct plgett *plget, __u16 *protocol)
 		*protocol = 0;
 }
 
+static int plget_mcast(void)
+{
+	__u8 *mac = (__u8 *)&plget->macaddr;
+	struct packet_mreq mreq;
+	int ret;
+
+	if (plget->mod == TX_LAT || plget->mod == PKT_GEN)
+		return 0;
+
+	 /* join multicast group if address is provided */
+	if (!(plget->flags & PLF_ADDR_SET))
+		return 0;
+
+	mreq.mr_ifindex = plget->ifidx;
+	mreq.mr_type = PACKET_MR_MULTICAST;
+	mreq.mr_alen = ETH_ALEN;
+	memcpy(&mreq.mr_address, mac, ETH_ALEN);
+
+	ret = setsockopt(plget->sfd, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mreq,
+			 sizeof(struct packet_mreq));
+	if (ret)
+		return perror("Cannot set PACKET_MEMBERSHIP"), -errno;
+
+	printf("joined mcast group: %02x:%02x:%02x:%02x:%02x:%02x\n",
+	       mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+	return 0;
+}
+
 static int packet_socket(struct plgett *plget)
 {
 	struct sockaddr_ll *addr = &plget->sk_addr;
@@ -286,6 +315,9 @@ static int packet_socket(struct plgett *plget)
 	addr->sll_halen = ETH_ALEN;
 	memcpy(addr->sll_addr, (__u8 *)&plget->macaddr, ETH_ALEN);
 
+	if (plget_mcast())
+		return -errno;
+
 	return sfd;
 }
 
@@ -313,40 +345,6 @@ static int plget_more_sock_options(void)
 	return 0;
 }
 
-static int plget_mcast(void)
-{
-	__u8 *mac = (__u8 *)&plget->macaddr;
-	struct packet_mreq mreq;
-	int ret;
-
-	if (plget->pkt_type == PKT_UDP)
-		return 0;
-
-	if (plget->mod == TX_LAT || plget->mod == PKT_GEN)
-		return 0;
-
-	 /* join multicast group if address is provided */
-	if (!(plget->flags & PLF_ADDR_SET))
-		return 0;
-
-	mreq.mr_ifindex = plget->ifidx;
-	mreq.mr_type = PACKET_MR_MULTICAST;
-	mreq.mr_alen = ETH_ALEN;
-	memcpy(&mreq.mr_address, mac, ETH_ALEN);
-
-	ret = setsockopt(plget->sfd, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mreq,
-			 sizeof(struct packet_mreq));
-	if (ret < 0) {
-		perror("Couldn't set PACKET_ADD_MEMBERSHIP");
-		return -errno;
-	}
-
-	printf("joined mcast group: %02x:%02x:%02x:%02x:%02x:%02x\n",
-	       mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-
-	return 0;
-}
-
 static int plget_create_socket(struct plgett *plget)
 {
 	if (plget->pkt_type == PKT_UDP)
@@ -363,9 +361,6 @@ static int plget_create_socket(struct plgett *plget)
 
 	/* set more socket options */
 	if (plget_more_sock_options())
-		return -errno;
-
-	if (plget_mcast())
 		return -errno;
 
 	return 0;
