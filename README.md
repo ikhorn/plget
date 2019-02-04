@@ -67,7 +67,6 @@ Build with AF_XDP support adding AFXDP=1:
 :~# make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- \
 	AFXDP=1 SYSROOT="path to RFS"
 ~~~
-
 Along with plget binary, the xsock_dispatch.o ebpf prog has to be copied on
 target board, if rx-lat mode is being used.
 
@@ -79,7 +78,6 @@ Possible packet/sock types, set with -t key:
 * -t avtp	socket(AF_PACKET, SOCK_DGRAM, ETH_P_TSN)
 * -t ptpl4	socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
 * -t udp	socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
-
 More info here:
 ~~~
 :~# plget -h
@@ -128,41 +126,37 @@ Use "-f lat,hwts,ipgap" if more printouts are needed, see "plget -h", as for
 the target board as for the server (if you need server latency too).
 
 ### Example 1: UDP RX latency
+----------
 Measure RX latency for UDP packets, port 385.
 
 On target board (192.168.3.16):
 ~~~
 :~# plget -i eth0 -t udp -u 385 -m rx-lat -n 16
 ~~~
-
 On client side generate appropriate packets:
 ~~~
 :~# plget -i eth0 -t udp -u 385 -m tx-lat -n 16 -s 100 -l 512 -a 192.168.3.16
 ~~~
 
 ### Example 2: PTP l4 RX latency
+----------
 Measure RX latency for PTP l4 packets (port 319), useful if the driver
 supports h/w timestamping only for PTP kind packets.
 
 On target board (192.168.3.16):
 ~~~
 :~# plget -i eth0 -t udp -u 319 -m rx-lat -n 16
-~~~
 or
-~~~
 :~# plget -i eth0 -t ptpl4 -m rx-lat -n 16
 ~~~
-
 On client side generate appropriate packets:
 ~~~
 :~# plget -i eth0 -t udp -u 319 -m tx-lat -n 16 -s 100 -l 512 -a 192.168.3.16
-~~~
 or
-~~~
 :~# plget -i eth0 -t ptpl4 -m tx-lat -n 16 -s 100 -l 512 -a 192.168.3.16
 ~~~
 
-Example 3: AVTP RX latency
+### Example 3: AVTP RX latency
 ----------
 Measure RX latency for avtp packets (IEEE 1722)
 
@@ -170,13 +164,12 @@ On target board (c8:a0:30:b4:94:03):
 ~~~
 :~# plget -i eth0 -t avtp -m rx-lat -n 16
 ~~~
-
 On client side generate appropriate packets:
 ~~~
 :~# plget -i eth0 -t avtp -m tx-lat -n 16 -s 100 -l 512 -a c8:a0:30:b4:94:03
 ~~~
 
-Example 4: PTP l2 RX latency
+### Example 4: PTP l2 RX latency
 ----------
 Measure RX latency for ptpl2 packets (IEEE 1588)
 
@@ -184,16 +177,14 @@ On target board (c8:a0:30:b4:94:03):
 ~~~
 :~# plget -i eth0 -t ptpl2 -m rx-lat -n 1600
 ~~~
-
 On client side generate appropriate packets:
 ~~~
 :~# plget -i eth0 -t ptpl2 -m pkt-gen -n 1600 -l 512 -s 400 -a 74:da:ea:47:7d:9d
 ~~~
-
 If address is not set for pkt-gen or tx-lat modes then default multicast address
 is used: 01:1B:19:00:00:00 in this case rx-lat should set address explicitly.
 
-Example 5: PTP l2 RX latency using raw sockets
+### Example 5: PTP l2 RX latency using raw sockets
 ----------
 Measure RX latency for ptpl2 packets (IEEE 1588)
 
@@ -203,12 +194,10 @@ On target board (c8:a0:30:b4:94:03):
 or
 :~# plget -i eth0 -t xdp_ptpl2 -m rx-lat -n 1600
 ~~~
-
 On client side generate appropriate packets:
 ~~~
 :~# plget -i eth0 -t ptpl2 -m pkt-gen -n 1600 -l 512 -s 400 -a 74:da:ea:47:7d:9d
 ~~~
-
 If address is not set for pkt-gen or tx-lat modes then default multicast address
 is used: 01:1B:19:00:00:00 in this case rx-lat should set address explicitly.
 
@@ -242,7 +231,7 @@ timestamping is supported ofc:
 
 Use "-f lat,hwts,ipgap" if more printouts are needed, see "plget -h".
 
-Example 1: UDP TX latency
+### Example 1: UDP TX latency
 ----------
 Measure TX latency for UDP packets, port 385.
 
@@ -250,7 +239,7 @@ Measure TX latency for UDP packets, port 385.
 :~# plget -i eth0 -t udp -u 385 -m tx-lat -n 16 -s 100 -l 512 -a 192.168.2.1
 ~~~
 
-Example 2: PTP l4 TX latency
+### Example 2: PTP l4 TX latency
 ----------
 Measure TX latency for PTP l4 packets (port 319), useful if a driver
 supports h/w timestamping only for PTP kind packets.
@@ -259,7 +248,7 @@ supports h/w timestamping only for PTP kind packets.
 :~# plget -i eth0 -t udp -u 319 -m tx-lat -n 16 -s 100 -l 512
 ~~~
 
-Example 3: AVTP TX latency
+### Example 3: AVTP TX latency
 ----------
 Measure TX latency for avtp packets (IEEE 1722).
 
@@ -267,17 +256,16 @@ Measure TX latency for avtp packets (IEEE 1722).
 :~# plget -i eth0 -t avtp -m tx-lat -n 16 -s 10 -l 512 -a 74:da:ea:47:7d:9d
 ~~~
 
-Example 4: PTP l2 TX latency
+### Example 4: PTP l2 TX latency
 ----------
 Measure TX latency for ptpl2 packets (IEEE 1588)
 
 ~~~
 :~# plget -i eth0 -t ptpl2 -m tx-lat -n 160 -l 512 -s 10 -a 74:da:ea:47:7d:9d
 ~~~
-
 If address is not specified then 01:1B:19:00:00:00 is used.
 
-Example 5:  PTP l2 TX latency and its packet scheduler part
+### Example 5: PTP l2 TX latency and its packet scheduler part
 ---------
 Measure TX latency for ptpl2 packet, but also get latency in
 packet scheduler (IEEE 1588)
@@ -286,15 +274,13 @@ packet scheduler (IEEE 1588)
 :~# plget -if=eth0 --type=ptpl2 --mode=tx-lat --pkt-num=16 --frame-size=512 \
 --format=sched,lat --pps=100
 ~~~
-
 or if vlan is used (one more sched ts):
-
 ~~~
 :~# plget -if=eth0.100 --type=ptpl2 --mode=tx-lat --pkt-num=16 \
 --frame-size=512 --format=sched,lat --pps=100 --dev-deep=2
 ~~~
 
-Example 6: PTP l2 TX latency using raw sockets
+### Example 6: PTP l2 TX latency using raw sockets
 ----------
 Measure TX latency for ptpl2 packets (IEEE 1588)
 
@@ -303,7 +289,6 @@ Measure TX latency for ptpl2 packets (IEEE 1588)
 or
 :~# plget -i eth0 -t xdp_ptpl2 -m tx-lat -n 160 -l 512 -s 10 -a 74:da:ea:47:7d:9d
 ~~~
-
 If address is not specified then 01:1B:19:00:00:00 is used.
 
 ## RTT and ECHO LATENCY EXAMPLES
@@ -361,10 +346,9 @@ timestamping is supported ofc:
 ~~~
 :~# phc2sys -s CLOCK_REALTIME -c eth0 -m -O 0 > /dev/null &
 ~~~
-
 Use "-f lat,hwts,ipgap" if more printouts are needed, see "plget -h".
 
-Example 1: UDP TX, RX latencies and RTT
+### Example 1: UDP TX, RX latencies and RTT
 ----------
 Measure TX, RX latencies and rtt for UDP packets, port 385.
 
@@ -372,13 +356,12 @@ On board 1 (192.168.3.16):
 ~~~
 :~# plget -i eth0 -t udp -u 385 -m rtt -n 16 -l 512 -a 192.168.3.20
 ~~~
-
 On board 2 (192.168.3.20):
 ~~~
 :~# plget -i eth0 -t udp -u 385 -m echo-lat -n 16 -a 192.168.3.16
 ~~~
 
-Example 2: PTP l4 TX, RX latencies and RTT
+### Example 2: PTP l4 TX, RX latencies and RTT
 ----------
 Measure TX, RX latencies and RTT for PTP l4.
 
@@ -386,16 +369,14 @@ On workstation (client):
 ~~~
 :~# plget -i eth0 -t udp -u 319 -m rtt -n 16 -l 512
 ~~~
-
 On target board:
 ~~~
 :~# plget -i eth0 -t udp -u 319 -m echo-lat -n 16
 ~~~
-
 By default multicast 224.0.1.129 address is used. In case the other is
 needed, use smth like -a 224.0.1.130 as for taget board as for client.
 
-Example 3: AVTP TX, RX latencies and RTT
+### Example 3: AVTP TX, RX latencies and RTT
 ----------
 Measure TX, RX latencies and RTT for avtp packets (IEEE 1722)
 
@@ -403,13 +384,12 @@ On workstation (client 74:da:ea:47:7d:9d):
 ~~~
 :~# plget -i eth0 -t avtp -m rtt -n 16 -l 512 -a c8:a0:30:b4:94:03
 ~~~
-
 On target board (c8:a0:30:b4:94:03):
 ~~~
 :~# plget -i eth0 -t avtp -m echo-lat -n 16 -a 74:da:ea:47:7d:9d
 ~~~
 
-Example 4: PTP l2 TX, RX latencies and RTT
+### Example 4: PTP l2 TX, RX latencies and RTT
 ----------
 Measure TX, RX latencies and RTT for ptpl2 packets (IEEE 1588)
 
@@ -417,50 +397,69 @@ On workstation (client 74:da:ea:47:7d:9d):
 ~~~
 :~# plget -i eth0 -t ptpl2 -m rtt -n 16 -l 512 -a c8:a0:30:b4:94:03
 ~~~
-
 On target board (c8:a0:30:b4:94:03):
 ~~~
 :~# plget -i eth0 -t ptpl2 -m echo-lat -n 16 -a 74:da:ea:47:7d:9d
 ~~~
-
 Or use default multicast group and run appropriately:
 ~~~
 :~# plget -i eth0 -t ptpl2 -m rtt -n 16 -l 512
 :~# plget -i eth0 -t ptpl2 -m echo-lat -n 16
 ~~~
 
+### Example 5: PTP l2 TX, RX latencies and RTT using raw sockets
+----------
+Measure TX, RX latencies and RTT for ptpl2 packets (IEEE 1588)
+
+On workstation (client 74:da:ea:47:7d:9d):
+~~~
+:~# plget -i eth0 -t raw_ptpl2 -m rtt -n 16 -l 512 -a c8:a0:30:b4:94:03
+or
+:~# plget -i eth0 -t xdp_ptpl2 -m rtt -n 16 -l 512 -a c8:a0:30:b4:94:03
+~~~
+On target board (c8:a0:30:b4:94:03):
+~~~
+:~# plget -i eth0 -t raw_ptpl2 -m echo-lat -n 16 -a 74:da:ea:47:7d:9d
+or
+:~# plget -i eth0 -t xdp_ptpl2 -m echo-lat -n 16 -a 74:da:ea:47:7d:9d
+or
+:~# plget -i eth0 -t ptpl2 -m echo-lat -n 16 -a 74:da:ea:47:7d:9d
+~~~
+Or use default multicast group and run appropriately:
+~~~
+:~# plget -i eth0 -t raw_ptpl2 -m rtt -n 16 -l 512
+:~# plget -i eth0 -t raw_ptpl2 -m echo-lat -n 16
+~~~
+
 ## RECEIVE RATE AND PACKET GEN MODES EXAMPLE
 On one side run packet generator, on another plget tool in "rx-rate" mode
 
-Example:
+### Example:
 --------
 
 On workstation, packet generator:
 ~~~
 :~# plget -i eth0 -t udp -u 385 -m pkt-gen -n 1600 -l 512 -s 103 -a 192.168.3.16
 ~~~
-
 On target board (192.168.3.16), measure periodically rate:
 ~~~
 :~# plget -i eth0 -t udp -u 385 -m rx-rate
 ~~~
-
 By default rate is measured once a second, but can be tuned with -s.
 For measurements h/w timestamps are used if possible, otherwise software.
 
 ## "HWTS" or/and "IPGAP" EXAMPLE
 For next examples, replace or add "ipgap" to -f command to get interpacket gap.
 
-Example 1:
+### Example 1:
 ----------
 Get plot, how packets are put on line:
 ~~~
 :~# plget -i eth0 -t ptpl2 -m tx-lat -n 16 -s 100 -l 512 -f hwts
 ~~~
-
 Packets are shown in relative to first packet ts time.
 
-Example 2:
+### Example 2:
 ----------
 To measure tx-lat or hwts with several applications in parallel, and print plots
 for two applications on the same time line (not relative to first ts time) the
