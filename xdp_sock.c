@@ -321,12 +321,13 @@ static int tx_ring_allocate(struct xsock *xsk)
 static int fq_populate(struct queue *fq)
 {
 	struct xdp_desc desc;
-	__u64 max_addr, *addr;
+	__u64 max_addr, min_addr, *addr;
 
 	addr = &desc.addr;
 	max_addr = FQ_DESC_NUM * FRAME_SIZE;
+	min_addr = plget->mod == RTT_MOD ? max_addr / 2 : 0;
 
-	for (*addr = 0; *addr < max_addr; *addr += FRAME_SIZE)
+	for (*addr = min_addr; *addr < max_addr; *addr += FRAME_SIZE)
 		if (fq_enq(fq, &desc, 1))
 			return perror("cannot populate fill queue"), -errno;
 
@@ -420,7 +421,7 @@ int xsk_sendto(struct plgett *plget)
 	struct xsock *xsk = plget->xsk;
 	struct queue *tq = &xsk->tq;
 	struct xdp_desc *desc;
-	int roll;
+	int roll, max_fnum;
 
 	desc = &xsk->desc;
 	if (plget->mod != ECHO_LAT) {
@@ -437,7 +438,8 @@ int xsk_sendto(struct plgett *plget)
 		return perror("sendto"), -errno;
 
 	if (plget->mod != ECHO_LAT) {
-		roll = (desc->addr >> FRAME_SHIFT) >= FRAME_NUM - 1;
+		max_fnum = plget->mod == RTT_MOD ? FRAME_NUM / 2 : FRAME_NUM;
+		roll = (desc->addr >> FRAME_SHIFT) >= --max_fnum;
 		if (roll)
 			plget->pkt = xsk->umem->frames;
 		else
@@ -465,7 +467,6 @@ int xsk_poll(struct timespec *ts2)
 	__u16 proto;
 	char *data;
 
-
 	fds.fd = plget->sfd;
 	fds.events = POLLIN;
 
@@ -489,7 +490,7 @@ int xsk_poll(struct timespec *ts2)
 	if (plget->flags & PLF_PTP && proto != htons(ETH_P_1588))
 		goto err;
 
-	plget->pkt = data;
+	plget->rx_pkt = data;
 
 	return desc->len;
 
@@ -506,7 +507,7 @@ static void xsk_get_ts(struct msghdr *msg)
 	char *data;
 	__u64 ns;
 
-	data = plget->pkt - 2 * sizeof(ns);
+	data = plget->rx_pkt - 2 * sizeof(ns);
 
 	cmsg = msg->msg_control;
 	cmsg->cmsg_len =

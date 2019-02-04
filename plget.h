@@ -116,6 +116,7 @@ struct plgett {
 
 	/* packet related info */
 	char *pkt;
+	char *rx_pkt;
 	int off_sid_wr;		/* PTP sequential id */
 	int off_tid_wr;		/* wr offset for ts id for identification */
 	int off_tid_rd;		/* rd offset for ts id for identification */

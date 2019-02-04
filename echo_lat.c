@@ -37,6 +37,8 @@ int echolat(struct plgett *plget)
 	for (i = 0; i < plget->pkt_num; ++i) {
 		rxlat_proc_packet(plget);
 
+		plget->pkt = plget->rx_pkt;
+
 		if (swap_addr) {
 			eth = (struct ether_header *)plget->pkt;
 			dst_addr = (struct ether_addr *)&eth->ether_dhost;

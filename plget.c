@@ -593,7 +593,7 @@ static int init_test(struct plgett *plget)
 		if (ret)
 			return ret;
 	} else if (mod == ECHO_LAT) {
-		plget->pkt = plget->data;
+		plget->rx_pkt = plget->data;
 	}
 
 	/* for simplicity and speed */
