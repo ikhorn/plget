@@ -17,19 +17,78 @@
 #include "rx_lat.h"
 #include "tx_lat.h"
 #include "rtt.h"
+#include <stdio.h>
+#include <unistd.h>
+#include <poll.h>
+#include <errno.h>
 
-int rtt(struct plgett *plget)
+#define MAX_LATENCY			5000
+
+int rtt_proc(void)
 {
 	int sid = plget->stream_id;
-	unsigned int i = 0;
+	struct pollfd fds;
+	unsigned int i;
+	int timer, ret;
+	uint64_t exps;
 
-	for (; i < plget->pkt_num; ++i) {
+	timer = ts_correct(&plget->interval);
+	if (timer) {
+		ret = plget_start_timer();
+		if (ret)
+			return ret;
+	}
+
+	for (i = 0; i < plget->pkt_num; ++i) {
 		if (plget->flags & PLF_PTP)
 			sid_wr(plget, htons((i & SEQ_ID_MASK) | sid));
 		tid_wr(plget, i);
 		txlat_proc_packet(plget);
 		rxlat_proc_packet(plget);
+
+		if (!timer)
+			continue;
+
+		fds.fd = plget->timer_fd;
+		fds.events = POLLIN;
+		ret = poll(&fds, 1, MAX_LATENCY);
+		if (ret <= 0)
+			return perror("Some error on timer poll()"), -errno;
+
+		ret = read(plget->timer_fd, &exps, sizeof(exps));
+		if (ret < 0)
+			return perror("Couldn't read timerfd"), -errno;
 	}
 
 	return 0;
+}
+
+int rtt_init(void)
+{
+	int ret;
+
+	if (!ts_correct(&plget->interval))
+		return 0;
+
+	ret = plget_create_timer();
+	if (ret)
+		return ret;
+
+	return 0;
+}
+
+int rtt(struct plgett *plget)
+{
+	int ret;
+
+	ret = rtt_init();
+	if (ret)
+		return ret;
+
+	ret = rtt_proc();
+
+	if (ts_correct(&plget->interval))
+		close(plget->timer_fd);
+
+	return ret;
 }
