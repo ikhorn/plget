@@ -368,10 +368,14 @@ Measure TX, RX latencies and RTT for PTP l4.
 On workstation (client):
 ~~~
 :~# plget -i eth0 -t udp -u 319 -m rtt -n 16 -l 512
+or
+:~# plget -i eth0 -t ptpl4 -m rtt -n 16 -l 512
 ~~~
 On target board:
 ~~~
 :~# plget -i eth0 -t udp -u 319 -m echo-lat -n 16
+or
+:~# plget -i eth0 -t ptpl4 -m echo-lat -n 16
 ~~~
 By default multicast 224.0.1.129 address is used. In case the other is
 needed, use smth like -a 224.0.1.130 as for taget board as for client.
