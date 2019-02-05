@@ -209,6 +209,9 @@ static void plget_check_args(void)
 			printf("Cannot specify port for non UDP packets\n");
 		break;
 	case PKT_XDP:
+		if (mod == TX_LAT || mod == PKT_GEN)
+			plget_fail("Mode is not supported for af_xdp for now");
+
 		plget_set_ptp_default_macaddr();
 
 		if (plget->if_name[0] == '\0')
