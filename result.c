@@ -346,7 +346,7 @@ void res_stats_print(void)
 		pnum = n | n2;
 	}
 
-	if (mod == RX_LAT) {
+	if (mod == RX_LAT || mod == ECHO_LAT) {
 		header_size = (plget->pkt_type == PKT_RAW ||
 			       plget->pkt_type == PKT_XDP) ? 0 : ETH_HLEN;
 
