@@ -48,9 +48,9 @@ static void plget_usage(void)
 	       "mode\n");
 	printf("\tn NUM\t\t--pkt-num=NUM\t\t:number of packets to be sent or "
 	       "received\n");
-	printf("\tl SIZE\t\t--frame-size=SIZE\t\t:packet frame size (total) in "
+	printf("\tl SIZE\t\t--frame-size=SIZE\t:packet frame size (total) in "
 	       "bytes\n");
-	printf("\ta ADDR\t--address=ADDR\t:ip or mac address depending on the "
+	printf("\ta ADDR\t\t--address=ADDR\t\t:ip or mac address depending on the "
 	       "mode\n");
 	printf("\tc \t\t--clock-check\t\t:print title along with system and "
 	       "ptp clock counts, no arguments\n");
@@ -74,11 +74,15 @@ static void plget_usage(void)
 	       "output instead of first packet timestamp, in ns\n");
 	printf("\tk ID\t\t--stream-id=ID\t\t:set stream num to identify PTP "
 	       "stream (with seq_id) to differ on h/w level\n");
-	printf("\td NUM\t\t--dev-deep=NUM\t\t:number of devices on tx path, "
-	       "used only for \"sched\" format and vlan or/and bridge is used, "
-	       "by default 1 is used. That is if vlan + bridge then -d 3, and "
-	       "so on, basically it's equal to number of sched timestamps "
-	       "expected\n");
+
+	printf("\td NUM\t\t--dev-deep=NUM\t\t:number of devices on tx path to "
+	       "get latencies between, used only for\n");
+	printf("\t\t\t\t\t\t\"sched\" format and vlan or/and bridge is used, "
+	       "by default 1 is used.\n");
+	printf("\t\t\t\t\t\tThat is, if vlan + bridge then -d 3, and so on, "
+	       "basically it's equal to\n");
+	printf("\t\t\t\t\t\tnumber of sched timestamps expected\n");
+
 	printf("\tq QUEUE\t\t--queue=QUEUE\t\t:set queue for xpd socket\n");
 	printf("\tz \t\t--zero-copy\t\t:force zero-copy XDP mode (not tested)\n");
 
@@ -209,7 +213,7 @@ static void plget_check_args(void)
 			printf("Cannot specify port for non UDP packets\n");
 		break;
 	case PKT_XDP:
-		if (mod == TX_LAT || mod == PKT_GEN)
+		if (mod == RX_RATE || mod == PKT_GEN)
 			plget_fail("Mode is not supported for af_xdp for now");
 
 		plget_set_ptp_default_macaddr();
