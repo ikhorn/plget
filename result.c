@@ -235,14 +235,12 @@ static void res_rtt_print(void)
 		b_ts_base = "app";
 	}
 
-	printf("round trip time measurements based on "
-		"tx %s ts and rx %s ts\n", a_ts_base, b_ts_base);
+	printf("RTT (round trip time) for this HOST based on "
+		"tx %s and rx %s timestamps\n", a_ts_base, b_ts_base);
 
 	stats_diff(b_stat, a_stat, &temp);
-	stats_print("\nround trip time (doesn't include rx and "
-		    "tx latencies printed above, based on "
-		    "send/receive NICs h/w or closest s/w "
-		    "timestamps), us", &temp, print_flags, NULL);
+	stats_print("\nRTT (doesn't include rx/tx latencies of this HOST, us",
+		    &temp, print_flags, NULL);
 }
 
 static struct stats *res_best_rx_vect(void)
