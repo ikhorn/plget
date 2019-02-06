@@ -4,8 +4,7 @@ driver and on the wire, trace interpacket gap, based as on h/w as on sw
 timestamping, as for RX as for TX path. It can be used to measure complete
 latency from wire to an application and from an application to wire, round
 trip time (RTT) and more. The plget tool uses socket interface and works
-with UDP and PTP l2/l4 packets. Also an extension is being adding to work
-with AF_XDP sockets.
+with UDP and PTP l2/l4 packets.
 
 Can be useful for developers to trace hw timestamps when packets were sent or
 received in case of some shaping verification, like CBS Qdisc in both, offload
