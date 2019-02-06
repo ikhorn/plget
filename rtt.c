@@ -24,7 +24,7 @@
 
 #define MAX_LATENCY			5000
 
-int rtt_proc(void)
+static int rtt_proc(void)
 {
 	int sid = plget->stream_id;
 	struct pollfd fds;
@@ -34,6 +34,9 @@ int rtt_proc(void)
 
 	timer = ts_correct(&plget->interval);
 	if (timer) {
+		fds.fd = plget->timer_fd;
+		fds.events = POLLIN;
+
 		ret = plget_start_timer();
 		if (ret)
 			return ret;
@@ -50,8 +53,6 @@ int rtt_proc(void)
 		if (!timer)
 			continue;
 
-		fds.fd = plget->timer_fd;
-		fds.events = POLLIN;
 		ret = poll(&fds, 1, MAX_LATENCY);
 		if (ret <= 0)
 			return perror("Some error on timer poll()"), -errno;
@@ -64,7 +65,7 @@ int rtt_proc(void)
 	return 0;
 }
 
-int rtt_init(void)
+static int rtt_init(void)
 {
 	int ret;
 
