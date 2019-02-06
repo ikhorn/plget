@@ -77,6 +77,7 @@ Possible packet/sock types, set with -t key:
 * -t avtp	socket(AF_PACKET, SOCK_DGRAM, ETH_P_TSN)
 * -t ptpl4	socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
 * -t udp	socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
+
 More info here:
 ~~~
 :~# plget -h
