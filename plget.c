@@ -263,6 +263,11 @@ static void specify_protocol(__u16 *protocol)
 		*protocol = 0;
 }
 
+static int mac_is_mcast(__u8 *mac)
+{
+	return 0x01 & mac[0];
+}
+
 static int plget_mcast(int sfd)
 {
 	__u8 *mac = (__u8 *)&plget->macaddr;
@@ -272,8 +277,11 @@ static int plget_mcast(int sfd)
 	if (plget->mod == TX_LAT || plget->mod == PKT_GEN)
 		return 0;
 
-	 /* join multicast group if address is provided */
+	 /* join multicast group if mcast address is provided */
 	if (!(plget->flags & PLF_ADDR_SET))
+		return 0;
+
+	if (!mac_is_mcast(mac))
 		return 0;
 
 	mreq.mr_ifindex = plget->ifidx;
