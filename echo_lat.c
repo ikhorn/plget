@@ -17,20 +17,37 @@
 #include <linux/errqueue.h>
 #include <net/ethernet.h>
 #include <stdio.h>
+#include <unistd.h>
 #include "plget.h"
 #include "stat.h"
 #include <errno.h>
 #include "tx_lat.h"
 #include "rx_lat.h"
 #include "echo_lat.h"
+#include <poll.h>
+#include <errno.h>
 
+#define MAX_LATENCY			5000
 
-int echolat(void)
+static int echolat_proc(void)
 {
 	struct ether_addr *dst_addr, *src_addr;
 	int type = plget->pkt_type;
 	struct ether_header *eth;
+	struct pollfd fds;
 	int swap_addr, i;
+	int timer, ret;
+	uint64_t exps;
+
+	timer = ts_correct(&plget->interval);
+	if (timer) {
+		fds.fd = plget->timer_fd;
+		fds.events = POLLIN;
+
+		ret = plget_start_timer();
+		if (ret)
+			return ret;
+	}
 
 	swap_addr = type == PKT_XDP || type == PKT_RAW;
 
@@ -52,8 +69,48 @@ int echolat(void)
 			*src_addr = plget->if_addr;
 		}
 
+		if (timer) {
+			ret = poll(&fds, 1, MAX_LATENCY);
+			if (ret <= 0)
+				return perror("Some error on timer poll()"), -errno;
+
+			ret = read(plget->timer_fd, &exps, sizeof(exps));
+			if (ret < 0)
+				return perror("Couldn't read timerfd"), -errno;
+		}
+
 		txlat_proc_packet();
 	}
 
 	return 0;
+}
+
+static int echolat_init(void)
+{
+	int ret;
+
+	if (!ts_correct(&plget->interval))
+		return 0;
+
+	ret = plget_create_timer();
+	if (ret)
+		return ret;
+
+	return 0;
+}
+
+int echolat(void)
+{
+	int ret;
+
+	ret = echolat_init();
+	if (ret)
+		return ret;
+
+	ret = echolat_proc();
+
+	if (ts_correct(&plget->interval))
+		close(plget->timer_fd);
+
+	return ret;
 }
