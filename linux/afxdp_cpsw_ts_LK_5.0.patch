@@ -1,0 +1,261 @@
+From a66d4c8c27636d3d09701e58440a80872d26b555 Mon Sep 17 00:00:00 2001
+From: Ivan Khoronzhuk <ivan.khoronzhuk@linaro.org>
+Date: Wed, 16 Jan 2019 03:19:24 +0200
+Subject: [PATCH] cpsw: add rx h/w ts to xdp_data buffer
+
+On rx side it's Ok to add directly to the frame, but in case of tx,
+when ts can be delayed, no way except error queue. By a big account
+both of them could be in error queue or in descriptor field. Get ts only
+for PTPl2 packets as no any reason on other types.
+
+Signed-off-by: Ivan Khoronzhuk <ivan.khoronzhuk@linaro.org>
+---
+ drivers/net/ethernet/ti/cpsw.c | 17 ++++++-
+ drivers/net/ethernet/ti/cpts.c | 92 ++++++++++++++++++++++++++++++++++
+ drivers/net/ethernet/ti/cpts.h |  1 +
+ net/xdp/xsk.c                  | 32 +++++++++++-
+ 4 files changed, 138 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/ethernet/ti/cpsw.c b/drivers/net/ethernet/ti/cpsw.c
+index b75a6a4b652d..03e309fd1805 100644
+--- a/drivers/net/ethernet/ti/cpsw.c
++++ b/drivers/net/ethernet/ti/cpsw.c
+@@ -1020,6 +1020,7 @@ static void cpsw_rx_handler(void *token, int len, int status)
+ 	struct cpsw_priv	*priv;
+ 	struct sk_buff		*skb;
+ 	struct xdp_buff		xdp;
++	ktime_t			ts;
+ 
+ 	if (cpsw->data.dual_emac) {
+ 		port = CPDMA_RX_SOURCE_PORT(status);
+@@ -1054,8 +1055,6 @@ static void cpsw_rx_handler(void *token, int len, int status)
+ 
+ 	priv = netdev_priv(ndev);
+ 	if (priv->xdp_prog) {
+-		xdp_set_data_meta_invalid(&xdp);
+-
+ 		if (status & CPDMA_RX_VLAN_ENCAP) {
+ 			xdp.data = (u8 *)token + CPSW_HEADROOM +
+ 				   CPSW_RX_VLAN_ENCAP_HDR_SIZE;
+@@ -1069,6 +1068,20 @@ static void cpsw_rx_handler(void *token, int len, int status)
+ 		xdp.data_hard_start = token;
+ 		xdp.rxq = &priv->xdp_rxq[ch];
+ 
++		xdp.data_meta = xdp.data - 2 * sizeof(ts);
++
++		/* set hw ts got by NIC */
++		if (priv->rx_ts_enabled) {
++			cpts_xdp_rx_timestamp(cpsw->cpts, &xdp);
++		} else {
++			((char *)xdp.data_meta)[0] = 0;
++			((char *)xdp.data_meta)[1] = 0;
++		}
++
++		/* set sw ts just before "xdp stack" entrance */
++		ts = ktime_get_real();
++		memcpy(xdp.data_meta + sizeof(ts), &ts, sizeof(ts));
++
+ 		ret = cpsw_run_xdp(priv, &xdp);
+ 		if (!ret)
+ 			goto requeue;
+diff --git a/drivers/net/ethernet/ti/cpts.c b/drivers/net/ethernet/ti/cpts.c
+index 2a9ba4acd7fa..1495af5a725a 100644
+--- a/drivers/net/ethernet/ti/cpts.c
++++ b/drivers/net/ethernet/ti/cpts.c
+@@ -43,6 +43,9 @@ struct cpts_skb_cb_data {
+ static int cpts_match(struct sk_buff *skb, unsigned int ptp_class,
+ 		      u16 ts_seqid, u8 ts_msgtype);
+ 
++static int cpts_xdp_match(struct xdp_buff *xdp, unsigned int ptp_class,
++			  u16 ts_seqid, u8 ts_msgtype);
++
+ static int event_expired(struct cpts_event *event)
+ {
+ 	return time_after(jiffies, event->tmo);
+@@ -338,6 +341,44 @@ static const struct ptp_clock_info cpts_info = {
+ 	.do_aux_work	= cpts_overflow_check,
+ };
+ 
++static int cpts_xdp_match(struct xdp_buff *xdp, unsigned int ptp_class,
++			  u16 ts_seqid, u8 ts_msgtype)
++{
++	u16 *seqid;
++	unsigned int offset = 0;
++	u8 *msgtype, *data = xdp->data;
++	int len = xdp->data_end - xdp->data;
++
++	if (ptp_class & PTP_CLASS_VLAN)
++		offset += VLAN_HLEN;
++
++	switch (ptp_class & PTP_CLASS_PMASK) {
++	case PTP_CLASS_IPV4:
++		offset += ETH_HLEN + IPV4_HLEN(data + offset) + UDP_HLEN;
++		break;
++	case PTP_CLASS_IPV6:
++		offset += ETH_HLEN + IP6_HLEN + UDP_HLEN;
++		break;
++	case PTP_CLASS_L2:
++		offset += ETH_HLEN;
++		break;
++	default:
++		return 0;
++	}
++
++	if (len + ETH_HLEN < offset + OFF_PTP_SEQUENCE_ID + sizeof(*seqid))
++		return 0;
++
++	if (unlikely(ptp_class & PTP_CLASS_V1))
++		msgtype = data + offset + OFF_PTP_CONTROL;
++	else
++		msgtype = data + offset;
++
++	seqid = (u16 *)(data + offset + OFF_PTP_SEQUENCE_ID);
++
++	return (ts_msgtype == (*msgtype & 0xf) && ts_seqid == ntohs(*seqid));
++}
++
+ static int cpts_match(struct sk_buff *skb, unsigned int ptp_class,
+ 		      u16 ts_seqid, u8 ts_msgtype)
+ {
+@@ -375,6 +416,44 @@ static int cpts_match(struct sk_buff *skb, unsigned int ptp_class,
+ 	return (ts_msgtype == (*msgtype & 0xf) && ts_seqid == ntohs(*seqid));
+ }
+ 
++static u64 cpts_xdp_find_rxts(struct cpts *cpts, struct xdp_buff *xdp)
++{
++	unsigned int class = PTP_CLASS_V2 | PTP_CLASS_L2;
++	struct ethhdr *hdr = xdp->data;
++	struct list_head *this, *next;
++	struct cpts_event *event;
++	unsigned long flags;
++	u64 ns = 0;
++	u16 seqid;
++	u8 mtype;
++
++	if (ntohs(hdr->h_proto) != ETH_P_1588)
++		return 0;
++
++	spin_lock_irqsave(&cpts->lock, flags);
++	cpts_fifo_read(cpts, -1);
++	list_for_each_safe(this, next, &cpts->events) {
++		event = list_entry(this, struct cpts_event, list);
++		if (event_expired(event)) {
++			list_del_init(&event->list);
++			list_add(&event->list, &cpts->pool);
++			continue;
++		}
++		mtype = (event->high >> MESSAGE_TYPE_SHIFT) & MESSAGE_TYPE_MASK;
++		seqid = (event->high >> SEQUENCE_ID_SHIFT) & SEQUENCE_ID_MASK;
++		if (event_type(event) == CPTS_EV_RX &&
++		    cpts_xdp_match(xdp, class, seqid, mtype)) {
++			ns = timecounter_cyc2time(&cpts->tc, event->low);
++			list_del_init(&event->list);
++			list_add(&event->list, &cpts->pool);
++			break;
++		}
++	}
++
++	spin_unlock_irqrestore(&cpts->lock, flags);
++	return ns;
++}
++
+ static u64 cpts_find_ts(struct cpts *cpts, struct sk_buff *skb, int ev_type)
+ {
+ 	u64 ns = 0;
+@@ -425,6 +504,19 @@ static u64 cpts_find_ts(struct cpts *cpts, struct sk_buff *skb, int ev_type)
+ 	return ns;
+ }
+ 
++void cpts_xdp_rx_timestamp(struct cpts *cpts, struct xdp_buff *xdp)
++{
++	ktime_t ns;
++
++	ns = cpts_xdp_find_rxts(cpts, xdp);
++	if (!ns)
++		return;
++
++	ns = ns_to_ktime(ns);
++	memcpy(xdp->data_meta, &ns, sizeof(ns));
++}
++EXPORT_SYMBOL_GPL(cpts_xdp_rx_timestamp);
++
+ void cpts_rx_timestamp(struct cpts *cpts, struct sk_buff *skb)
+ {
+ 	u64 ns;
+diff --git a/drivers/net/ethernet/ti/cpts.h b/drivers/net/ethernet/ti/cpts.h
+index d2c7decd59b6..629089a42134 100644
+--- a/drivers/net/ethernet/ti/cpts.h
++++ b/drivers/net/ethernet/ti/cpts.h
+@@ -129,6 +129,7 @@ struct cpts {
+ };
+ 
+ void cpts_rx_timestamp(struct cpts *cpts, struct sk_buff *skb);
++void cpts_xdp_rx_timestamp(struct cpts *cpts, struct xdp_buff *xdp);
+ void cpts_tx_timestamp(struct cpts *cpts, struct sk_buff *skb);
+ int cpts_register(struct cpts *cpts);
+ void cpts_unregister(struct cpts *cpts);
+diff --git a/net/xdp/xsk.c b/net/xdp/xsk.c
+index 949d3bbccb2f..b3d576d302c8 100644
+--- a/net/xdp/xsk.c
++++ b/net/xdp/xsk.c
+@@ -262,6 +262,7 @@ static int xsk_generic_xmit(struct sock *sk, struct msghdr *m,
+ 		skb->priority = sk->sk_priority;
+ 		skb->mark = sk->sk_mark;
+ 		skb_shinfo(skb)->destructor_arg = (void *)(long)addr;
++		skb_setup_tx_timestamp(skb, sk->sk_tsflags);
+ 		skb->destructor = xsk_destruct_skb;
+ 
+ 		err = dev_direct_xmit(skb, xs->queue_id);
+@@ -693,6 +694,33 @@ static struct proto xsk_proto = {
+ 	.obj_size =	sizeof(struct xdp_sock),
+ };
+ 
++static int xsk_ioctl(struct socket *sock, unsigned int cmd, unsigned long arg)
++{
++	struct sock *sk = sock->sk;
++
++	switch (cmd) {
++	case SIOCGSTAMP:
++		return sock_get_timestamp(sk, (struct timeval __user *)arg);
++	case SIOCGSTAMPNS:
++		return sock_get_timestampns(sk, (struct timespec __user *)arg);
++	default:
++		return -ENOIOCTLCMD;
++	}
++	return 0;
++}
++
++static int xsk_recvmsg(struct socket *sock, struct msghdr *msg, size_t len,
++		       int flags)
++{
++	int err = -EINVAL;
++
++	if (flags & MSG_ERRQUEUE)
++		err = sock_recv_errqueue(sock->sk, msg, len, SOL_PACKET,
++					 PACKET_TX_TIMESTAMP);
++
++	return err;
++}
++
+ static const struct proto_ops xsk_proto_ops = {
+ 	.family		= PF_XDP,
+ 	.owner		= THIS_MODULE,
+@@ -703,13 +731,13 @@ static const struct proto_ops xsk_proto_ops = {
+ 	.accept		= sock_no_accept,
+ 	.getname	= sock_no_getname,
+ 	.poll		= xsk_poll,
+-	.ioctl		= sock_no_ioctl,
++	.ioctl		= xsk_ioctl,
+ 	.listen		= sock_no_listen,
+ 	.shutdown	= sock_no_shutdown,
+ 	.setsockopt	= xsk_setsockopt,
+ 	.getsockopt	= xsk_getsockopt,
+ 	.sendmsg	= xsk_sendmsg,
+-	.recvmsg	= sock_no_recvmsg,
++	.recvmsg	= xsk_recvmsg,
+ 	.mmap		= xsk_mmap,
+ 	.sendpage	= sock_no_sendpage,
+ };
+-- 
+2.17.1
+

@@ -48,9 +48,9 @@ This tool can do the following:
 ## For regular + af_xdp sockets
 This is not required and not everywhere present.
 Except plget, it requires also kernel patching for now (no generic LK support),
-for tx the generic patch for tx can be applied (find here in github), for rx
-also NIC specific patch (for h/w ts). At this moment here is only patch for TI
-cpsw driver that can be used as an example.
+can be found under ./linux, at this moment only for cpsw . At this moment here
+is only patch for TI cpsw driver that can be used as an example:
+./linux/afxdp_cpsw_ts_LK_5.0.patch
 
 For AF_XDP sockets plget requires at least libbpf library, and it can be
 integrated with RFS environment so for cross-compilation SYSROOT address can be
