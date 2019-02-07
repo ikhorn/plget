@@ -117,7 +117,8 @@ struct plgett {
 	struct xsock *xsk;	/* xdp soket info */
 
 	/* rt print */
-	unsigned long icnt;
+	unsigned long icnt; /* current iteration for progress bar */
+	unsigned long inum; /* number of iterations for progress bar */
 
 	/* packet related info */
 	char *pkt;

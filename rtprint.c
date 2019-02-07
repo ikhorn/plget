@@ -12,18 +12,31 @@
  * GNU General Public License for more details.
  */
 
-
 #include <stdio.h>
 #include <unistd.h>
 #include "plget.h"
+#include "debug.h"
 
 void *rtprint(void *arg)
 {
+	unsigned long cnt;
+
+	pr_progress_bar("Measuring: ", plget->icnt, 100);
+
 	for (;;) {
-		sleep(1);
-		printf("\rpkt_num = %lu", plget->icnt);
+		cnt = plget->icnt;
+
+		if (plget->inum)
+			pr_progress_bar("Measuring: ", plget->icnt, plget->inum);
+
 		fflush(stdout);
+
+		if (cnt == plget->inum)
+			break;
+
+		sleep(1);
 	}
+	printf("\n");
 
 	return 0;
 }

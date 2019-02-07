@@ -119,15 +119,19 @@ static int txlat_sendto(void)
 
 static int txlat_proc_packets(int pkt_num)
 {
-	int tx_cnt = 0, rx_cnt = 0;
+	unsigned long ts_num, tx_cnt, *rx_cnt;
 	int sid = plget->stream_id;
 	struct pollfd fds[2];
 	struct timespec ts;
 	uint64_t exps;
-	int ts_num;
 	int ret;
 
+	rx_cnt = &plget->icnt;
+	*rx_cnt = 0;
+	tx_cnt = 0;
+
 	ts_num = pkt_num * (plget->dev_deep + 1);
+	plget->inum = ts_num;
 
 	ret = plget_start_timer();
 	if (ret)
@@ -142,8 +146,8 @@ static int txlat_proc_packets(int pkt_num)
 		ret = poll(fds, 2, MAX_LATENCY);
 		if (ret <= 0) {
 			if (!ret) {
-				printf("Timed out, tx packets: %d, "
-				       "ts num: %d\n", tx_cnt, rx_cnt);
+				printf("Timed out, tx packets: %lu, "
+				       "ts num: %lu\n", tx_cnt, *rx_cnt);
 				return -1;
 			}
 
@@ -183,7 +187,7 @@ static int txlat_proc_packets(int pkt_num)
 			if (ret < 0)
 				continue;
 
-			if (++rx_cnt >= ts_num)
+			if (++(*rx_cnt) >= ts_num)
 				break;
 		}
 	}

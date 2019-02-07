@@ -625,7 +625,7 @@ static int init_test(void)
 int main(int argc, char **argv)
 {
 	int ret;
-	pthread_t pt;
+	pthread_t rt_thd;
 
 	if (argc == 1) {
 		res_print_time();
@@ -647,7 +647,7 @@ int main(int argc, char **argv)
 		perror("mlockall failed");
 
 	if (plget->flags & PLF_RT_PRINT)
-		ret = pthread_create(&pt, NULL, rtprint, NULL);
+		ret = pthread_create(&rt_thd, NULL, rtprint, NULL);
 
 	switch (plget->mod) {
 	case RX_LAT:
@@ -669,7 +669,7 @@ int main(int argc, char **argv)
 		ret = rxrate();
 		break;
 	default:
-		plget_fail("provid mode with -m");
+		plget_fail("provide mode with -m");
 		break;
 	}
 
@@ -677,6 +677,12 @@ int main(int argc, char **argv)
 		return ret;
 
 	xdp_unload_prog();
+
+	if (plget->flags & PLF_RT_PRINT) {
+		plget->icnt = plget->inum = plget->pkt_num;
+		pthread_join(rt_thd, NULL);
+	}
+
 	res_stats_print();
 	free(plget);
 	exit(0);

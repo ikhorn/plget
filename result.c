@@ -364,4 +364,6 @@ void res_stats_print(void)
 
 	if (mod == RX_LAT || mod == ECHO_LAT)
 		stats_vrate_print(res_best_rx_vect(), plget->frame_size);
+
+	printf("\n");
 }
