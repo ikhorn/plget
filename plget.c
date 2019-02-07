@@ -36,6 +36,8 @@
 #include "result.h"
 #include "xdp_sock.h"
 #include "xdp_prog_load.h"
+#include <pthread.h>
+#include "rtprint.h"
 
 #define ALIGN_ROUNDUP(x, align)\
 	((align) * (((x) + align - 1) / (align)))
@@ -623,6 +625,7 @@ static int init_test(void)
 int main(int argc, char **argv)
 {
 	int ret;
+	pthread_t pt;
 
 	if (argc == 1) {
 		res_print_time();
@@ -642,6 +645,9 @@ int main(int argc, char **argv)
 	/* lock current and future pages */
 	if (mlockall(MCL_CURRENT | MCL_FUTURE))
 		perror("mlockall failed");
+
+	if (plget->flags & PLF_RT_PRINT)
+		ret = pthread_create(&pt, NULL, rtprint, NULL);
 
 	switch (plget->mod) {
 	case RX_LAT:

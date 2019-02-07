@@ -92,6 +92,8 @@ static void plget_usage(void)
 	       "possible impact of mmio calls while h/w ts retrieve\n");
 	printf("\t\t\t\t\t\t\"clock_check\" - print title along with system "
 	       "and ptp clock counts\n");
+	printf("\t\t\t\t\t\t\"rt_print\" - print real time results while "
+	       "running\n");
 }
 
 static struct option plget_options[] = {
@@ -365,6 +367,9 @@ static void plget_set_option(void)
 
 	if (strstr(optarg, "clock_check"))
 		plget->flags |= PLF_TITLE;
+
+	if (strstr(optarg, "rt_print"))
+		plget->flags |= PLF_RT_PRINT;
 }
 
 static void plget_set_relative_time(void)
