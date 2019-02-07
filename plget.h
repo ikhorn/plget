@@ -116,6 +116,9 @@ struct plgett {
 	int timer_fd;
 	struct xsock *xsk;	/* xdp soket info */
 
+	/* rt print */
+	unsigned long icnt;
+
 	/* packet related info */
 	char *pkt;
 	char *rx_pkt;
