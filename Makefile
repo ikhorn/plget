@@ -1,5 +1,5 @@
 CFLAGS += -g -Wall
-LDFLAGS += -lm
+LDFLAGS += -lm -lpthread
 
 ifdef SYSROOT
 CFLAGS += --sysroot=${SYSROOT}
@@ -7,8 +7,8 @@ endif
 
 CC=$(CROSS_COMPILE)gcc
 
-ALL_SOURCES :=  debug.c echo_lat.c pkt_gen.c plget_args.c plget.c result.c rtt.c \
-rx_lat.c stat.c tx_lat.c
+ALL_SOURCES := debug.c rtprint.c echo_lat.c pkt_gen.c plget_args.c \
+plget.c result.c rtt.c rx_lat.c stat.c tx_lat.c
 
 ifdef AFXDP
 all: sub_libbpf plget

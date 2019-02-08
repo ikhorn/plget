@@ -1,5 +1,6 @@
 #include "debug.h"
 #include <stdio.h>
+#include <string.h>
 
 void db_dump_buf(void *data, int size)
 {
@@ -34,4 +35,25 @@ void db_dump_buf(void *data, int size)
 			}
 		}
 	}
+}
+
+#define PROGRESS_WIDTH				72
+
+void pr_progress_bar(char label[], int step, int total)
+{
+	int width, pos, percent, i;
+
+	width = PROGRESS_WIDTH - strlen(label); /* minus label len */
+	pos = (step * width) / total ;
+	percent = (step * 100) / total;
+
+	printf("%s[", label);
+
+	/* fill progress bar with = */
+	for (i = 0; i < pos; i++)
+		printf( "%c", '=' );
+
+	/* fill progress bar with spaces */
+	printf("%*c", width - pos + 1, ']');
+	printf(" %3d%%\r", percent);
 }

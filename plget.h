@@ -62,6 +62,7 @@ extern struct plgett *plget;
 #define PLF_DIS_HW_TS			BIT(14)
 #define PLF_ADDR_SET			BIT(15)
 #define PLF_PROG_LOADED			BIT(16)
+#define PLF_RT_PRINT			BIT(17)
 
 #define PLF_PRINTOUT			(PLF_HW_STAT |\
 					PLF_HW_GAP_STAT |\
@@ -114,6 +115,10 @@ struct plgett {
 	int dev_deep;
 	int timer_fd;
 	struct xsock *xsk;	/* xdp soket info */
+
+	/* rt print */
+	unsigned long icnt; /* current iteration for progress bar */
+	unsigned long inum; /* number of iterations for progress bar */
 
 	/* packet related info */
 	char *pkt;
