@@ -110,9 +110,8 @@ void rxlat_proc_packet(void)
 
 int rxlat(void)
 {
-	int i;
-
-	for (i = 0; i < plget->pkt_num; ++i)
+	plget->inum = plget->pkt_num;
+	for (plget->icnt = 0; plget->icnt < plget->pkt_num; ++plget->icnt)
 		rxlat_proc_packet();
 
 	return 0;
