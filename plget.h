@@ -149,10 +149,10 @@ static inline char *magic_rd(void)
 	return (char *)(plget->data + plget->off_magic_rd);
 }
 
-static inline void tid_wr(unsigned int tid)
+static inline void tid_wr(__u32 tid)
 {
-	int i;
 	char *p1, *p2;
+	int i;
 
 	p1 = (char *)&tid;
 	p2 = (char *)(plget->off_tid_wr + plget->pkt);
@@ -163,8 +163,8 @@ static inline void tid_wr(unsigned int tid)
 
 static inline unsigned int tid_rd(void)
 {
-	unsigned int tid;
 	char *p1, *p2;
+	__u32 tid;
 	int i;
 
 	p1 = (char *)&tid;
