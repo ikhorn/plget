@@ -33,10 +33,9 @@ static int echolat_proc(void)
 {
 	struct ether_addr *dst_addr, *src_addr;
 	int type = plget->pkt_type;
+	int swap_addr, timer, ret;
 	struct ether_header *eth;
 	struct pollfd fds;
-	int swap_addr, i;
-	int timer, ret;
 	uint64_t exps;
 
 	timer = ts_correct(&plget->interval);
@@ -51,7 +50,8 @@ static int echolat_proc(void)
 
 	swap_addr = type == PKT_XDP || type == PKT_RAW;
 
-	for (i = 0; i < plget->pkt_num; ++i) {
+	plget->inum = plget->pkt_num;
+	for (plget->icnt = 0; plget->icnt < plget->pkt_num; ++plget->icnt) {
 		rxlat_proc_packet();
 
 		plget->pkt = plget->rx_pkt;
