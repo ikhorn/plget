@@ -33,8 +33,8 @@ static int get_tx_tstamps(void)
 	int i, ts_type, psize;
 	struct cmsghdr *cmsg;
 	struct timespec *ts;
-	unsigned int ts_id;
 	struct stats *v;
+	__u32 ts_id;
 	char *magic;
 
 	msg->msg_controllen = sizeof(plget->control);
@@ -119,12 +119,13 @@ static int txlat_sendto(void)
 
 static int txlat_proc_packets(void)
 {
-	unsigned long ts_num, tx_cnt, *rx_cnt;
+	unsigned long ts_num, *rx_cnt;
 	int sid = plget->stream_id;
 	struct pollfd fds[2];
 	struct timespec ts;
 	int pkt_num, ret;
 	uint64_t exps;
+	__u32 tx_cnt;
 
 	pkt_num = plget->pkt_num;
 
@@ -148,8 +149,8 @@ static int txlat_proc_packets(void)
 		ret = poll(fds, 2, MAX_LATENCY);
 		if (ret <= 0) {
 			if (!ret) {
-				printf("Timed out, tx packets: %lu, "
-				       "ts num: %lu\n", tx_cnt, *rx_cnt);
+				printf("Timed out, tx packets: %lu, ts num:"
+				       "%lu\n", (unsigned long)tx_cnt, *rx_cnt);
 				return -1;
 			}
 
