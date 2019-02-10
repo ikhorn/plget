@@ -28,7 +28,6 @@ static int rtt_proc(void)
 {
 	int sid = plget->stream_id;
 	struct pollfd fds;
-	unsigned int i;
 	int timer, ret;
 	uint64_t exps;
 
@@ -42,11 +41,12 @@ static int rtt_proc(void)
 			return ret;
 	}
 
-	for (i = 0; i < plget->pkt_num; ++i) {
+	plget->inum = plget->pkt_num;
+	for (plget->icnt = 0; plget->icnt < plget->pkt_num; ++plget->icnt) {
 		if (plget->flags & PLF_PTP)
-			sid_wr(htons((i & SEQ_ID_MASK) | sid));
+			sid_wr(htons((plget->icnt & SEQ_ID_MASK) | sid));
 		if (!(plget->flags & PLF_TS_ID_ALLOWED))
-			tid_wr(i);
+			tid_wr(plget->icnt);
 		txlat_proc_packet();
 		rxlat_proc_packet();
 
