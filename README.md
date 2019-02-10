@@ -90,8 +90,9 @@ relevant, "ipgap" means time between neighbor h/w timestamps and useful to see
 how h/w shaping behaves in case of several streams etc. The "lat" is set by
 default, but only if -f option is not used. All can be used in one line
 "-f lat,hwts,ipgap". Also, if stack latency before entering packet scheduler is
-needed, -f "sched" can be ued, relevant only for modes with TX, like echo-lat,
-rtt, tx-lat.
+needed, -f "sched" can be used, relevant only for modes with TX, like echo-lat,
+rtt, tx-lat. Also if no worries about printing progress bar while measurements,
+the -o "rt_print" can be set.
 
 # EXAMPLES
 
