@@ -19,7 +19,7 @@
 #include <math.h>
 #include <string.h>
 
-#define LOG_ENTRY_SIZE		18
+#define LOG_ENTRY_SIZE		15
 #define LOG_BASE		8
 #define LOG_LINE_SIZE		(LOG_BASE * LOG_ENTRY_SIZE + 1)
 
@@ -217,7 +217,7 @@ static void stats_print_log(struct stats *ss, int flags, struct timespec *rtime)
 			if (!(to_num(ss, ts) % LOG_BASE))
 				printf("\n");
 
-			printf(" %15g |", val);
+			printf(" %*g |", LOG_ENTRY_SIZE - 3, val);
 		}
 
 		if (flags & STATS_GAP_DATA) {
