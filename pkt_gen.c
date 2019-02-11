@@ -27,14 +27,14 @@ static int fast_pktgen(void)
 	char *packet = plget->pkt;
 	int sid = plget->stream_id;
 	int sfd = plget->sfd;
-	int pnum, ret, i = 0;
+	int ret;
 
-	pnum = plget->pkt_num ? plget->pkt_num : ~0;
-	for (i = 0; i < pnum; i++) {
+	plget->inum = plget->pkt_num ? plget->pkt_num : ~0;
+	for (plget->icnt = 0; plget->icnt < plget->inum; plget->icnt++) {
 		if (plget->flags & PLF_PTP)
-			sid_wr(htons((i & SEQ_ID_MASK) | sid));
+			sid_wr(htons((plget->icnt & SEQ_ID_MASK) | sid));
 
-		tid_wr(i);
+		tid_wr(plget->icnt);
 		ret = sendto(sfd, packet, dsize, 0, addr,
 			     sizeof(plget->sk_addr));
 		if (ret != dsize) {
@@ -43,12 +43,12 @@ static int fast_pktgen(void)
 			else
 				perror("cannot send whole packet\n");
 
-			return -1;
+			break;
 		}
 	}
 
-	plget->pkt_num = i;
-	return 0;
+	plget->pkt_num = plget->icnt;
+	return !(plget->icnt == plget->inum);
 }
 
 int pktgen_proc(void)
