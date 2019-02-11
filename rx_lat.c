@@ -28,7 +28,7 @@
 
 #define RATE_INERVAL			1
 
-void rxlat_handle_ts(struct timespec *ts)
+static void rxlat_handle_ts(struct timespec *ts, __u32 ts_id)
 {
 	struct scm_timestamping *tss = NULL;
 	struct msghdr *msg = &plget->msg;
@@ -48,9 +48,15 @@ void rxlat_handle_ts(struct timespec *ts)
 		return;
 	}
 
-	stats_push(&rx_sw_v, tss->ts);
-	stats_push(&rx_hw_v, tss->ts + 2);
-	stats_push(&rx_app_v, ts);
+	if (plget->flags & PLF_TS_ID_ALLOWED) {
+		stats_push(&rx_sw_v, tss->ts);
+		stats_push(&rx_hw_v, tss->ts + 2);
+		stats_push(&rx_app_v, ts);
+	} else {
+		stats_push_id(&rx_sw_v, tss->ts, ts_id);
+		stats_push_id(&rx_hw_v, tss->ts + 2, ts_id);
+		stats_push_id(&rx_app_v, ts, ts_id);
+	}
 }
 
 static int rxlat_recvmsg_raw(struct timespec *ts)
@@ -75,19 +81,53 @@ static int rxlat_recvmsg_raw(struct timespec *ts)
 	return psize;
 }
 
-static int rxlat_recvmsg(struct timespec *ts)
+static int rxlat_recvmsg_xdp(struct timespec *ts)
+{
+	int psize;
+	__u16 proto;
+
+	do {
+		psize = xsk_recvmsg(&plget->msg, ts);
+
+		if (psize < 0)
+			return -errno;
+
+		memcpy(&proto, plget->rx_pkt + ETH_ALEN * 2, sizeof(proto));
+		if ((plget->flags & PLF_PTP) && proto == htons(ETH_P_1588))
+			break;
+	} while (0);
+
+	return psize;
+}
+
+static int rxlat_recvmsg(struct timespec *ts, __u32 *ts_id)
 {
 	int psize, err;
+	char *magic;
 
-	if (plget->pkt_type == PKT_XDP)
-		psize = xsk_recvmsg(&plget->msg, ts);
-	else if (plget->pkt_type == PKT_RAW) {
-		psize = rxlat_recvmsg_raw(ts);
-	} else {
-		psize = recvmsg(plget->sfd, &plget->msg, 0);
-		err = clock_gettime(CLOCK_REALTIME, ts);
-		if (err)
-			return -1;
+	for (;;) {
+		if (plget->pkt_type == PKT_XDP)
+			psize = rxlat_recvmsg_xdp(ts);
+		else if (plget->pkt_type == PKT_RAW) {
+			psize = rxlat_recvmsg_raw(ts);
+		} else {
+			psize = recvmsg(plget->sfd, &plget->msg, 0);
+			err = clock_gettime(CLOCK_REALTIME, ts);
+			if (err)
+				return -1;
+		}
+
+		if (plget->flags & PLF_TS_ID_ALLOWED)
+			break;
+
+		/* check magic number */
+		magic = magic_rx_rd();
+		if (*magic == MAGIC) {
+			*ts_id = tid_rx_rd();
+			break;
+		}
+
+		printf("incorrect MAGIC number 0x%x\n", *magic);
 	}
 
 	return psize;
@@ -96,15 +136,16 @@ static int rxlat_recvmsg(struct timespec *ts)
 void rxlat_proc_packet(void)
 {
 	struct timespec ts;
+	__u32 ts_id;
 	int psize;
 
 	plget->msg.msg_controllen = sizeof(plget->control);
-	psize = rxlat_recvmsg(&ts);
+	psize = rxlat_recvmsg(&ts, &ts_id);
 
 	if (psize < 0)
 		return perror("recvmsg");
 
-	rxlat_handle_ts(&ts);
+	rxlat_handle_ts(&ts, ts_id);
 	plget->sk_payload_size = psize;
 }
 

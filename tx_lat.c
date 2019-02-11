@@ -33,8 +33,8 @@ static int get_tx_tstamps(void)
 	int i, ts_type, psize;
 	struct cmsghdr *cmsg;
 	struct timespec *ts;
-	unsigned int ts_id;
 	struct stats *v;
+	__u32 ts_id;
 	char *magic;
 
 	msg->msg_controllen = sizeof(plget->control);

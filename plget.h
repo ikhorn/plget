@@ -126,13 +126,15 @@ struct plgett {
 	int off_sid_wr;		/* PTP sequential id */
 	int off_tid_wr;		/* wr offset for ts id for identification */
 	int off_tid_rd;		/* rd offset for ts id for identification */
-	int off_magic_rd;	/* magic num to validate packet */
+	int off_magic_rd;	/* rd offset for magic num for validation */
 
 	/* rx packet related info */
 	char data[ETH_DATA_LEN];
 	char control[CONTROL_LEN];
 	struct iovec iov;
 	struct msghdr msg;
+	int off_tid_rx_rd;	/* rx rd offset for ts id for identification */
+	int off_magic_rx_rd;	/* rx rd offset magic num for validation */
 };
 
 int setup_sock(int sfd, int flags);
@@ -143,6 +145,11 @@ void plget_stop_timer(void);
 
 struct stats *plget_best_rx_vect(void);
 struct stats *plget_best_tx_vect(void);
+
+static inline char *magic_rx_rd(void)
+{
+	return (char *)(plget->rx_pkt + plget->off_magic_rx_rd);
+}
 
 static inline char *magic_rd(void)
 {
@@ -161,7 +168,7 @@ static inline void tid_wr(__u32 tid)
 		*p2++ = *p1++;
 }
 
-static inline unsigned int tid_rd(void)
+static inline __u32 tid_rd(void)
 {
 	char *p1, *p2;
 	__u32 tid;
@@ -169,6 +176,21 @@ static inline unsigned int tid_rd(void)
 
 	p1 = (char *)&tid;
 	p2 = (char *)(plget->data + plget->off_tid_rd);
+
+	for (i = 0; i < sizeof(tid); i++)
+		*p1++ = *p2++;
+
+	return tid;
+}
+
+static inline __u32 tid_rx_rd(void)
+{
+	char *p1, *p2;
+	__u32 tid;
+	int i;
+
+	p1 = (char *)&tid;
+	p2 = (char *)(plget->pkt + plget->off_tid_rx_rd);
 
 	for (i = 0; i < sizeof(tid); i++)
 		*p1++ = *p2++;

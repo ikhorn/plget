@@ -506,8 +506,7 @@ static void fill_in_data_pointers(void)
 	plget->msg.msg_control = plget->control;
 	plget->msg.msg_controllen = sizeof(plget->control);
 
-	if (plget->mod == RX_LAT || plget->mod == RX_RATE)
-		return;
+	plget->rx_pkt = plget->data;
 
 	if (plget->pkt_type == PKT_XDP || plget->pkt_type == PKT_RAW)
 		off += ETH_HLEN;
@@ -525,8 +524,11 @@ static void fill_in_data_pointers(void)
 		plget->off_magic_rd = off;
 		plget->off_tid_rd = off + 1;
 
+		plget->off_magic_rx_rd = off;
+		plget->off_tid_rx_rd = off + 1;
+
 		/* add sent_payload - sk_payload */
-		if (plget->pkt_type == PKT_ETH) {
+		if (plget->pkt_type == PKT_ETH && plget->mod != RX_LAT) {
 			plget->off_magic_rd += ETH_HLEN;
 			plget->off_tid_rd += ETH_HLEN;
 		}
@@ -611,8 +613,6 @@ static int init_test(void)
 		ret = plget_create_packet();
 		if (ret)
 			return ret;
-	} else if (mod == ECHO_LAT) {
-		plget->rx_pkt = plget->data;
 	}
 
 	/* for simplicity and speed */
