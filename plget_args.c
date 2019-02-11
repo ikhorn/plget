@@ -150,6 +150,9 @@ static void plget_check_args(void)
 	int mod = plget->mod;
 	int need_addr;
 
+	if (mod == RX_RATE)
+		plget->flags &= ~PLF_RT_PRINT;
+
 	if (plget->flags & PLF_SCHED_STAT) {
 		/* as always present some packet scheduler
 		 * TODO: identify virtual interface and increase to 2
