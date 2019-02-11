@@ -33,6 +33,8 @@ static int fast_pktgen(void)
 	for (i = 0; i < pnum; i++) {
 		if (plget->flags & PLF_PTP)
 			sid_wr(htons((i & SEQ_ID_MASK) | sid));
+
+		tid_wr(i);
 		ret = sendto(sfd, packet, dsize, 0, addr,
 			     sizeof(plget->sk_addr));
 		if (ret != dsize) {
@@ -53,12 +55,13 @@ int pktgen_proc(void)
 {
 	struct sockaddr *addr = (struct sockaddr *)&plget->sk_addr;
 	int dsize = plget->sk_payload_size;
-	char *packet = plget->pkt;
 	int sid = plget->stream_id;
+	char *packet = plget->pkt;
 	int sfd = plget->sfd;
 	struct pollfd fds[1];
-	int pnum, ret, i = 0;
+	int pnum, ret;
 	uint64_t exps;
+	__u32 i = 0;
 
 	ret = plget_start_timer();
 	if (ret)
@@ -93,6 +96,7 @@ int pktgen_proc(void)
 				else
 					perror("cannot send whole packet\n");
 
+				ret = -1;
 				goto err;
 			}
 
@@ -101,14 +105,15 @@ int pktgen_proc(void)
 
 			if (plget->flags & PLF_PTP)
 				sid_wr(htons((i & SEQ_ID_MASK) | sid));
+
+			tid_wr(i);
 		}
 	}
 
-	plget->pkt_num = i;
-	return 0;
+	ret = 0;
 err:
 	plget->pkt_num = i;
-	return -1;
+	return ret;
 }
 
 int pktgen(void)
