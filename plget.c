@@ -48,6 +48,7 @@
 	((void *)ALIGN_ROUNDUP((uintptr_t)(x), (uintptr_t)(align)))
 
 #define OFF_PTP_SEQUENCE_ID		30
+#define UDP_HLEN	42
 
 struct plgett *plget;
 
@@ -431,8 +432,7 @@ static void fill_in_packets(void)
 			dp += PTP_HSIZE;
 		}
 
-		if (!(plget->flags & PLF_TS_ID_ALLOWED))
-			*dp++ = MAGIC;
+		*dp++ = MAGIC;
 
 		for (j = 0; j < ptp_payload_size; j++)
 			*dp++ = (rand() % 230) + 1;
@@ -465,7 +465,7 @@ static int plget_create_packet(void)
 		} else if (!plget->frame_size)
 			plget->frame_size = 66;
 
-		payload_size = plget->frame_size - 42;
+		payload_size = plget->frame_size - UDP_HLEN;
 	} else {
 		if (plget->flags & PLF_PTP) {
 			if (plget->frame_size &&
@@ -513,24 +513,25 @@ static void fill_in_data_pointers(void)
 	if (plget->flags & PLF_PTP)
 		plget->off_sid_wr = off + OFF_PTP_SEQUENCE_ID;
 
-	if (!(plget->flags & PLF_TS_ID_ALLOWED)) {
-		if (plget->flags & PLF_PTP)
-			off += PTP_HSIZE;
+	if (plget->flags & PLF_PTP)
+		off += PTP_HSIZE;
 
-		if (plget->mod != ECHO_LAT)
-			plget->off_tid_wr = off + 1;
+	if (plget->mod != ECHO_LAT)
+		plget->off_tid_wr = off + 1;
 
-		plget->off_magic_rd = off;
-		plget->off_tid_rd = off + 1;
+	plget->off_magic_rd = off;
+	plget->off_tid_rd = off + 1;
 
-		plget->off_magic_rx_rd = off;
-		plget->off_tid_rx_rd = off + 1;
+	plget->off_magic_rx_rd = off;
+	plget->off_tid_rx_rd = off + 1;
 
-		/* add sent_payload - sk_payload */
-		if (plget->pkt_type == PKT_ETH) {
-			plget->off_magic_rd += ETH_HLEN;
-			plget->off_tid_rd += ETH_HLEN;
-		}
+	/* add sent_payload - sk_payload */
+	if (plget->pkt_type == PKT_ETH) {
+		plget->off_magic_rd += ETH_HLEN;
+		plget->off_tid_rd += ETH_HLEN;
+	} else if (plget->pkt_type == PKT_UDP) {
+		plget->off_magic_rd += UDP_HLEN;
+		plget->off_tid_rd += UDP_HLEN;
 	}
 }
 
@@ -581,10 +582,6 @@ static int init_test(void)
 
 		ts_flags |= SOF_TIMESTAMPING_TX_SOFTWARE;
 		ts_flags |= SOF_TIMESTAMPING_TX_HARDWARE;
-		if (plget->flags & PLF_TS_ID_ALLOWED) {
-			ts_flags |= SOF_TIMESTAMPING_OPT_ID;
-			ts_flags |= SOF_TIMESTAMPING_OPT_TSONLY;
-		}
 
 		if (plget->flags & PLF_SCHED_STAT) {
 			ts_flags |= SOF_TIMESTAMPING_TX_SCHED;

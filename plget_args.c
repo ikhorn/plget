@@ -202,8 +202,6 @@ static void plget_check_args(void)
 		need_addr = (!plget->iaddr.s_addr) && (mod == TX_LAT ||
 			    mod == ECHO_LAT || mod == RTT_MOD ||
 			    mod == PKT_GEN);
-
-		plget->flags |= PLF_TS_ID_ALLOWED;
 		break;
 	case PKT_ETH:
 		plget_set_ptp_default_macaddr();

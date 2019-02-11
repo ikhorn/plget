@@ -48,15 +48,9 @@ static void rxlat_handle_ts(struct timespec *ts, __u32 ts_id)
 		return;
 	}
 
-	if (plget->flags & PLF_TS_ID_ALLOWED) {
-		stats_push(&rx_sw_v, tss->ts);
-		stats_push(&rx_hw_v, tss->ts + 2);
-		stats_push(&rx_app_v, ts);
-	} else {
-		stats_push_id(&rx_sw_v, tss->ts, ts_id);
-		stats_push_id(&rx_hw_v, tss->ts + 2, ts_id);
-		stats_push_id(&rx_app_v, ts, ts_id);
-	}
+	stats_push_id(&rx_sw_v, tss->ts, ts_id);
+	stats_push_id(&rx_hw_v, tss->ts + 2, ts_id);
+	stats_push_id(&rx_app_v, ts, ts_id);
 }
 
 static int rxlat_recvmsg_raw_filter(int psize)
@@ -105,9 +99,6 @@ static int rxlat_recvmsg(struct timespec *ts, __u32 *ts_id)
 		if (rxlat_recvmsg_raw_filter(psize))
 			continue;
 
-		if (plget->flags & PLF_TS_ID_ALLOWED)
-			break;
-
 		/* check magic number */
 		magic = magic_rx_rd();
 		if (*magic == MAGIC) {
@@ -117,7 +108,7 @@ static int rxlat_recvmsg(struct timespec *ts, __u32 *ts_id)
 			break;
 		}
 
-		printf("incorrect MAGIC number 0x%x\n", *magic);
+		printf("incorrect rx MAGIC number 0x%x\n", *magic);
 	}
 
 	return psize;

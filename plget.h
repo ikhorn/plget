@@ -56,14 +56,13 @@ extern struct plgett *plget;
 #define PLF_LATENCY_STAT		BIT(7)
 #define PLF_PRIO			BIT(8)
 #define PLF_BUSYPOLL			BIT(9)
-#define PLF_TS_ID_ALLOWED		BIT(10)
-#define PLF_SCHED_STAT			BIT(11)
-#define PLF_QUEUE			BIT(12)
-#define PLF_ZERO_COPY			BIT(13)
-#define PLF_DIS_HW_TS			BIT(14)
-#define PLF_ADDR_SET			BIT(15)
-#define PLF_PROG_LOADED			BIT(16)
-#define PLF_RT_PRINT			BIT(17)
+#define PLF_SCHED_STAT			BIT(10)
+#define PLF_QUEUE			BIT(11)
+#define PLF_ZERO_COPY			BIT(12)
+#define PLF_DIS_HW_TS			BIT(13)
+#define PLF_ADDR_SET			BIT(14)
+#define PLF_PROG_LOADED			BIT(15)
+#define PLF_RT_PRINT			BIT(16)
 
 #define PLF_PRINTOUT			(PLF_HW_STAT |\
 					PLF_HW_GAP_STAT |\

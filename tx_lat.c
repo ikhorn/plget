@@ -66,18 +66,14 @@ static int get_tx_tstamps(void)
 		ts_type = serr->ee_info;
 	}
 
-	if (!(plget->flags & PLF_TS_ID_ALLOWED)) {
-		/* check MAGIC number and get timestamp id */
-		magic = magic_rd();
-		if (*magic != MAGIC) {
-			printf("incorrect MAGIC number 0x%x\n", *magic);
-			return -1;
-		}
-
-		ts_id = tid_rd();
-	} else {
-		ts_id = serr->ee_data;
+	/* check MAGIC number and get timestamp id */
+	magic = magic_rd();
+	if (*magic != MAGIC) {
+		printf("incorrect tx MAGIC number 0x%x\n", *magic);
+		return -1;
 	}
+
+	ts_id = tid_rd();
 
 	if (!tss)
 		return plget->mod == RTT_MOD ? 0 : -1;
@@ -166,8 +162,7 @@ static int txlat_proc_packets(void)
 			if (plget->flags & PLF_PTP)
 				sid_wr(htons((tx_cnt & SEQ_ID_MASK) | sid));
 
-			if (!(plget->flags & PLF_TS_ID_ALLOWED))
-				tid_wr(tx_cnt);
+			tid_wr(tx_cnt);
 			if (++tx_cnt >= pkt_num)
 				plget_stop_timer();
 
