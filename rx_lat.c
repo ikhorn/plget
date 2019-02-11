@@ -73,7 +73,7 @@ static int rxlat_recvmsg_raw(struct timespec *ts)
 		if (psize < 0)
 			return -errno;
 
-		memcpy(&proto, plget->data + ETH_ALEN * 2, sizeof(proto));
+		memcpy(&proto, plget->rx_pkt + ETH_ALEN * 2, sizeof(proto));
 		if ((plget->flags & PLF_PTP) && proto == htons(ETH_P_1588))
 			break;
 	} while (0);
@@ -116,6 +116,9 @@ static int rxlat_recvmsg(struct timespec *ts, __u32 *ts_id)
 			if (err)
 				return -1;
 		}
+
+		if (psize < 0)
+			return psize;
 
 		if (plget->flags & PLF_TS_ID_ALLOWED)
 			break;

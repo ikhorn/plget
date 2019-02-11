@@ -19,6 +19,7 @@
 #include <net/ethernet.h>
 #include <netinet/in.h>
 #include <net/if.h>
+#include <string.h>
 #include <sys/time.h>
 #include "stat.h"
 
@@ -158,42 +159,35 @@ static inline char *magic_rd(void)
 
 static inline void tid_wr(__u32 tid)
 {
-	char *p1, *p2;
-	int i;
+	char *p;
 
-	p1 = (char *)&tid;
-	p2 = (char *)(plget->off_tid_wr + plget->pkt);
-
-	for (i = 0; i < sizeof(tid); i++)
-		*p2++ = *p1++;
+	p = (char *)(plget->off_tid_wr + plget->pkt);
+	tid = htonl(tid);
+	memcpy(p, &tid, sizeof(tid));
 }
 
 static inline __u32 tid_rd(void)
 {
-	char *p1, *p2;
 	__u32 tid;
-	int i;
+	char *p;
 
-	p1 = (char *)&tid;
-	p2 = (char *)(plget->data + plget->off_tid_rd);
+	p = (char *)(plget->data + plget->off_tid_rd);
 
-	for (i = 0; i < sizeof(tid); i++)
-		*p1++ = *p2++;
+	memcpy(&tid, p, sizeof(tid));
+	tid = ntohl(tid);
 
 	return tid;
 }
 
 static inline __u32 tid_rx_rd(void)
 {
-	char *p1, *p2;
 	__u32 tid;
-	int i;
+	char *p;
 
-	p1 = (char *)&tid;
-	p2 = (char *)(plget->pkt + plget->off_tid_rx_rd);
+	p = (char *)(plget->rx_pkt + plget->off_tid_rx_rd);
 
-	for (i = 0; i < sizeof(tid); i++)
-		*p1++ = *p2++;
+	memcpy(&tid, p, sizeof(tid));
+	tid = ntohl(tid);
 
 	return tid;
 }

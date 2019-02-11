@@ -431,8 +431,7 @@ static void fill_in_packets(void)
 			dp += PTP_HSIZE;
 		}
 
-		if (!(plget->flags & PLF_TS_ID_ALLOWED) &&
-		    plget->mod != ECHO_LAT)
+		if (!(plget->flags & PLF_TS_ID_ALLOWED))
 			*dp++ = MAGIC;
 
 		for (j = 0; j < ptp_payload_size; j++)
@@ -528,7 +527,7 @@ static void fill_in_data_pointers(void)
 		plget->off_tid_rx_rd = off + 1;
 
 		/* add sent_payload - sk_payload */
-		if (plget->pkt_type == PKT_ETH && plget->mod != RX_LAT) {
+		if (plget->pkt_type == PKT_ETH) {
 			plget->off_magic_rd += ETH_HLEN;
 			plget->off_tid_rd += ETH_HLEN;
 		}
