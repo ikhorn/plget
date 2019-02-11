@@ -59,9 +59,8 @@ int pktgen_proc(void)
 	char *packet = plget->pkt;
 	int sfd = plget->sfd;
 	struct pollfd fds[1];
-	int pnum, ret;
 	uint64_t exps;
-	__u32 i = 0;
+	int ret;
 
 	ret = plget_start_timer();
 	if (ret)
@@ -69,17 +68,20 @@ int pktgen_proc(void)
 
 	fds[0].fd = plget->timer_fd;
 	fds[0].events = POLLIN;
-	pnum = plget->pkt_num ? plget->pkt_num : ~0;
-	for (;;) {
+
+	plget->inum = plget->pkt_num ? plget->pkt_num : ~0;
+	tid_wr(0);
+
+	for (plget->icnt = 0; plget->icnt < plget->inum;) {
 		ret = poll(fds, 1, MAX_LATENCY);
 		if (ret <= 0) {
 			if (!ret) {
 				printf("Timed out\n");
-				goto err;
+				break;
 			}
 
 			perror("Some error on poll()");
-			goto err;
+			break;
 		}
 
 		/* time to send new packet */
@@ -96,24 +98,18 @@ int pktgen_proc(void)
 				else
 					perror("cannot send whole packet\n");
 
-				ret = -1;
-				goto err;
+				break;
 			}
 
-			if (++i >= pnum)
-				break;
-
 			if (plget->flags & PLF_PTP)
-				sid_wr(htons((i & SEQ_ID_MASK) | sid));
-
-			tid_wr(i);
+				sid_wr(htons((++plget->icnt & SEQ_ID_MASK) |
+					      sid));
+			tid_wr(plget->icnt);
 		}
 	}
 
-	ret = 0;
-err:
-	plget->pkt_num = i;
-	return ret;
+	plget->pkt_num = plget->icnt;
+	return !(plget->icnt == plget->inum);
 }
 
 int pktgen(void)

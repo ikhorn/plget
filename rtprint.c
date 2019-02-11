@@ -19,19 +19,20 @@
 
 void *rtprint(void *arg)
 {
-	unsigned long cnt;
-
-	pr_progress_bar("Measuring: ", plget->icnt, 100);
+	unsigned long cnt, num;
 
 	for (;;) {
 		cnt = plget->icnt;
+		num = plget->inum;
 
-		if (plget->inum)
-			pr_progress_bar("Measuring: ", plget->icnt, plget->inum);
+		if (!num)
+			num = 100;
+
+		pr_progress_bar("Measuring: ", cnt, num);
 
 		fflush(stdout);
 
-		if (cnt == plget->inum)
+		if (cnt >= num)
 			break;
 
 		sleep(1);

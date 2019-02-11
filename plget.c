@@ -669,17 +669,18 @@ int main(int argc, char **argv)
 		break;
 	}
 
-	if (ret)
-		return ret;
-
 	xdp_unload_prog();
 
 	if (plget->flags & PLF_RT_PRINT) {
-		plget->icnt = plget->inum = plget->pkt_num;
+		plget->icnt = plget->inum;
 		pthread_join(rt_thd, NULL);
 	}
 
 	res_stats_print();
 	free(plget);
-	exit(0);
+
+	if (ret)
+		printf("exit with error\n");
+
+	exit(ret);
 }
