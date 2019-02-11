@@ -20,7 +20,7 @@
 #include <string.h>
 #include "xdp_prog_load.h"
 
-#define PLGET_NAME_VER			"plget v0.4"
+#define PLGET_NAME_VER			"plget v0.5"
 #define PTP_EVENT_PORT			319
 #define PTP_GENERAL_PORT		320
 #define PTP_PRIMARY_MCAST_IPADDR	"224.0.1.129"
