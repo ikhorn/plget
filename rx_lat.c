@@ -59,53 +59,28 @@ static void rxlat_handle_ts(struct timespec *ts, __u32 ts_id)
 	}
 }
 
-static int rxlat_recvmsg_raw(struct timespec *ts)
+static int rxlat_recvmsg_raw_filter(int psize)
 {
-	int psize, err;
+	int ptp_pkt;
 	__u16 proto;
 
-	do {
-		psize = recvmsg(plget->sfd, &plget->msg, 0);
-		err = clock_gettime(CLOCK_REALTIME, ts);
-		if (err)
-			return -1;
+	if (plget->pkt_type != PKT_XDP && plget->pkt_type != PKT_RAW)
+		return 0;
 
-		if (psize < 0)
-			return -errno;
-
-		memcpy(&proto, plget->rx_pkt + ETH_ALEN * 2, sizeof(proto));
-		if ((plget->flags & PLF_PTP) && proto == htons(ETH_P_1588))
-			break;
-	} while (0);
-
-	return psize;
-}
-
-static int rxlat_recvmsg_xdp(struct timespec *ts)
-{
-	int psize;
-	__u16 proto;
-
-	do {
-		psize = xsk_recvmsg_start(ts);
-		if (psize < 0)
-			return psize;
-
-		if (psize < ETH_HLEN) {
+	/* drop not expected packets */
+	memcpy(&proto, plget->rx_pkt + ETH_ALEN * 2, sizeof(proto));
+	ptp_pkt = (plget->flags & PLF_PTP) && proto == htons(ETH_P_1588);
+	if (psize < ETH_HLEN || !ptp_pkt) {
+		if (plget->pkt_type == PKT_XDP)
 			xsk_recvmsg_fail();
-			continue;
-		}
 
-		memcpy(&proto, plget->rx_pkt + ETH_ALEN * 2, sizeof(proto));
-		if ((plget->flags & PLF_PTP) && proto == htons(ETH_P_1588))
-			break;
+		return -1;
+	}
 
-		xsk_recvmsg_fail();
-	} while (0);
+	if (plget->pkt_type == PKT_XDP)
+		xsk_recvmsg_complete(&plget->msg);
 
-	xsk_recvmsg_complete(&plget->msg);
-
-	return psize;
+	return 0;
 }
 
 static int rxlat_recvmsg(struct timespec *ts, __u32 *ts_id)
@@ -114,10 +89,9 @@ static int rxlat_recvmsg(struct timespec *ts, __u32 *ts_id)
 	char *magic;
 
 	for (;;) {
-		if (plget->pkt_type == PKT_XDP)
-			psize = rxlat_recvmsg_xdp(ts);
-		else if (plget->pkt_type == PKT_RAW) {
-			psize = rxlat_recvmsg_raw(ts);
+
+		if (plget->pkt_type == PKT_XDP) {
+			psize = xsk_recvmsg_start(ts);
 		} else {
 			psize = recvmsg(plget->sfd, &plget->msg, 0);
 			err = clock_gettime(CLOCK_REALTIME, ts);
@@ -127,6 +101,9 @@ static int rxlat_recvmsg(struct timespec *ts, __u32 *ts_id)
 
 		if (psize < 0)
 			return psize;
+
+		if (rxlat_recvmsg_raw_filter(psize))
+			continue;
 
 		if (plget->flags & PLF_TS_ID_ALLOWED)
 			break;

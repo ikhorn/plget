@@ -528,5 +528,5 @@ void xsk_recvmsg_complete(struct msghdr *msg)
 	xsk_create_msg(msg);
 
 	if (plget->mod != ECHO_LAT)
-		fq_enq(&plget->xsk->umem->fq, &xsk->desc, 1);
+		fq_enq(&xsk->umem->fq, &xsk->desc, 1);
 }
