@@ -135,6 +135,8 @@ static int rxlat_recvmsg(struct timespec *ts, __u32 *ts_id)
 		magic = magic_rx_rd();
 		if (*magic == MAGIC) {
 			*ts_id = tid_rx_rd();
+			if (*ts_id > plget->pkt_num)
+				printf("incorrect ts_id\n");
 			break;
 		}
 
