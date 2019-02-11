@@ -99,8 +99,8 @@ int pktgen_proc(void)
 			if (++i >= pnum)
 				break;
 
-			*(__u16 *)(plget->off_sid_wr + plget->pkt) =
-				htons((i & SEQ_ID_MASK) | sid);
+			if (plget->flags & PLF_PTP)
+				sid_wr(htons((i & SEQ_ID_MASK) | sid));
 		}
 	}
 
