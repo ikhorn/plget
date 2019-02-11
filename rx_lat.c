@@ -87,15 +87,23 @@ static int rxlat_recvmsg_xdp(struct timespec *ts)
 	__u16 proto;
 
 	do {
-		psize = xsk_recvmsg(&plget->msg, ts);
-
+		psize = xsk_recvmsg_start(ts);
 		if (psize < 0)
-			return -errno;
+			return psize;
+
+		if (psize < ETH_HLEN) {
+			xsk_recvmsg_fail();
+			continue;
+		}
 
 		memcpy(&proto, plget->rx_pkt + ETH_ALEN * 2, sizeof(proto));
 		if ((plget->flags & PLF_PTP) && proto == htons(ETH_P_1588))
 			break;
+
+		xsk_recvmsg_fail();
 	} while (0);
+
+	xsk_recvmsg_complete(&plget->msg);
 
 	return psize;
 }

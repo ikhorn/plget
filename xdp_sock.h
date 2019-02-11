@@ -55,7 +55,9 @@ struct xsock {
 
 int xdp_socket(void);
 int xsk_sendto(void);
-int xsk_recvmsg(struct msghdr *msg, struct timespec *ts);
+int xsk_recvmsg_start(struct timespec *ts);
+void xsk_recvmsg_fail(void);
+void xsk_recvmsg_complete(struct msghdr *msg);
 
 #else
 inline static int xdp_socket(void)
@@ -68,10 +70,19 @@ inline static int xsk_sendto(void)
 	return 1;
 }
 
-inline static int xsk_recvmsg(struct msghdr *msg, struct timespec *ts)
+inline static int xsk_recvmsg_start(struct timespec *ts)
 {
 	return 1;
 }
+
+inline static void xsk_recvmsg_fail(void)
+{
+}
+
+inline static void xsk_recvmsg_complete(struct msghdr *msg)
+{
+}
+
 #endif
 
 #endif

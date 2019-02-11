@@ -458,14 +458,12 @@ static inline void *umem_get_data(struct xsock *xsk, __u64 addr)
 	return &xsk->umem->frames[addr];
 }
 
-int xsk_poll(struct timespec *ts2)
+int xsk_recvmsg_start(struct timespec *ts)
 {
 	struct xsock *xsk = plget->xsk;
 	struct xdp_desc *desc;
 	struct pollfd fds;
 	unsigned int ret;
-	__u16 proto;
-	char *data;
 
 	fds.fd = plget->sfd;
 	fds.events = POLLIN;
@@ -479,27 +477,13 @@ int xsk_poll(struct timespec *ts2)
 	if (!ret)
 		return -1;
 
-	data = umem_get_data(xsk, desc->addr);
-	clock_gettime(CLOCK_REALTIME, ts2);
-
-	/* to be sure, drop not compatible packets */
-	if (desc->len < ETH_HLEN)
-		goto err;
-
-	memcpy(&proto, data + ETH_ALEN * 2, sizeof(proto));
-	if ((plget->flags & PLF_PTP) && proto != htons(ETH_P_1588))
-		goto err;
-
-	plget->rx_pkt = data;
+	plget->rx_pkt = umem_get_data(xsk, desc->addr);
+	clock_gettime(CLOCK_REALTIME, ts);
 
 	return desc->len;
-
-err:
-	fq_enq(&xsk->umem->fq, desc, 1);
-	return -1;
 }
 
-static void xsk_get_ts(struct msghdr *msg)
+static void xsk_create_msg(struct msghdr *msg)
 {
 	struct scm_timestamping *tss;
 	struct timespec *ts1;
@@ -530,19 +514,19 @@ static void xsk_get_ts(struct msghdr *msg)
 	msg->msg_controllen = CMSG_ALIGN(cmsg->cmsg_len);
 }
 
-int xsk_recvmsg(struct msghdr *msg, struct timespec *ts2)
+void xsk_recvmsg_fail(void)
 {
 	struct xsock *xsk = plget->xsk;
-	int len;
 
-	do {
-		len = xsk_poll(ts2);
-	} while (len <= 0);
+	fq_enq(&xsk->umem->fq, &xsk->desc, 1);
+}
 
-	xsk_get_ts(msg);
+void xsk_recvmsg_complete(struct msghdr *msg)
+{
+	struct xsock *xsk = plget->xsk;
+
+	xsk_create_msg(msg);
 
 	if (plget->mod != ECHO_LAT)
 		fq_enq(&plget->xsk->umem->fq, &xsk->desc, 1);
-
-	return len;
 }
