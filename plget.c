@@ -62,14 +62,14 @@ struct stats rx_hw_v;
 
 struct stats temp;
 
-static unsigned char ptpv2_sync_header[] = {
+static unsigned char ptpv2_sync_pkt[] = {
 	0x10, 0x02, 0x00, 0x2c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x80, 0x63, 0xff, 0xff, 0x00, 0x09, 0xba, 0x00, 0x01,
 	0x00, 0x74, 0x00, 0x00
 };
 
-#define PTP_HSIZE	sizeof(ptpv2_sync_header)
+#define PTP_HSIZE	sizeof(ptpv2_sync_pkt)
 
 int plget_create_timer(void)
 {
@@ -428,7 +428,7 @@ static void fill_in_packets(void)
 		}
 
 		if (plget->flags & PLF_PTP) {
-			memcpy(dp, ptpv2_sync_header, PTP_HSIZE);
+			memcpy(dp, ptpv2_sync_pkt, PTP_HSIZE);
 			dp += PTP_HSIZE;
 		}
 

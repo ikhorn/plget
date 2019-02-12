@@ -24,8 +24,8 @@ static int fast_pktgen(void)
 {
 	struct sockaddr *addr = (struct sockaddr *)&plget->sk_addr;
 	int dsize = plget->sk_payload_size;
-	char *packet = plget->pkt;
 	int sid = plget->stream_id;
+	char *packet = plget->pkt;
 	int sfd = plget->sfd;
 	int ret;
 
