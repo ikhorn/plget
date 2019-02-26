@@ -219,6 +219,9 @@ static void plget_check_args(void)
 		if (mod == RX_RATE || mod == PKT_GEN)
 			plget_fail("Mode is not supported for af_xdp for now");
 
+		if (plget->port)
+			plget_fail("UDP (-u) is not supported for raw af_xdp sockets for now");
+
 		plget_set_ptp_default_macaddr();
 
 		if (plget->if_name[0] == '\0')
