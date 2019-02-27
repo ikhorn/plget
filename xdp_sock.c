@@ -462,15 +462,28 @@ int xsk_recvmsg_start(struct timespec *ts)
 {
 	struct xsock *xsk = plget->xsk;
 	struct xdp_desc *desc;
+	struct pollfd fds;
 	unsigned int ret;
 
 	desc = &xsk->desc;
+	if (!(plget->flags & PLF_SW_POLL)) {
+		fds.fd = plget->sfd;
+		fds.events = POLLIN;
+
+		ret = poll(&fds, 1, -1);
+		if (ret <= 0)
+			return perror("Some error on poll()"), -errno;
+	}
+
 	do
 		ret = rq_deq(&xsk->rq, desc, 1);
-	while (!ret);
+	while (!ret && plget->flags & PLF_SW_POLL);
 
 	plget->rx_pkt = umem_get_data(xsk, desc->addr);
 	clock_gettime(CLOCK_REALTIME, ts);
+
+	if (!ret)
+		return -1;
 
 	return desc->len;
 }
