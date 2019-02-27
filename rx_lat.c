@@ -53,6 +53,26 @@ static void rxlat_handle_ts(struct timespec *ts, __u32 ts_id)
 	stats_push_id(&rx_app_v, ts, ts_id);
 }
 
+static int rxlat_recvmsg_start(struct timespec *ts)
+{
+	int flags, psize;
+
+	if (plget->pkt_type == PKT_XDP) {
+		psize = xsk_recvmsg_start(ts);
+		return psize;
+	}
+
+	flags = (plget->flags & PLF_SW_POLL) ? MSG_DONTWAIT : 0;
+	do
+		psize = recvmsg(plget->sfd, &plget->msg, flags);
+	while (psize <= 0 && flags);
+
+	if (clock_gettime(CLOCK_REALTIME, ts))
+		return -1;
+
+	return psize;
+}
+
 static int rxlat_recvmsg_raw_filter(int psize)
 {
 	int ptp_pkt;
@@ -79,19 +99,11 @@ static int rxlat_recvmsg_raw_filter(int psize)
 
 static int rxlat_recvmsg(struct timespec *ts, __u32 *ts_id)
 {
-	int psize, err;
 	char *magic;
+	int psize;
 
 	for (;;) {
-		if (plget->pkt_type == PKT_XDP) {
-			psize = xsk_recvmsg_start(ts);
-		} else {
-			psize = recvmsg(plget->sfd, &plget->msg, 0);
-			err = clock_gettime(CLOCK_REALTIME, ts);
-			if (err)
-				return -1;
-		}
-
+		psize = rxlat_recvmsg_start(ts);
 		if (psize < 0)
 			return psize;
 

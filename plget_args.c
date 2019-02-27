@@ -94,6 +94,9 @@ static void plget_usage(void)
 	       "and ptp clock counts\n");
 	printf("\t\t\t\t\t\t\"rt_print\" - print real time results while "
 	       "running\n");
+	printf("\t\t\t\t\t\t\"sw_poll\" - software poll of ingress data, "
+	       "DONTWAIT flag if recmsg is used, for af_xdp it's polling of "
+	       "rx queue. Can consume CPU time and power.\n");
 }
 
 static struct option plget_options[] = {
@@ -374,6 +377,9 @@ static void plget_set_option(void)
 
 	if (strstr(optarg, "rt_print"))
 		plget->flags |= PLF_RT_PRINT;
+
+	if (strstr(optarg, "sw_poll"))
+		plget->flags |= PLF_SW_POLL;
 }
 
 static void plget_set_relative_time(void)
