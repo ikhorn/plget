@@ -94,8 +94,8 @@ static void plget_usage(void)
 	       "and ptp clock counts\n");
 	printf("\t\t\t\t\t\t\"rt_print\" - print real time results while "
 	       "running\n");
-	printf("\t\t\t\t\t\t\"sw_poll\" - software poll of ingress data, "
-	       "DONTWAIT flag if recmsg is used, for af_xdp it's polling of "
+	printf("\t\t\t\t\t\t\"sw_poll\" - software poll of ingress packets, "
+	       "DONTWAIT flag if recvmsg is used, for af_xdp it's polling of "
 	       "rx queue. Can consume CPU time and power.\n");
 }
 

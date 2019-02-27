@@ -78,7 +78,9 @@ Possible packet/sock types, set with -t key:
 * -t ptpl4	socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
 * -t udp	socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
 
-More info here:
+For aggressive packet retrieve use combinations of -w and -o "sw_poll" options.
+
+More info is here:
 ~~~
 :~# plget -h
 ~~~
