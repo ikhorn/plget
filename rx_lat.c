@@ -83,7 +83,6 @@ static int rxlat_recvmsg(struct timespec *ts, __u32 *ts_id)
 	char *magic;
 
 	for (;;) {
-
 		if (plget->pkt_type == PKT_XDP) {
 			psize = xsk_recvmsg_start(ts);
 		} else {
