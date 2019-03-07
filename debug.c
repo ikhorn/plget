@@ -41,11 +41,14 @@ void db_dump_buf(void *data, int size)
 
 void pr_progress_bar(char label[], int step, int total)
 {
-	int width, pos, percent, i;
+	int width, pos, _pct, pct, pct_frag, i;
 
 	width = PROGRESS_WIDTH - strlen(label); /* minus label len */
 	pos = (step * width) / total ;
-	percent = (step * 100) / total;
+
+	_pct = (step * 10000) / total;
+	pct = _pct / 100;
+	pct_frag =  _pct - pct * 100;
 
 	printf("%s[", label);
 
@@ -55,5 +58,5 @@ void pr_progress_bar(char label[], int step, int total)
 
 	/* fill progress bar with spaces */
 	printf("%*c", width - pos + 1, ']');
-	printf(" %3d%%\r", percent);
+	printf(" %3d.%02d%%\r", pct, pct_frag);
 }
