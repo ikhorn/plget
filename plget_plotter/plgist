@@ -7,8 +7,9 @@ ORIG_FILE=$1
 TEMP_FILE=$(mktemp)
 cp $ORIG_FILE $TEMP_FILE
 
-plgist_histogram() {
-	local XLABEL=""
+# COMPLETE_TITLE, SUBTITLE, XLABEL, YLABEL
+plgist_create_notations()
+{
 	local TITLE=$(plgist_get_title "$PLOT_DATA_FILE")
 
 	local LTYPE=$(echo $TITLE | sed -n '/latency/p')
@@ -18,7 +19,27 @@ plgist_histogram() {
 	[ -z "$LTYPE" ] || XLABEL="inter packet time (ipgap), us"
 
 	local FILE_NAME=$(basename -- "$ORIG_FILE" | tr _ -)
-	local SUBTITLE=$(echo $TITLE | sed -n 's/\(^.*, us\)\( .*\)/\1/p')
+	SUBTITLE=$(echo $TITLE | sed -n 's/\(^.*, us\)\( .*\)/\1/p')
+
+	COMPLETE_TITLE=\
+"$FILE_NAME\
+\n$TITLE\
+\nlink = 1000Mbps, \
+frame = `sed -n '/frame\ size/s/\(^.*\): \(.\)/\2/p' "$PLOT_DATA_FILE"`B, \
+rate = `sed -n '/RATE/s/\(^.*\)PPS = \(.\)/\2/p' "$PLOT_DATA_FILE"`pps, \
+`sed -n '/RATE\ =/s/\(^.*\)= \(.*\),\(.*\)/\2/p' "$PLOT_DATA_FILE"`, \
+\nmin = `sed -n '/min\ val/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`, \
+max = `sed -n '/max\ val/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`, \
+p-t-p = `sed -n '/peak-to-peak/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`, \
+mean-+RMS = `sed -n '/mean\ +-\ RMS/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`"
+}
+
+plgist_histogram() {
+	local XLABEL=""
+	local SUBTITLE=""
+	local COMPLETE_TITLE=""
+
+	plgist_create_notations
 
 gnuplot -p <<GIST_EOF
 reset
@@ -44,16 +65,7 @@ set tics out nomirror
 set xlabel "$XLABEL"
 set ylabel "frequency"
 
-set title "$FILE_NAME\
-\n$TITLE\
-\nlink = 1000Mbps, \
-frame = `sed -n '/frame\ size/s/\(^.*\): \(.\)/\2/p' "$PLOT_DATA_FILE"`B, \
-rate = `sed -n '/RATE/s/\(^.*\)PPS = \(.\)/\2/p' "$PLOT_DATA_FILE"`pps, \
-`sed -n '/RATE\ =/s/\(^.*\)= \(.*\),\(.*\)/\2/p' "$PLOT_DATA_FILE"`, \
-\nmin = `sed -n '/min\ val/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`, \
-max = `sed -n '/max\ val/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`, \
-p-t-p = `sed -n '/peak-to-peak/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`, \
-mean-+RMS = `sed -n '/mean\ +-\ RMS/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`"
+set title "$COMPLETE_TITLE"
 
 set terminal qt 0
 plot "< sed -e '0,/----/ d' -e '/----/,$ d' ". "$PLOT_DATA_FILE" \
@@ -64,16 +76,10 @@ GIST_EOF
 plgist_plot()
 {
 	local XLABEL=""
-	local TITLE=$(plgist_get_title "$PLOT_DATA_FILE")
+	local SUBTITLE=""
+	local COMPLETE_TITLE=""
 
-	local LTYPE=$(echo $TITLE | sed -n '/latency/p')
-	[ -z "$LTYPE" ] || XLABEL="latency, us"
-
-	local LTYPE=$(echo $TITLE | sed -n '/ipgap/p')
-	[ -z "$LTYPE" ] || XLABEL="inter packet time (ipgap), us"
-
-	local FILE_NAME=$(basename -- "$ORIG_FILE" | tr _ -)
-	local SUBTITLE=$(echo $TITLE | sed -n 's/\(^.*, us\)\( .*\)/\1/p')
+	plgist_create_notations
 
 gnuplot -p <<PLOT_EOF
 reset
@@ -84,16 +90,7 @@ set xlabel 'packet number'
 set key box
 set grid
 
-set title "$FILE_NAME\
-\n$TITLE\
-\nlink = 1000Mbps, \
-frame = `sed -n '/frame\ size/s/\(^.*\): \(.\)/\2/p' "$PLOT_DATA_FILE"`B, \
-rate = `sed -n '/RATE/s/\(^.*\)PPS = \(.\)/\2/p' "$PLOT_DATA_FILE"`pps, \
-`sed -n '/RATE\ =/s/\(^.*\)= \(.*\),\(.*\)/\2/p' "$PLOT_DATA_FILE"`, \
-\nmin = `sed -n '/min\ val/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`, \
-max = `sed -n '/max\ val/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`, \
-p-t-p = `sed -n '/peak-to-peak/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`, \
-mean-+RMS = `sed -n '/mean\ +-\ RMS/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`"
+set title "$COMPLETE_TITLE"
 
 set terminal qt 0
 plot "< sed -e '0,/----/ d' -e '/----/,$ d' ". "$PLOT_DATA_FILE" \
