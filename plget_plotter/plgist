@@ -7,42 +7,38 @@ ORIG_FILE=$1
 TEMP_FILE=$(mktemp)
 cp $ORIG_FILE $TEMP_FILE
 
-# COMPLETE_TITLE, SUBTITLE, MAIN_LABEL
-plgist_create_notations()
+plgist_get_main_label()
 {
-	local TITLE=$(plgist_get_title "$PLOT_DATA_FILE")
-
+	local TITLE=$1
 	local LTYPE=$(echo $TITLE | sed -n '/latency/p')
 	[ -z "$LTYPE" ] || MAIN_LABEL="latency, us"
 
-	local LTYPE=$(echo $TITLE | sed -n '/ipgap/p')
+	LTYPE=$(echo $TITLE | sed -n '/ipgap/p')
 	[ -z "$LTYPE" ] || MAIN_LABEL="inter packet time (ipgap), us"
+}
 
-	local FILE_NAME=$(basename -- "$ORIG_FILE" | tr _ -)
+plgist_get_subtitle()
+{
+	local TITLE=$1
 	SUBTITLE=$(echo $TITLE | sed -n 's/\(^.*, us\)\( .*\)/\1/p')
-
-	COMPLETE_TITLE=\
-"$FILE_NAME\
-\n$TITLE\
-\nlink = 1000Mbps, \
-frame = `sed -n '/frame\ size/s/\(^.*\): \(.\)/\2/p' "$PLOT_DATA_FILE"`B, \
-rate = `sed -n '/RATE/s/\(^.*\)PPS = \(.\)/\2/p' "$PLOT_DATA_FILE"`pps, \
-`sed -n '/RATE\ =/s/\(^.*\)= \(.*\),\(.*\)/\2/p' "$PLOT_DATA_FILE"`, \
-\nmin = `sed -n '/min\ val/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`, \
-max = `sed -n '/max\ val/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`, \
-p-t-p = `sed -n '/peak-to-peak/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`, \
-mean-+RMS = `sed -n '/mean\ +-\ RMS/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`"
 }
 
 plgist_hist() {
-	local MAIN_LABEL=""
-	local SUBTITLE=""
-	local COMPLETE_TITLE=""
 
-	plgist_create_notations
+	local TITLE=$(plgist_get_title "$PLOT_DATA_FILE")
+	local MAIN_LABEL=""
+	plgist_get_main_label "$TITLE"
+	local SUBTITLE=""
+	plgist_get_subtitle "$TITLE"
+
+	local CTITLE=$(basename -- "$ORIG_FILE" | tr _ -)
+	plgist_add_file_ctitle "$TITLE" "$PLOT_DATA_FILE"
 
 gnuplot -p <<GIST_EOF
 reset
+
+set key font ",8"
+set title font ",8"
 
 n=100 #number of intervals
 mean="`sed -n '/mean\ +-\ RMS/s/\(^.*\)= \(.*\) +- \(.*$\)/\2/p' "$PLOT_DATA_FILE"`"
@@ -65,7 +61,7 @@ set tics out nomirror
 set xlabel "$MAIN_LABEL"
 set ylabel "frequency"
 
-set title "$COMPLETE_TITLE"
+set title "$CTITLE"
 
 set terminal qt 0
 plot "< sed -e '0,/$SEP/ d' -e '/$SEP/,$ d' ". "$PLOT_DATA_FILE" \
@@ -73,33 +69,37 @@ u (hist(\$1,width)):(1.0) smooth freq w boxes lc rgb"black" title "$SUBTITLE"
 GIST_EOF
 }
 
+plgist_add_file_ctitle()
+{
+	local TITLE="$1"
+	local FILE="$2"
+	CTITLE+="\n\n$TITLE"
+	CTITLE+="\nlink = 1000Mbps, "
+	CTITLE+="frame = `sed -n '/frame\ size/s/\(^.*\): \(.\)/\2/p' "$FILE"`B, "
+	CTITLE+="rate = `sed -n '/RATE/s/\(^.*\)PPS = \(.\)/\2/p' "$FILE"`pps, "
+	CTITLE+="`sed -n '/RATE\ =/s/\(^.*\)= \(.*\),\(.*\)/\2/p' "$FILE"`, "
+	CTITLE+="\nmin = `sed -n '/min\ val/s/\(^.*\)= \(.\)/\2/p' "$FILE"`, "
+	CTITLE+="max = `sed -n '/max\ val/s/\(^.*\)= \(.\)/\2/p' "$FILE"`, "
+	CTITLE+="p-t-p = `sed -n '/peak-to-peak/s/\(^.*\)= \(.\)/\2/p' "$FILE"`, "
+	CTITLE+="mean-+RMS = `sed -n '/mean\ +-\ RMS/s/\(^.*\)= \(.\)/\2/p' "$FILE"`"
+}
+
+
 plgist_plot()
 {
 	local MAIN_LABEL=""
 	local SUBTITLE=""
-	local CTITLE=""
-
-	plgist_create_notations $@
-
-	local FILE_NAME=$(basename -- "$ORIG_FILE" | tr _ -)
-	CTITLE="$FILE_NAME"
+	local CTITLE=$(basename -- "$ORIG_FILE" | tr _ -)
 
 	PLCMD=""
 	COLOR=8
 	for FILE in $@
 	do
 		local TITLE=$(plgist_get_title "$FILE")
-		SUBTITLE=$(echo $TITLE | sed -n 's/\(^.*, us\)\( .*\)/\1/p')
+		plgist_get_subtitle "$TITLE"
+		plgist_get_main_label "$TITLE"
 
-		CTITLE+="\n$TITLE"
-		CTITLE+="\nlink = 1000Mbps, "
-		CTITLE+="frame = `sed -n '/frame\ size/s/\(^.*\): \(.\)/\2/p' "$FILE"`B, "
-		CTITLE+="rate = `sed -n '/RATE/s/\(^.*\)PPS = \(.\)/\2/p' "$FILE"`pps, "
-		CTITLE+="`sed -n '/RATE\ =/s/\(^.*\)= \(.*\),\(.*\)/\2/p' "$FILE"`, "
-		CTITLE+="\nmin = `sed -n '/min\ val/s/\(^.*\)= \(.\)/\2/p' "$FILE"`, "
-		CTITLE+="max = `sed -n '/max\ val/s/\(^.*\)= \(.\)/\2/p' "$FILE"`, "
-		CTITLE+="p-t-p = `sed -n '/peak-to-peak/s/\(^.*\)= \(.\)/\2/p' "$FILE"`, "
-		CTITLE+="mean-+RMS = `sed -n '/mean\ +-\ RMS/s/\(^.*\)= \(.\)/\2/p' "$FILE"`"
+		plgist_add_file_ctitle "$TITLE" "$FILE"
 
 		PLCMD+="\"< sed -e '0,/$SEP/ d' -e '/$SEP/,$ d' \". \"$FILE\"\
 		with points pointtype 7 lc $COLOR title \"$SUBTITLE\", "
@@ -108,6 +108,10 @@ plgist_plot()
 
 gnuplot -p <<PLOT_EOF
 reset
+
+set key font ",8"
+set title font ",8"
+
 
 set ylabel "$MAIN_LABEL"
 set xlabel 'frame number'
