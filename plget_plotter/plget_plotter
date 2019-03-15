@@ -89,7 +89,6 @@ do
 
 	plget_get_tail
 
-	cat $PLOT_DATA_FILE
 	plget_histogram
 
 	rm $PLOT_DATA_FILE
