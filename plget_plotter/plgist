@@ -8,17 +8,14 @@ TEMP_FILE=$(mktemp)
 cp $ORIG_FILE $TEMP_FILE
 
 plget_histogram() {
-
 	local XLABEL=""
 	local TITLE=$(plget_get_title "$PLOT_DATA_FILE")
 
 	local LTYPE=$(echo $TITLE | sed -n '/latency/p')
 	[ -z "$LTYPE" ] || XLABEL="latency, us"
-	echo $LTYPE
 
 	local LTYPE=$(echo $TITLE | sed -n '/ipgap/p')
 	[ -z "$LTYPE" ] || XLABEL="inter packet time (ipgap), us"
-	echo $LTYPE
 
 gnuplot -p <<EOF
 reset
@@ -55,7 +52,7 @@ p-t-p = `sed -n '/peak-to-peak/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`, \
 mean-+RMS = `sed -n '/mean\ +-\ RMS/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`"
 
 set terminal qt 0
-plot "< sed -e '0,/----/ d' -e '/----/,$ d' ". "$PLOT_DATA_FILE" u (hist(\$1,width)):(1.0) smooth freq w boxes lc rgb"black" title "class A"
+plot "< sed -e '0,/----/ d' -e '/----/,$ d' ". "$PLOT_DATA_FILE" u (hist(\$1,width)):(1.0) smooth freq w boxes lc rgb"black" title "latency"
 EOF
 }
 
@@ -97,7 +94,6 @@ do
 
 	plget_get_tail "$ORIG_FILE" >>  $PLOT_DATA_FILE
 
-	cat $PLOT_DATA_FILE
 	plget_histogram
 
 	rm $PLOT_DATA_FILE
