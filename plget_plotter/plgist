@@ -7,9 +7,9 @@ ORIG_FILE=$1
 TEMP_FILE=$(mktemp)
 cp $ORIG_FILE $TEMP_FILE
 
-plget_histogram() {
+plgist_histogram() {
 	local XLABEL=""
-	local TITLE=$(plget_get_title "$PLOT_DATA_FILE")
+	local TITLE=$(plgist_get_title "$PLOT_DATA_FILE")
 
 	local LTYPE=$(echo $TITLE | sed -n '/latency/p')
 	[ -z "$LTYPE" ] || XLABEL="latency, us"
@@ -59,23 +59,62 @@ u (hist(\$1,width)):(1.0) smooth freq w boxes lc rgb"black" title "$FILE_NAME"
 EOF
 }
 
-plget_blocks_num() {
+plgist_plot()
+{
+	local TITLE=$(plgist_get_title "$PLOT_DATA_FILE")
+
+	local LTYPE=$(echo $TITLE | sed -n '/latency/p')
+	[ -z "$LTYPE" ] || XLABEL="latency, us"
+
+	local LTYPE=$(echo $TITLE | sed -n '/ipgap/p')
+	[ -z "$LTYPE" ] || XLABEL="inter packet time (ipgap), us"
+
+	local FILE_NAME=$(basename -- "$ORIG_FILE" | tr _ -)
+
+	PLOT_DATA_FILE_1='am572_ipgap_CBS_CPDMA_classA_parB_parBE_1000.data'
+
+gnuplot -p <<PLOT_EOF
+reset
+
+set ylabel 'packets period (between packet time, gap), us'
+set xlabel 'packet number'
+
+set key box
+set grid
+
+set title "$TITLE\
+\nlink = 1000Mbps, \
+frame = `sed -n '/frame\ size/s/\(^.*\): \(.\)/\2/p' "$PLOT_DATA_FILE"`B, \
+\nrate A = `sed -n '/RATE/s/\(^.*\)PPS = \(.\)/\2/p' "$PLOT_DATA_FILE"`pps, \
+`sed -n '/RATE\ =/s/\(^.*\)= \(.*\),\(.*\)/\2/p' "$PLOT_DATA_FILE"`, \
+min A = `sed -n '/min\ val/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`, \
+max A = `sed -n '/max\ val/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`, \
+p-t-p A = `sed -n '/peak-to-peak/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`"
+
+set terminal qt 0
+plot "< sed -e '0,/----/ d' -e '/----/,$ d' ". "$PLOT_DATA_FILE" \
+with points pointtype 7 black title "$FILE_NAME", \
+
+PLOT_EOF
+}
+
+plgist_blocks_num() {
 	# 2 separators has to be present
 	local NUM=$(sed -n "/${SEP}/p" $TEMP_FILE | wc -l)
 	return $(($NUM/2))
 }
 
-plget_get_title() {
+plgist_get_title() {
 	sed "/${SEP}/,$ d" $1 | sed -n '$p'
 }
 
-plget_get_tail() {
+plgist_get_tail() {
 	echo
 	sed -n "/frame\ size/,$ p" $1
 }
 
 
-plget_blocks_num
+plgist_blocks_num
 BNUM=$?
 
 # create plots income data files
@@ -84,10 +123,8 @@ for ((i=0; i<$BNUM; i++))
 do
 	# get data
 	PLOT_DATA_FILE=$(mktemp)
-	echo
-	echo
 
-	plget_get_title "$TEMP_FILE" >> $PLOT_DATA_FILE
+	plgist_get_title "$TEMP_FILE" >> $PLOT_DATA_FILE
 
 	sed -e '0,/:\ packets\ / d'\
 	-e '/^$/,$ d'\
@@ -95,9 +132,10 @@ do
 	-e "/$SEP/,/$SEP/s/|/\n/g"\
 	$TEMP_FILE >> $PLOT_DATA_FILE
 
-	plget_get_tail "$ORIG_FILE" >>  $PLOT_DATA_FILE
+	plgist_get_tail "$ORIG_FILE" >>  $PLOT_DATA_FILE
 
-	plget_histogram
+	plgist_histogram
+	plgist_plot
 
 	rm $PLOT_DATA_FILE
 
