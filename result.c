@@ -197,8 +197,8 @@ static int res_rx_lat_print(void)
 				 "driver latency, net subsystem -> app)",
 				 &temp, print_flags, NULL);
 		stats_diff(&rx_app_v, &rx_hw_v, &temp);
-		n |= stats_print("\ncomplete rx latency (includes driver "
-				 "latency and stack latency), us (wire -> app)",
+		n |= stats_print("\ncomplete rx latency, us (includes driver "
+				 "latency and stack latency, wire -> app)",
 				 &temp, print_flags, NULL);
 	}
 
