@@ -34,7 +34,7 @@ p-t-p = `sed -n '/peak-to-peak/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`, \
 mean-+RMS = `sed -n '/mean\ +-\ RMS/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`"
 }
 
-plgist_histogram() {
+plgist_hist() {
 	local MAIN_LABEL=""
 	local SUBTITLE=""
 	local COMPLETE_TITLE=""
@@ -77,9 +77,34 @@ plgist_plot()
 {
 	local MAIN_LABEL=""
 	local SUBTITLE=""
-	local COMPLETE_TITLE=""
+	local CTITLE=""
 
-	plgist_create_notations
+	plgist_create_notations $@
+
+	local FILE_NAME=$(basename -- "$ORIG_FILE" | tr _ -)
+	CTITLE="$FILE_NAME"
+
+	PLCMD=""
+	COLOR=8
+	for FILE in $@
+	do
+		local TITLE=$(plgist_get_title "$FILE")
+		SUBTITLE=$(echo $TITLE | sed -n 's/\(^.*, us\)\( .*\)/\1/p')
+
+		CTITLE+="\n$TITLE"
+		CTITLE+="\nlink = 1000Mbps, "
+		CTITLE+="frame = `sed -n '/frame\ size/s/\(^.*\): \(.\)/\2/p' "$FILE"`B, "
+		CTITLE+="rate = `sed -n '/RATE/s/\(^.*\)PPS = \(.\)/\2/p' "$FILE"`pps, "
+		CTITLE+="`sed -n '/RATE\ =/s/\(^.*\)= \(.*\),\(.*\)/\2/p' "$FILE"`, "
+		CTITLE+="\nmin = `sed -n '/min\ val/s/\(^.*\)= \(.\)/\2/p' "$FILE"`, "
+		CTITLE+="max = `sed -n '/max\ val/s/\(^.*\)= \(.\)/\2/p' "$FILE"`, "
+		CTITLE+="p-t-p = `sed -n '/peak-to-peak/s/\(^.*\)= \(.\)/\2/p' "$FILE"`, "
+		CTITLE+="mean-+RMS = `sed -n '/mean\ +-\ RMS/s/\(^.*\)= \(.\)/\2/p' "$FILE"`"
+
+		PLCMD+="\"< sed -e '0,/$SEP/ d' -e '/$SEP/,$ d' \". \"$FILE\"\
+		with points pointtype 7 lc $COLOR title \"$SUBTITLE\", "
+		COLOR=$(($COLOR+15))
+	done
 
 gnuplot -p <<PLOT_EOF
 reset
@@ -90,11 +115,11 @@ set xlabel 'frame number'
 set key box
 set grid
 
-set title "$COMPLETE_TITLE"
+set title "$CTITLE"
 
 set terminal qt 0
-plot "< sed -e '0,/$SEP/ d' -e '/$SEP/,$ d' ". "$PLOT_DATA_FILE" \
-with points pointtype 7 black title "$SUBTITLE", \
+
+plot $PLCMD
 
 PLOT_EOF
 }
@@ -120,6 +145,7 @@ BNUM=$?
 
 # create plots income data files
 
+PLOT_DATA_FILE_LIST=$(mktemp)
 for ((i=0; i<$BNUM; i++))
 do
 	# get data
@@ -135,10 +161,10 @@ do
 
 	plgist_get_tail "$ORIG_FILE" >>  $PLOT_DATA_FILE
 
-	plgist_histogram
-	plgist_plot
+	plgist_hist
+	plgist_plot "$PLOT_DATA_FILE"
+	echo "$PLOT_DATA_FILE" >> $PLOT_DATA_FILE_LIST
 
-	rm $PLOT_DATA_FILE
 
 	# remove printed part
 	TEMP_FILE_2=$(mktemp)
@@ -146,4 +172,13 @@ do
 	mv $TEMP_FILE_2 $TEMP_FILE
 done
 
+FILE_LIST=$(cat $PLOT_DATA_FILE_LIST)
+plgist_plot $FILE_LIST
+
+for FILE in $(cat $PLOT_DATA_FILE_LIST)
+do
+	rm $FILE
+done
+
 rm $TEMP_FILE
+rm $PLOT_DATA_FILE_LIST
