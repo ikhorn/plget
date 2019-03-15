@@ -9,7 +9,16 @@ cp $ORIG_FILE $TEMP_FILE
 
 plget_histogram() {
 
+	local XLABEL=""
 	local TITLE=$(plget_get_title "$PLOT_DATA_FILE")
+
+	local LTYPE=$(echo $TITLE | sed -n '/latency/p')
+	[ -z "$LTYPE" ] || XLABEL="latency, us"
+	echo $LTYPE
+
+	local LTYPE=$(echo $TITLE | sed -n '/ipgap/p')
+	[ -z "$LTYPE" ] || XLABEL="inter packet time (ipgap), us"
+	echo $LTYPE
 
 gnuplot -p <<EOF
 reset
@@ -32,7 +41,7 @@ set xtics min,(max-min)/5,max
 set boxwidth width*0.9
 set style fill solid 0.5 #fillstyle
 set tics out nomirror
-set xlabel "inter packet time (ipgap)"
+set xlabel "$XLABEL"
 set ylabel "frequency"
 
 set title "$TITLE\
