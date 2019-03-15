@@ -68,7 +68,7 @@ set ylabel "frequency"
 set title "$COMPLETE_TITLE"
 
 set terminal qt 0
-plot "< sed -e '0,/----/ d' -e '/----/,$ d' ". "$PLOT_DATA_FILE" \
+plot "< sed -e '0,/$SEP/ d' -e '/$SEP/,$ d' ". "$PLOT_DATA_FILE" \
 u (hist(\$1,width)):(1.0) smooth freq w boxes lc rgb"black" title "$SUBTITLE"
 GIST_EOF
 }
@@ -93,7 +93,7 @@ set grid
 set title "$COMPLETE_TITLE"
 
 set terminal qt 0
-plot "< sed -e '0,/----/ d' -e '/----/,$ d' ". "$PLOT_DATA_FILE" \
+plot "< sed -e '0,/$SEP/ d' -e '/$SEP/,$ d' ". "$PLOT_DATA_FILE" \
 with points pointtype 7 black title "$SUBTITLE", \
 
 PLOT_EOF
@@ -147,5 +147,3 @@ do
 done
 
 rm $TEMP_FILE
-
-#set +x
