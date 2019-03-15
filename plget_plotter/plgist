@@ -7,16 +7,16 @@ ORIG_FILE=$1
 TEMP_FILE=$(mktemp)
 cp $ORIG_FILE $TEMP_FILE
 
-# COMPLETE_TITLE, SUBTITLE, XLABEL, YLABEL
+# COMPLETE_TITLE, SUBTITLE, MAIN_LABEL
 plgist_create_notations()
 {
 	local TITLE=$(plgist_get_title "$PLOT_DATA_FILE")
 
 	local LTYPE=$(echo $TITLE | sed -n '/latency/p')
-	[ -z "$LTYPE" ] || XLABEL="latency, us"
+	[ -z "$LTYPE" ] || MAIN_LABEL="latency, us"
 
 	local LTYPE=$(echo $TITLE | sed -n '/ipgap/p')
-	[ -z "$LTYPE" ] || XLABEL="inter packet time (ipgap), us"
+	[ -z "$LTYPE" ] || MAIN_LABEL="inter packet time (ipgap), us"
 
 	local FILE_NAME=$(basename -- "$ORIG_FILE" | tr _ -)
 	SUBTITLE=$(echo $TITLE | sed -n 's/\(^.*, us\)\( .*\)/\1/p')
@@ -35,7 +35,7 @@ mean-+RMS = `sed -n '/mean\ +-\ RMS/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`"
 }
 
 plgist_histogram() {
-	local XLABEL=""
+	local MAIN_LABEL=""
 	local SUBTITLE=""
 	local COMPLETE_TITLE=""
 
@@ -62,7 +62,7 @@ set xtics min,(max-min)/5,max
 set boxwidth width*0.9
 set style fill solid 0.5 #fillstyle
 set tics out nomirror
-set xlabel "$XLABEL"
+set xlabel "$MAIN_LABEL"
 set ylabel "frequency"
 
 set title "$COMPLETE_TITLE"
@@ -75,7 +75,7 @@ GIST_EOF
 
 plgist_plot()
 {
-	local XLABEL=""
+	local MAIN_LABEL=""
 	local SUBTITLE=""
 	local COMPLETE_TITLE=""
 
@@ -84,8 +84,8 @@ plgist_plot()
 gnuplot -p <<PLOT_EOF
 reset
 
-set ylabel 'packets period (between packet time, gap), us'
-set xlabel 'packet number'
+set ylabel "$MAIN_LABEL"
+set xlabel 'frame number'
 
 set key box
 set grid
