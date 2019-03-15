@@ -17,6 +17,8 @@ plget_histogram() {
 	local LTYPE=$(echo $TITLE | sed -n '/ipgap/p')
 	[ -z "$LTYPE" ] || XLABEL="inter packet time (ipgap), us"
 
+	local FILE_NAME=$(basename -- "$ORIG_FILE" | tr _ -)
+
 gnuplot -p <<EOF
 reset
 
@@ -52,7 +54,8 @@ p-t-p = `sed -n '/peak-to-peak/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`, \
 mean-+RMS = `sed -n '/mean\ +-\ RMS/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`"
 
 set terminal qt 0
-plot "< sed -e '0,/----/ d' -e '/----/,$ d' ". "$PLOT_DATA_FILE" u (hist(\$1,width)):(1.0) smooth freq w boxes lc rgb"black" title "latency"
+plot "< sed -e '0,/----/ d' -e '/----/,$ d' ". "$PLOT_DATA_FILE" \
+u (hist(\$1,width)):(1.0) smooth freq w boxes lc rgb"black" title "$FILE_NAME"
 EOF
 }
 
