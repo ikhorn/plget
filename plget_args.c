@@ -27,76 +27,72 @@
 #define PTP_PRIMARY_MCAST_MACADDR	"01:1B:19:00:00:00"
 #define PTP_FILTERED_MCAST_MACADDR	"01:80:C2:00:00:0E"
 
-static void plget_usage(void)
+static void plget_usage(FILE *s)
 {
-	printf("%s\n", PLGET_NAME_VER);
-	printf("Usage:\n");
-	printf("plget <options>:\n");
-	printf("\ts PPS \t\t--pps=PPS\t\t:packets per second, no need in "
-	       "\"rx-lat\" and \"echo-lat\" modes\n");
+fprintf(s, "%s\n", PLGET_NAME_VER);
+fprintf(s, "Usage:\n");
+fprintf(s, "plget <options>:\n");
+fprintf(s, "\ts PPS \t\t--pps=PPS\t\t:packets per second, no need in "
+	"\"rx-lat\" and \"echo-lat\" modes\n");
 
-	printf("\tu PORT\t\t--udp=PORT\t\t:udp port number for udp packet "
-	       "type\n");
-	printf("\t\t\t\t\t\tport 319 or 320 is special and address 224.0.1.29 "
-	       "by default if not overwritten\n");
+fprintf(s, "\tu PORT\t\t--udp=PORT\t\t:udp port number for udp packet type\n");
+fprintf(s, "\t\t\t\t\t\tport 319 or 320 is special and address 224.0.1.29 "
+	"by default if not overwritten\n");
 
-	printf("\tt TYPE\t\t--type=TYPE\t\t:type of packet, can be udp, avtp, "
-	       "ptpl2, ptpl4, xdp_ptpl2, raw_ptpl2\n");
-	printf("\ti NAME\t\t--if=NAME\t\t:interface name\n");
-	printf("\tm MODE\t\t--mode=MODE\t\t:\"rx-lat\" or \"tx-lat\" or "
-	       "\"echo-lat\" or \"pkt-gen\" or \"rtt\" or \"rx-rate\" "
-	       "mode\n");
-	printf("\tn NUM\t\t--pkt-num=NUM\t\t:number of packets to be sent or "
-	       "received\n");
-	printf("\tl SIZE\t\t--frame-size=SIZE\t:packet frame size (total) in "
-	       "bytes\n");
-	printf("\ta ADDR\t\t--address=ADDR\t\t:ip or mac address depending on the "
-	       "mode\n");
-	printf("\tc \t\t--clock-check\t\t:print title along with system and "
-	       "ptp clock counts, no arguments\n");
+fprintf(s, "\tt TYPE\t\t--type=TYPE\t\t:type of packet, can be udp, avtp, "
+	"ptpl2, ptpl4, xdp_ptpl2, raw_ptpl2\n");
+fprintf(s, "\ti NAME\t\t--if=NAME\t\t:interface name\n");
+fprintf(s, "\tm MODE\t\t--mode=MODE\t\t:\"rx-lat\" or \"tx-lat\" or "
+	"\"echo-lat\" or \"pkt-gen\" or \"rtt\" or \"rx-rate\" mode\n");
+fprintf(s, "\tn NUM\t\t--pkt-num=NUM\t\t:number of packets to be sent or "
+	"received\n");
+fprintf(s, "\tl SIZE\t\t--frame-size=SIZE\t:packet frame size (total) in "
+	"bytes\n");
+fprintf(s, "\ta ADDR\t\t--address=ADDR\t\t:ip or mac address depending on the "
+	"mode\n");
+fprintf(s, "\tc \t\t--clock-check\t\t:print title along with system and "
+	"ptp clock counts, no arguments\n");
 
-	printf("\tf PRINTLINE\t--format=PRINTLINE\t:printout conf, \"hwts\" "
-	       "\"ipgap\" \"plain\" \"lat\", by default \"lat\" is used\n");
-	printf("\t\t\t\t\t\t\"hwts\" - print hw timesamps relatively to first "
-	       "packet hw tx time\n");
-	printf("\t\t\t\t\t\t\"ipgap\" - print interpacket gap, that is time "
-	       "between packets, sent or received\n");
-	printf("\t\t\t\t\t\t\"plain\" - format output in one row and with "
-	       "space delimiter\n");
-	printf("\t\t\t\t\t\t\"lat\" - print latencies\n");
-	printf("\t\t\t\t\t\t\"sched\" - print latencies before packet "
-	       "scheduler\n");
+fprintf(s, "\tf PRINTLINE\t--format=PRINTLINE\t:printout conf, \"hwts\" "
+	"\"ipgap\" \"plain\" \"lat\", by default \"lat\" is used\n");
+fprintf(s, "\t\t\t\t\t\t\"hwts\" - print hw timesamps relatively to first "
+	"packet hw tx time\n");
+fprintf(s, "\t\t\t\t\t\t\"ipgap\" - print interpacket gap, that is time "
+	"between packets, sent or received\n");
+fprintf(s, "\t\t\t\t\t\t\"plain\" - format output in one row and with "
+	"space delimiter\n");
+fprintf(s, "\t\t\t\t\t\t\"lat\" - print latencies\n");
+fprintf(s, "\t\t\t\t\t\t\"sched\" - print latencies before packet scheduler\n");
 
-	printf("\tp PRIO\t\t--prio=PRIO\t\t:set priority for socket\n");
-	printf("\tw TIME\t\t--busy-poll=TIME\t:set SO_BUSY_POLL option for "
-	       "socket, in us\n");
-	printf("\tr TIME\t\t--rel-time=TIME\t\t:use relative time for \"hwts\" "
-	       "output instead of first packet timestamp, in ns\n");
-	printf("\tk ID\t\t--stream-id=ID\t\t:set stream num to identify PTP "
-	       "stream (with seq_id) to differ on h/w level\n");
+fprintf(s, "\tp PRIO\t\t--prio=PRIO\t\t:set priority for socket\n");
+fprintf(s, "\tw TIME\t\t--busy-poll=TIME\t:set SO_BUSY_POLL option for "
+	"socket, in us\n");
+fprintf(s, "\tr TIME\t\t--rel-time=TIME\t\t:use relative time for \"hwts\" "
+	"output instead of first packet timestamp, in ns\n");
+fprintf(s, "\tk ID\t\t--stream-id=ID\t\t:set stream num to identify PTP "
+	"stream (with seq_id) to differ on h/w level\n");
 
-	printf("\td NUM\t\t--dev-deep=NUM\t\t:number of devices on tx path to "
-	       "get latencies between, used only for\n");
-	printf("\t\t\t\t\t\t\"sched\" format and vlan or/and bridge is used, "
-	       "by default 1 is used.\n");
-	printf("\t\t\t\t\t\tThat is, if vlan + bridge then -d 3, and so on, "
-	       "basically it's equal to\n");
-	printf("\t\t\t\t\t\tnumber of sched timestamps expected\n");
+fprintf(s, "\td NUM\t\t--dev-deep=NUM\t\t:number of devices on tx path to "
+	"get latencies between, used only for\n");
+fprintf(s, "\t\t\t\t\t\t\"sched\" format and vlan or/and bridge is used, "
+	"by default 1 is used.\n");
+fprintf(s, "\t\t\t\t\t\tThat is, if vlan + bridge then -d 3, and so on, "
+	"basically it's equal to\n");
+fprintf(s, "\t\t\t\t\t\tnumber of sched timestamps expected\n");
 
-	printf("\tq QUEUE\t\t--queue=QUEUE\t\t:set queue for xpd socket\n");
-	printf("\tz \t\t--zero-copy\t\t:force zero-copy XDP mode (not tested)\n");
+fprintf(s, "\tq QUEUE\t\t--queue=QUEUE\t\t:set queue for xpd socket\n");
+fprintf(s, "\tz \t\t--zero-copy\t\t:force zero-copy XDP mode (not tested)\n");
 
-	printf("\to \t\t--option\t\t:can set the following options via comma: "
-	       "\n");
-	printf("\t\t\t\t\t\t\"dis_hwts\" - disable h/w ts, usefull to check "
-	       "possible impact of mmio calls while h/w ts retrieve\n");
-	printf("\t\t\t\t\t\t\"clock_check\" - print title along with system "
-	       "and ptp clock counts\n");
-	printf("\t\t\t\t\t\t\"rt_print\" - print real time results while "
-	       "running\n");
-	printf("\t\t\t\t\t\t\"sw_poll\" - software poll of ingress packets, "
-	       "DONTWAIT flag if recvmsg is used, for af_xdp it's polling of "
-	       "rx queue. Can consume CPU time and power.\n");
+fprintf(s, "\to \t\t--option\t\t:can set the following options via comma: \n");
+fprintf(s, "\t\t\t\t\t\t\"dis_hwts\" - disable h/w ts, usefull to check "
+	"possible impact of mmio calls while h/w ts retrieve\n");
+fprintf(s, "\t\t\t\t\t\t\"clock_check\" - print title along with system "
+	"and ptp clock counts\n");
+fprintf(s, "\t\t\t\t\t\t\"rt_print\" - print real time results while "
+	"running\n");
+fprintf(s, "\t\t\t\t\t\t\"sw_poll\" - software poll of ingress packets, "
+	"DONTWAIT flag if recvmsg is used, for af_xdp it's polling of "
+	"rx queue. Can consume CPU time and power.\n");
 }
 
 static struct option plget_options[] = {
@@ -117,6 +113,7 @@ static struct option plget_options[] = {
 	{"dev-deep",	required_argument,	0, 'd'},
 	{"queue",	required_argument,	0, 'q'},
 	{"zero-copy",	no_argument,		0, 'z'},
+	{"help",	no_argument,		0, 'h'},
 	{"option",	required_argument,	0, 'o'},
 	{NULL, 0, NULL, 0},
 };
@@ -406,7 +403,7 @@ static void read_args(int argc, char **argv)
 {
 	int idx, opt;
 
-	while ((opt = getopt_long(argc, argv, "s:u:p:i:m:n:l:a:t:f:b:cw:r:k:d:q:zo:",
+	while ((opt = getopt_long(argc, argv, "s:u:p:i:m:n:l:a:t:f:b:cw:r:k:d:q:zho:",
 	       plget_options, &idx)) != -1) {
 		switch (opt) {
 		case 's':
@@ -466,6 +463,10 @@ static void read_args(int argc, char **argv)
 		case 'o':
 			plget_set_option();
 			break;
+		case 'h':
+			plget_usage(stdout);
+			exit(EXIT_SUCCESS);
+			break;
 		default:
 			plget_fail("unknown option");
 		}
@@ -475,11 +476,11 @@ static void read_args(int argc, char **argv)
 void plget_fail(char *err)
 {
 	if (err)
-		printf("%s\n", err);
+		fprintf(stderr, "%s\n", err);
 
 	xdp_unload_prog();
 
-	plget_usage();
+	plget_usage(stderr);
 	exit(EXIT_FAILURE);
 }
 
