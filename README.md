@@ -100,6 +100,10 @@ needed, -f "sched" can be used, relevant only for modes with TX, like echo-lat,
 rtt, tx-lat. Also if no worries about printing progress bar while measurements,
 the -o "rt_print" can be set.
 
+To get plots and histograms for measured data just run from plget_plot:
+
+:~# plgist file_with plget_stdout
+
 # EXAMPLES
 
 ## RX LATENCY EXAMPLES
