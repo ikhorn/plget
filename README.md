@@ -23,6 +23,10 @@ two time counters in sub-microsecond level accuracy, for TI AM572x it was
 One of the possible test models:
 
 ![](https://github.com/ikhorn/plget/blob/master/pic/example_latency_test_model.jpg)
+![](https://github.com/ikhorn/plget/blob/master/pic/driver_stack_sys_poll.jpg)
+![](https://github.com/ikhorn/plget/blob/master/pic/driver_stack_sys_poll_hist.jpg)
+![](https://github.com/ikhorn/plget/blob/master/pic/complete_sys_poll.jpg)
+![](https://github.com/ikhorn/plget/blob/master/pic/all_syspoll.jpg)
 
 
 # PURPOSE
