@@ -88,8 +88,7 @@ fprintf(s, "\t\t\t\t\t\t\"dis_hwts\" - disable h/w ts, usefull to check "
 	"possible impact of mmio calls while h/w ts retrieve\n");
 fprintf(s, "\t\t\t\t\t\t\"clock_check\" - print title along with system "
 	"and ptp clock counts\n");
-fprintf(s, "\t\t\t\t\t\t\"rt_print\" - print real time results while "
-	"running\n");
+fprintf(s, "\t\t\t\t\t\t\"progress\" - print progress bar while running\n");
 fprintf(s, "\t\t\t\t\t\t\"sw_poll\" - software poll of ingress packets, "
 	"DONTWAIT flag if recvmsg is used, for af_xdp it's polling of "
 	"rx queue. Can consume CPU time and power.\n");
@@ -372,7 +371,7 @@ static void plget_set_option(void)
 	if (strstr(optarg, "clock_check"))
 		plget->flags |= PLF_TITLE;
 
-	if (strstr(optarg, "rt_print"))
+	if (strstr(optarg, "progress"))
 		plget->flags |= PLF_RT_PRINT;
 
 	if (strstr(optarg, "sw_poll"))
