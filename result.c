@@ -98,19 +98,19 @@ static int res_tx_lat_print(void)
 
 	if (plget->flags & PLF_LATENCY_STAT) {
 		stats_diff(&tx_hw_v, &tx_sw_v, &temp);
-		n |= stats_print("\ndma + NIC tx latency, us (doesn't include "
-				 "complete driver latency, driver s/w ts -> "
-				 "wire)", &temp, print_flags, NULL);
+		n |= stats_print("\ndma + NIC tx latency, us (not complete "
+				 "driver latency, driver s/w ts -> wire)" ,
+				 &temp, print_flags, NULL);
 
 		stats_diff(&tx_sw_v, &tx_app_v, &temp);
 		n |= stats_print("\nstack + packet scheduler + part of "
-				 "driver tx latency, us (app -> some palce in the "
+				 "driver tx latency, us (app -> some place in the "
 				 "NIC driver, app -> driver s/w ts)",
 				  &temp, print_flags, NULL);
 
 		stats_diff(&tx_hw_v, &tx_app_v, &temp);
-		n |= stats_print("\ncomplete tx latency, us (includes driver "
-				 "latency and stack latency, app -> wire)",
+		n |= stats_print("\ncomplete tx latency, us (driver latency + "
+				 "stack latency, app -> wire)",
 				  &temp, print_flags, NULL);
 	}
 
@@ -189,16 +189,16 @@ static int res_rx_lat_print(void)
 
 	if (plget->flags & PLF_LATENCY_STAT) {
 		stats_diff(&rx_sw_v, &rx_hw_v, &temp);
-		n |= stats_print("\ndriver rx latency, us (doesn't include "
-				 "stack latency, wire -> net subsystem)",
+		n |= stats_print("\ndriver rx latency, us (no stack latency, "
+				 "wire -> net subsystem)",
 				 &temp, print_flags, NULL);
 		stats_diff(&rx_app_v, &rx_sw_v, &temp);
-		n |= stats_print("\nstack rx latency, us (doesn't include "
-				 "driver latency, net subsystem -> app)",
+		n |= stats_print("\nstack rx latency, us (no driver latency,  "
+				 "net subsystem -> app)",
 				 &temp, print_flags, NULL);
 		stats_diff(&rx_app_v, &rx_hw_v, &temp);
-		n |= stats_print("\ncomplete rx latency, us (includes driver "
-				 "latency and stack latency, wire -> app)",
+		n |= stats_print("\ncomplete rx latency, us (driver latency + "
+				 "stack latency, wire -> app)",
 				 &temp, print_flags, NULL);
 	}
 
@@ -239,7 +239,7 @@ static void res_rtt_print(void)
 		"tx %s and rx %s timestamps\n", a_ts_base, b_ts_base);
 
 	stats_diff(b_stat, a_stat, &temp);
-	stats_print("\nRTT (doesn't include rx/tx latencies of this HOST, us",
+	stats_print("\nRTT (no rx/tx latencies of this HOST, us",
 		    &temp, print_flags, NULL);
 }
 
