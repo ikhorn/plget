@@ -43,8 +43,12 @@ set title font ",8"
 n=100 #number of intervals
 mean="`sed -n '/mean\ +-\ RMS/s/\(^.*\)= \(.*\) +- \(.*$\)/\2/p' "$PLOT_DATA_FILE"`"
 rms="`sed -n '/mean\ +-\ RMS/s/\(^.*\)= \(.*\) +- \(.*\) us$/\3/p' "$PLOT_DATA_FILE"`"
-max=mean + rms
-min=mean - rms
+max=mean + 2 * rms
+min=mean - 2 * rms
+if (min < 0) {
+	max=max-min
+	min=0
+}
 
 width=(max-min)/n #interval width
 #function used to map a value to the intervals
