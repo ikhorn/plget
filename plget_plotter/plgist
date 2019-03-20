@@ -106,8 +106,8 @@ plgist_plot()
 		plgist_add_file_ctitle "$TITLE" "$FILE"
 
 		PLCMD+="\"< sed -e '0,/$SEP/ d' -e '/$SEP/,$ d' \". \"$FILE\"\
-		with points pointtype 7 lc $COLOR title \"$SUBTITLE\", "
-		COLOR=$(($COLOR+15))
+		with points pointtype 7 pointsize 0.5 lc $COLOR\
+		title \"$SUBTITLE\", " COLOR=$(($COLOR+15))
 	done
 
 gnuplot -p <<PLOT_EOF
