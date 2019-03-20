@@ -37,8 +37,8 @@ plgist_hist() {
 gnuplot -p <<GIST_EOF
 reset
 
-set key font ",8"
-set title font ",8"
+set key font ",9"
+set title font ",9"
 
 n=100 #number of intervals
 mean="`sed -n '/mean\ +-\ RMS/s/\(^.*\)= \(.*\) +- \(.*$\)/\2/p' "$PLOT_DATA_FILE"`"
@@ -113,8 +113,8 @@ plgist_plot()
 gnuplot -p <<PLOT_EOF
 reset
 
-set key font ",8"
-set title font ",8"
+set key font ",9"
+set title font ",9"
 
 
 set ylabel "$MAIN_LABEL"
