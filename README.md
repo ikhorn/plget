@@ -492,7 +492,7 @@ BASE_TIME=$(./plget)
 plget -i eth0 -t ptpl2 -m tx-lat -n 16 -s 100 -l 512 -f hwts -p 3 \
 	-r $BASE_TIME -k 0 > tss1&
 
-# run stream 2 with prio 3 and stream id = 1 to get hwts to tss2 file
+# run stream 2 with prio 2 and stream id = 1 to get hwts to tss2 file
 plget -i eth0 -t ptpl2 -m tx-lat -n 16 -s 100 -l 512 -f hwts -p 2 \
 	-r $BASE_TIME -k 1 > tss2
 ~~~
