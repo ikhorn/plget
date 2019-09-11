@@ -16,6 +16,10 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <errno.h>
+#include <sys/ioctl.h>
+#include <linux/sockios.h>
+#include <linux/ethtool.h>
 
 #define MEASUREMENTS_NUM		5
 #define NSEC_PER_USEC			1000ULL
@@ -313,15 +317,36 @@ void res_print_time(void)
 	printf("%llu\n", val);
 }
 
+int res_get_intf_speed(void)
+{
+	struct ethtool_cmd edata;
+	struct ifreq ifr;
+	int ret;
+
+	strncpy(ifr.ifr_name, plget->if_name, sizeof(ifr.ifr_name));
+	ifr.ifr_data = (char *)&edata;
+
+	edata.cmd = ETHTOOL_GSET;
+
+	ret = ioctl(plget->sfd, SIOCETHTOOL, &ifr);
+	if (ret < 0) {
+		printf("ETHTOOL_GLINK failed, supposing 100Mbs: %s\n", strerror(errno));
+		return SPEED_100;
+	}
+
+	return ethtool_cmd_speed(&edata);
+}
+
 void res_stats_print(void)
 {
+	unsigned long long int ftt;
 	int mod = plget->mod;
 	int rx_tx_lat = mod == ECHO_LAT || mod == RTT_MOD;
 	int print_rx_lat = mod == RX_LAT || rx_tx_lat;
 	int print_tx_lat = mod == TX_LAT || rx_tx_lat;
 	int n = 0, n2 = 0;
 	int header_size;
-	int pnum;
+	int pnum, speed;
 
 	printf("\n");
 	if (print_tx_lat)
@@ -354,8 +379,16 @@ void res_stats_print(void)
 		plget->frame_size = header_size + plget->sk_payload_size;
 	}
 
-	if (plget->frame_size)
-		printf("frame size: %d\n", plget->frame_size);
+	if (plget->frame_size) {
+		speed = res_get_intf_speed();
+		printf("Interface speed returned: %dMbps\n", speed);
+		printf("Frame size: %d\n", plget->frame_size);
+		if (speed > 0) {
+			ftt = (double)(plget->frame_size * 8 * 1000) / speed;
+			printf("Frame transmission time: %lluns (%gus)\n", ftt,
+				ftt / 1000.0);
+		}
+	}
 
 	printf("number of packets: %d\n", pnum);
 
