@@ -147,7 +147,7 @@ static int txlat_proc_packets(void)
 			if (!ret) {
 				printf("Timed out, tx packets: %lu, ts num:"
 				       "%lu\n", (unsigned long)tx_cnt, *rx_cnt);
-				return -1;
+				return -ETIME;
 			}
 
 			return perror("Some error on poll()"), -errno;
