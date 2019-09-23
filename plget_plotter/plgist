@@ -34,20 +34,30 @@ plgist_hist() {
 	local CTITLE=$(basename -- "$ORIG_FILE" | tr _ -)
 	plgist_add_file_ctitle "$TITLE" "$PLOT_DATA_FILE"
 
+
 gnuplot -p <<GIST_EOF
 reset
 
 set key font ",9"
 set title font ",9"
 
-n=100 #number of intervals
+n=200 #number of intervals
 mean="`sed -n '/mean\ +-\ RMS/s/\(^.*\)= \(.*\) +- \(.*$\)/\2/p' "$PLOT_DATA_FILE"`"
 rms="`sed -n '/mean\ +-\ RMS/s/\(^.*\)= \(.*\) +- \(.*\) us$/\3/p' "$PLOT_DATA_FILE"`"
+
+real_min="`sed -n '/min\ val/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`"
+real_max="`sed -n '/max\ val/s/\(^.*\)= \(.\)/\2/p' "$PLOT_DATA_FILE"`"
+
 max=mean + 2 * rms
 min=mean - 2 * rms
-if (min < 0) {
+
+if (min < real_min) {
 	max=max-min
-	min=0
+	min=real_min
+}
+
+if (max > real_max) {
+	max=real_max
 }
 
 width=(max-min)/n #interval width
@@ -70,6 +80,16 @@ set title "$CTITLE"
 set terminal qt 0
 plot "< sed -e '0,/$SEP/ d' -e '/$SEP/,$ d' ". "$PLOT_DATA_FILE" \
 u (hist(\$1,width)):(1.0) smooth freq w boxes lc rgb"black" title "$SUBTITLE"
+
+
+min=real_min
+max=real_max
+set xrange [min:max]
+
+set terminal qt 1
+plot "< sed -e '0,/$SEP/ d' -e '/$SEP/,$ d' ". "$PLOT_DATA_FILE" \
+u (hist(\$1,width)):(1.0) smooth freq w boxes lc rgb"black" title "$SUBTITLE"
+
 GIST_EOF
 }
 
