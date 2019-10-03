@@ -215,6 +215,57 @@ static void print_timestamp_info(struct ethtool_ts_info *info)
 	printf("\t\n");
 }
 
+static void print_hwts_configuration(struct hwtstamp_config *hwcnf, char *sfx)
+{
+	printf("\n\"%s\" HWTS configuration %s: \n", plget->if_name,
+	       sfx);
+
+	printf("TX type: \n");
+
+	if (hwcnf->tx_type == HWTSTAMP_TX_OFF)
+		printf("\tHWTSTAMP_TX_OFF\n");
+	if (hwcnf->tx_type == HWTSTAMP_TX_ON)
+		printf("\tHWTSTAMP_TX_ON\n");
+	if (hwcnf->tx_type == HWTSTAMP_TX_ONESTEP_SYNC)
+		printf("\tHWTSTAMP_TX_ONESTEP_SYNC\n");
+
+	printf("RX filter: \n");
+	if (hwcnf->rx_filter == HWTSTAMP_FILTER_NONE)
+		printf("\tHWTSTAMP_FILTER_NONE\n");
+	if (hwcnf->rx_filter == HWTSTAMP_FILTER_ALL)
+		printf("\tHWTSTAMP_FILTER_ALL\n");
+	if (hwcnf->rx_filter == HWTSTAMP_FILTER_SOME)
+		printf("\tHWTSTAMP_FILTER_SOME\n");
+	if (hwcnf->rx_filter == HWTSTAMP_FILTER_PTP_V1_L4_EVENT)
+		printf("\tHWTSTAMP_FILTER_PTP_V1_L4_EVENT\n");
+	if (hwcnf->rx_filter == HWTSTAMP_FILTER_PTP_V1_L4_SYNC)
+		printf("\tHWTSTAMP_FILTER_PTP_V1_L4_SYNC\n");
+	if (hwcnf->rx_filter == HWTSTAMP_FILTER_PTP_V1_L4_DELAY_REQ)
+		printf("\tHWTSTAMP_FILTER_PTP_V1_L4_DELAY_REQ\n");
+	if (hwcnf->rx_filter == HWTSTAMP_FILTER_PTP_V2_L4_EVENT)
+		printf("\tHWTSTAMP_FILTER_PTP_V2_L4_EVENT\n");
+	if (hwcnf->rx_filter == HWTSTAMP_FILTER_PTP_V2_L4_SYNC)
+		printf("\tHWTSTAMP_FILTER_PTP_V2_L4_SYNC\n");
+	if (hwcnf->rx_filter == HWTSTAMP_FILTER_PTP_V2_L4_DELAY_REQ)
+		printf("\tHWTSTAMP_FILTER_PTP_V2_L4_DELAY_REQ\n");
+	if (hwcnf->rx_filter == HWTSTAMP_FILTER_PTP_V2_L2_EVENT)
+		printf("\tHWTSTAMP_FILTER_PTP_V2_L2_EVENT\n");
+	if (hwcnf->rx_filter == HWTSTAMP_FILTER_PTP_V2_L2_SYNC)
+		printf("\tHWTSTAMP_FILTER_PTP_V2_L2_SYNC\n");
+	if (hwcnf->rx_filter == HWTSTAMP_FILTER_PTP_V2_L2_DELAY_REQ)
+		printf("\tHWTSTAMP_FILTER_PTP_V2_L2_DELAY_REQ\n");
+	if (hwcnf->rx_filter == HWTSTAMP_FILTER_PTP_V2_EVENT)
+		printf("\tHWTSTAMP_FILTER_PTP_V2_EVENT\n");
+	if (hwcnf->rx_filter == HWTSTAMP_FILTER_PTP_V2_SYNC)
+		printf("\tHWTSTAMP_FILTER_PTP_V2_SYNC\n");
+	if (hwcnf->rx_filter == HWTSTAMP_FILTER_PTP_V2_DELAY_REQ)
+		printf("\tHWTSTAMP_FILTER_PTP_V2_DELAY_REQ\n");
+	if (hwcnf->rx_filter == HWTSTAMP_FILTER_NTP_ALL)
+		printf("\tHWTSTAMP_FILTER_NTP_ALL\n");
+
+	printf("\t\n");
+}
+
 static int enable_hw_timestamping(void)
 {
 	struct hwtstamp_config hwconfig_requested;
@@ -234,8 +285,7 @@ static int enable_hw_timestamping(void)
 	strncpy(ifreq_ts.ifr_name, plget->if_name, sizeof(ifreq_ts.ifr_name));
 	ifreq_ts.ifr_data = (void *)&hwconfig;
 	ret = ioctl(plget->sfd, SIOCGHWTSTAMP, &ifreq_ts);
-	printf("SIOCGHWTSTAMP: tx_type was %d; rx_filter was %d\n",
-	       hwconfig.tx_type, hwconfig.rx_filter);
+	print_hwts_configuration(&hwconfig, "before");
 
 	/* configure timestamping */
 	memset(&ifreq_ts, 0, sizeof(ifreq_ts));
@@ -285,9 +335,7 @@ static int enable_hw_timestamping(void)
 		return -errno;
 	}
 
-	printf("SIOCSHWTSTAMP: tx_type %d requested, got %d; rx_filter %d requested, got %d\n",
-	       hwconfig_requested.tx_type, hwconfig.tx_type,
-	       hwconfig_requested.rx_filter, hwconfig.rx_filter);
+	print_hwts_configuration(&hwconfig, "after");
 
 	return ret;
 }
