@@ -272,12 +272,16 @@ int stats_reserve(struct stats *ss, int entry_num)
 
 void stats_drate_print(struct timespec *interval, int pkt_num, int data_size)
 {
-	double rate, pps;
+	__u64 val;
+	double rate, pps, period;
 
-	pps = (double)pkt_num * NSEC_PER_SEC / to_val(interval);
-	rate = (double)data_size * 8 * USEC_PER_SEC / to_val(interval);
+	val = to_val(interval);
+	pps = (double)pkt_num * NSEC_PER_SEC / val;
+	rate = (double)data_size * 8 * USEC_PER_SEC / val;
+	period = val / (double)pkt_num;
 
 	printf("RAW RATE = %.2fkbps, PPS = %.1f\n", rate, pps);
+	printf("AVERAGE PERIOD = %.2fns (%.2fus)\n", period, period / 1000.0);
 }
 
 void stats_rate_print(struct timespec *interval, int pkt_num, int frame_size)
