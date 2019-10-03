@@ -323,6 +323,9 @@ int res_get_intf_speed(void)
 	struct ifreq ifr;
 	int ret;
 
+	memset(&ifr, 0, sizeof(ifr));
+	memset(&edata, 0, sizeof(edata));
+
 	strncpy(ifr.ifr_name, plget->if_name, sizeof(ifr.ifr_name));
 	ifr.ifr_data = (char *)&edata;
 
@@ -330,7 +333,7 @@ int res_get_intf_speed(void)
 
 	ret = ioctl(plget->sfd, SIOCETHTOOL, &ifr);
 	if (ret < 0) {
-		printf("ETHTOOL_GLINK failed, supposing 100Mbs: %s\n", strerror(errno));
+		printf("SIOCETHTOOL failed, supposing 100Mbs: %s\n", strerror(errno));
 		return SPEED_100;
 	}
 

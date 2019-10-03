@@ -38,6 +38,7 @@
 #include "xdp_prog_load.h"
 #include <pthread.h>
 #include "rtprint.h"
+#include <linux/ethtool.h>
 
 #define ALIGN_ROUNDUP(x, align)\
 	((align) * (((x) + align - 1) / (align)))
@@ -127,26 +128,118 @@ static int setup_sock_ts(int sfd, int flags)
 	return 0;
 }
 
+static int get_timestamp_info(struct ethtool_ts_info *info)
+{
+	struct ifreq ifr;
+	int ret;
+
+	memset(&ifr, 0, sizeof(ifr));
+	memset(info, 0, sizeof(struct ethtool_ts_info));
+
+	strncpy(ifr.ifr_name, plget->if_name, sizeof(ifr.ifr_name));
+	ifr.ifr_data = (char *)info;
+
+	info->cmd = ETHTOOL_GET_TS_INFO;
+
+	ret = ioctl(plget->sfd, SIOCETHTOOL, &ifr);
+	if (ret < 0) {
+		printf("SIOCETHTOOL failed");
+		return -1;
+	}
+
+	return 0;
+}
+
+static void print_timestamp_info(struct ethtool_ts_info *info)
+{
+	printf("\n\"%s\" timestamp capabilities: \n", plget->if_name);
+	printf("RX filters: \n");
+
+	if (info->rx_filters & BIT(HWTSTAMP_FILTER_NONE))
+		printf("\tHWTSTAMP_FILTER_NONE\n");
+	if (info->rx_filters & BIT(HWTSTAMP_FILTER_ALL))
+		printf("\tHWTSTAMP_FILTER_ALL\n");
+	if (info->rx_filters & BIT(HWTSTAMP_FILTER_SOME))
+		printf("\tHWTSTAMP_FILTER_SOME\n");
+	if (info->rx_filters & BIT(HWTSTAMP_FILTER_PTP_V1_L4_EVENT))
+		printf("\tHWTSTAMP_FILTER_PTP_V1_L4_EVENT\n");
+	if (info->rx_filters & BIT(HWTSTAMP_FILTER_PTP_V1_L4_SYNC))
+		printf("\tHWTSTAMP_FILTER_PTP_V1_L4_SYNC\n");
+	if (info->rx_filters & BIT(HWTSTAMP_FILTER_PTP_V1_L4_DELAY_REQ))
+		printf("\tHWTSTAMP_FILTER_PTP_V1_L4_DELAY_REQ\n");
+	if (info->rx_filters & BIT(HWTSTAMP_FILTER_PTP_V2_L4_EVENT))
+		printf("\tHWTSTAMP_FILTER_PTP_V2_L4_EVENT\n");
+	if (info->rx_filters & BIT(HWTSTAMP_FILTER_PTP_V2_L4_SYNC))
+		printf("\tHWTSTAMP_FILTER_PTP_V2_L4_SYNC\n");
+	if (info->rx_filters & BIT(HWTSTAMP_FILTER_PTP_V2_L4_DELAY_REQ))
+		printf("\tHWTSTAMP_FILTER_PTP_V2_L4_DELAY_REQ\n");
+	if (info->rx_filters & BIT(HWTSTAMP_FILTER_PTP_V2_L2_EVENT))
+		printf("\tHWTSTAMP_FILTER_PTP_V2_L2_EVENT\n");
+	if (info->rx_filters & BIT(HWTSTAMP_FILTER_PTP_V2_L2_SYNC))
+		printf("\tHWTSTAMP_FILTER_PTP_V2_L2_SYNC\n");
+	if (info->rx_filters & BIT(HWTSTAMP_FILTER_PTP_V2_L2_DELAY_REQ))
+		printf("\tHWTSTAMP_FILTER_PTP_V2_L2_DELAY_REQ\n");
+	if (info->rx_filters & BIT(HWTSTAMP_FILTER_PTP_V2_EVENT))
+		printf("\tHWTSTAMP_FILTER_PTP_V2_EVENT\n");
+	if (info->rx_filters & BIT(HWTSTAMP_FILTER_PTP_V2_SYNC))
+		printf("\tHWTSTAMP_FILTER_PTP_V2_SYNC\n");
+	if (info->rx_filters & BIT(HWTSTAMP_FILTER_PTP_V2_DELAY_REQ))
+		printf("\tHWTSTAMP_FILTER_PTP_V2_DELAY_REQ\n");
+	if (info->rx_filters & BIT(HWTSTAMP_FILTER_NTP_ALL))
+		printf("\tHWTSTAMP_FILTER_NTP_ALL\n");
+
+	printf("TX types: \n");
+
+	if (info->tx_types & BIT(HWTSTAMP_TX_OFF))
+		printf("\tHWTSTAMP_TX_OFF\n");
+	if (info->tx_types & BIT(HWTSTAMP_TX_ON))
+		printf("\tHWTSTAMP_TX_ON\n");
+	if (info->tx_types & BIT(HWTSTAMP_TX_ONESTEP_SYNC))
+		printf("\tHWTSTAMP_TX_ONESTEP_SYNC\n");
+
+	printf("TS cofigurations: \n");
+
+	if (info->so_timestamping & SOF_TIMESTAMPING_TX_HARDWARE)
+		printf("\tSOF_TIMESTAMPING_TX_HARDWARE\n");
+	if (info->so_timestamping & SOF_TIMESTAMPING_TX_SOFTWARE)
+		printf("\tSOF_TIMESTAMPING_TX_SOFTWARE\n");
+	if (info->so_timestamping & SOF_TIMESTAMPING_RX_HARDWARE)
+		printf("\tSOF_TIMESTAMPING_RX_HARDWARE\n");
+	if (info->so_timestamping & SOF_TIMESTAMPING_RX_SOFTWARE)
+		printf("\tSOF_TIMESTAMPING_RX_SOFTWARE\n");
+	if (info->so_timestamping & SOF_TIMESTAMPING_SOFTWARE)
+		printf("\tSOF_TIMESTAMPING_SOFTWARE\n");
+	if (info->so_timestamping & SOF_TIMESTAMPING_RAW_HARDWARE)
+		printf("\tSOF_TIMESTAMPING_RAW_HARDWARE\n");
+
+	printf("\t\n");
+}
+
 static int enable_hw_timestamping(void)
 {
 	struct hwtstamp_config hwconfig_requested;
 	struct hwtstamp_config hwconfig;
 	int need_tx_hwts, need_rx_hwts;
+	struct ethtool_ts_info info;
 	struct ifreq ifreq_ts;
 	int ret;
 
+	/* timestamping capabilities */
+	get_timestamp_info(&info);
+	print_timestamp_info(&info);
+
+	/* current timestamping configuration */
 	memset(&ifreq_ts, 0, sizeof(ifreq_ts));
 	memset(&hwconfig, 0, sizeof(hwconfig));
-
 	strncpy(ifreq_ts.ifr_name, plget->if_name, sizeof(ifreq_ts.ifr_name));
 	ifreq_ts.ifr_data = (void *)&hwconfig;
 	ret = ioctl(plget->sfd, SIOCGHWTSTAMP, &ifreq_ts);
 	printf("SIOCGHWTSTAMP: tx_type was %d; rx_filter was %d\n",
 	       hwconfig.tx_type, hwconfig.rx_filter);
 
+	/* configure timestamping */
 	memset(&ifreq_ts, 0, sizeof(ifreq_ts));
 	memset(&hwconfig, 0, sizeof(hwconfig));
-
 	strncpy(ifreq_ts.ifr_name, plget->if_name, sizeof(ifreq_ts.ifr_name));
 	ifreq_ts.ifr_data = (void *)&hwconfig;
 
