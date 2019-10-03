@@ -178,7 +178,7 @@ static void plget_check_args(void)
 		plget_fail("pps cannot be set in rx-lat mode");
 
 	if ((mod == RX_LAT || mod == RX_RATE) && plget->flags & PLF_PRIO)
-		plget_fail("priority cannot be set int this mode");
+		plget_fail("priority cannot be set in this mode");
 
 	if ((mod == ECHO_LAT || mod == RX_LAT || mod == RX_RATE) &&
 	    plget->frame_size)
