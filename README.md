@@ -102,7 +102,7 @@ the -o "rt_print" can be set.
 
 To get plots and histograms for measured data just run from plget_plot:
 
-:~# plgist file_with plget_stdout
+:~# plgist plget_stdout_file
 
 # EXAMPLES
 
