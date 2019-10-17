@@ -447,7 +447,9 @@ Or use default multicast group and run appropriately:
 ~~~
 
 ## RECEIVE RATE AND PACKET GEN MODES EXAMPLE
-On one side run packet generator, on another plget tool in "rx-rate" mode
+On one side run packet generator, on another plget tool in "rx-rate" mode.
+pkt-gen mode, in comparison to tx-lat mode, doesn't print any latencies or
+timestamps.
 
 ### Example:
 --------
