@@ -16,6 +16,8 @@
 #include <errno.h>
 
 #define MAX_LATENCY			5000
+#define VLAN_TAG_SIZE			4
+#define MAC_ADDR_SIZE			6
 
 static int init_tx_test(void)
 {
@@ -69,8 +71,17 @@ static int get_tx_tstamps(void)
 	/* check MAGIC number and get timestamp id */
 	magic = magic_rd();
 	if (*magic != MAGIC) {
-		printf("incorrect tx MAGIC number 0x%x\n", *magic);
-		return -1;
+		/* can be vlan tagged packet */
+		if (*(plget->data + MAC_ADDR_SIZE * 2) == 0x81 &&
+		    *(plget->data + 1 + MAC_ADDR_SIZE * 2) == 0x00 &&
+		    *(magic + VLAN_TAG_SIZE) == MAGIC) {
+				/* don't do this next time */
+				plget->off_magic_rd += VLAN_TAG_SIZE;
+				plget->off_tid_rd += VLAN_TAG_SIZE;
+		} else {
+			printf("incorrect tx MAGIC number 0x%x\n", *magic);
+			return -1;
+		}
 	}
 
 	ts_id = tid_rd();
