@@ -150,7 +150,7 @@ static int res_tx_lat_print(void)
 	}
 
 	if (plget->flags & PLF_HW_STAT) {
-		if (ts_correct(&plget->rtime)) {
+		if (plget->flags & PLF_RTIME) {
 			rtime = &plget->rtime;
 		} else {
 			rtime = plget->mod == ECHO_LAT ? rx_hw_v.start_ts :
@@ -177,7 +177,7 @@ static int res_rx_lat_print(void)
 	print_flags = plget->flags & PLF_PLAIN_FORMAT ? STATS_PLAIN_OUTPUT : 0;
 
 	if (plget->flags & PLF_HW_STAT) {
-		if (ts_correct(&plget->rtime))
+		if (plget->flags & PLF_RTIME)
 			rtime = &plget->rtime;
 		else
 			rtime = plget->mod == RTT_MOD ? tx_hw_v.start_ts :

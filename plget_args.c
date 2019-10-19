@@ -385,8 +385,8 @@ static void plget_set_relative_time(void)
 	sscanf(optarg, "%llu", &ns);
 	plget->rtime.tv_sec = ns / NSEC_PER_SEC;
 	plget->rtime.tv_nsec = ns - (__u64)plget->rtime.tv_sec * NSEC_PER_SEC;
+	plget->flags |= PLF_RTIME;
 }
-
 
 static void plget_set_stream_id(void)
 {

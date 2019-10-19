@@ -102,7 +102,7 @@ the -o "rt_print" can be set.
 
 To get plots and histograms for measured data just run from plget_plot:
 
-:~# plgist file_with plget_stdout
+:~# plgist plget_stdout_file
 
 # EXAMPLES
 
@@ -447,7 +447,9 @@ Or use default multicast group and run appropriately:
 ~~~
 
 ## RECEIVE RATE AND PACKET GEN MODES EXAMPLE
-On one side run packet generator, on another plget tool in "rx-rate" mode
+On one side run packet generator, on another plget tool in "rx-rate" mode.
+pkt-gen mode, in comparison to tx-lat mode, doesn't print any latencies or
+timestamps.
 
 ### Example:
 --------

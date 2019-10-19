@@ -64,6 +64,7 @@ extern struct plgett *plget;
 #define PLF_PROG_LOADED			BIT(14)
 #define PLF_RT_PRINT			BIT(15)
 #define PLF_SW_POLL			BIT(16)
+#define PLF_RTIME			BIT(17)
 
 #define PLF_PRINTOUT			(PLF_HW_STAT |\
 					PLF_HW_GAP_STAT |\
