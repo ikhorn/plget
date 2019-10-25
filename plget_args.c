@@ -398,6 +398,14 @@ static void plget_set_stream_id(void)
 	plget->stream_id <<= STREAM_ID_SHIFT;
 }
 
+static void plget_set_pkt_num(void)
+{
+	plget->pkt_num = atoi(optarg);
+
+	if (plget->pkt_num == 0)
+		plget_fail("please provide countable packet number, but not 0");
+}
+
 static void read_args(int argc, char **argv)
 {
 	int idx, opt;
@@ -420,6 +428,7 @@ static void read_args(int argc, char **argv)
 			break;
 		case 'n':
 			plget->pkt_num = atoi(optarg);
+			plget_set_pkt_num();
 			break;
 		case 'm':
 			plget_set_mode();
