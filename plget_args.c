@@ -152,6 +152,9 @@ static void plget_check_args(void)
 	if (mod == RX_RATE)
 		plget->flags &= ~PLF_RT_PRINT;
 
+	if (mod != PKT_GEN && !plget->pkt_num)
+		plget_fail("packet num has to be given if not pkt-gen mode");
+
 	if (plget->flags & PLF_SCHED_STAT) {
 		/* as always present some packet scheduler
 		 * TODO: identify virtual interface and increase to 2
