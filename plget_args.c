@@ -353,7 +353,7 @@ static void plget_set_output_format(void)
 		plget->flags |= PLF_HW_STAT;
 
 	if (strstr(optarg, "ipgap"))
-		plget->flags |= PLF_HW_GAP_STAT;
+		plget->flags |= PLF_IPGAP_STAT;
 
 	if (strstr(optarg, "plain"))
 		plget->flags |= PLF_PLAIN_FORMAT;

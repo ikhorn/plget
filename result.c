@@ -157,7 +157,7 @@ static int res_tx_lat_print(void)
 				 rtime);
 	}
 
-	if (plget->flags & PLF_HW_GAP_STAT)
+	if (plget->flags & PLF_IPGAP_STAT)
 		n |= stats_print("\ngap of hw tx time, us", &tx_hw_v,
 				  print_flags | STATS_GAP_DATA, NULL);
 
@@ -183,7 +183,7 @@ static int res_rx_lat_print(void)
 				 rtime);
 	}
 
-	if (plget->flags & PLF_HW_GAP_STAT)
+	if (plget->flags & PLF_IPGAP_STAT)
 		n |= stats_print("\ngap of hw rx time, us", &rx_hw_v,
 				  print_flags | STATS_GAP_DATA, NULL);
 
