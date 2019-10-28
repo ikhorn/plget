@@ -138,6 +138,7 @@ static void plget_set_ptp_default_macaddr(void)
 				PTP_FILTERED_MCAST_MACADDR);
 		plget->flags |= PLF_ADDR_SET;
 	} else {
+		printf("The interface address is used\n");
 		printf("Default address can be specified: %s "
 		       "or %s\n", PTP_PRIMARY_MCAST_MACADDR,
 		       PTP_FILTERED_MCAST_MACADDR);
