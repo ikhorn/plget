@@ -161,9 +161,14 @@ static int res_tx_lat_print(void)
 				 rtime);
 	}
 
-	if (plget->flags & PLF_HW_GAP_STAT)
-		n |= stats_print("\ngap of hw tx time, us", &tx_hw_v,
-				  print_flags | STATS_GAP_DATA, NULL);
+	if (plget->flags & PLF_IPGAP_STAT) {
+		if (plget->flags & PLF_DIS_HW_TS)
+			n |= stats_print("\ngap of sw tx time, us", &tx_sw_v,
+					  print_flags | STATS_GAP_DATA, NULL);
+		else
+			n |= stats_print("\ngap of hw tx time, us", &tx_hw_v,
+					  print_flags | STATS_GAP_DATA, NULL);
+	}
 
 	return n;
 }
@@ -187,9 +192,16 @@ static int res_rx_lat_print(void)
 				 rtime);
 	}
 
-	if (plget->flags & PLF_HW_GAP_STAT)
-		n |= stats_print("\ngap of hw rx time, us", &rx_hw_v,
-				  print_flags | STATS_GAP_DATA, NULL);
+	if (plget->flags & PLF_IPGAP_STAT) {
+		if (plget->flags & PLF_DIS_HW_TS)
+			n |= stats_print("\ngap of sw rx time, us", &rx_sw_v,
+					 print_flags | STATS_GAP_DATA, NULL);
+		else
+			n |= stats_print("\ngap of hw rx time, us", &rx_hw_v,
+					 print_flags | STATS_GAP_DATA, NULL);
+
+
+	}
 
 	if (plget->flags & PLF_LATENCY_STAT) {
 		stats_diff(&rx_sw_v, &rx_hw_v, &temp);

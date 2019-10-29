@@ -52,7 +52,7 @@ extern struct plgett *plget;
 #define PLF_AVTP			BIT(2)
 #define PLF_PLAIN_FORMAT		BIT(3)
 #define PLF_HW_STAT			BIT(4)
-#define PLF_HW_GAP_STAT			BIT(5)
+#define PLF_IPGAP_STAT			BIT(5)
 #define PLF_LATENCY_STAT		BIT(6)
 #define PLF_PRIO			BIT(7)
 #define PLF_BUSYPOLL			BIT(8)
@@ -67,7 +67,7 @@ extern struct plgett *plget;
 #define PLF_RTIME			BIT(17)
 
 #define PLF_PRINTOUT			(PLF_HW_STAT |\
-					PLF_HW_GAP_STAT |\
+					PLF_IPGAP_STAT |\
 					PLF_LATENCY_STAT |\
 					PLF_SCHED_STAT)
 

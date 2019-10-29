@@ -138,6 +138,7 @@ static void plget_set_ptp_default_macaddr(void)
 				PTP_FILTERED_MCAST_MACADDR);
 		plget->flags |= PLF_ADDR_SET;
 	} else {
+		printf("The interface address is used\n");
 		printf("Default address can be specified: %s "
 		       "or %s\n", PTP_PRIMARY_MCAST_MACADDR,
 		       PTP_FILTERED_MCAST_MACADDR);
@@ -151,6 +152,9 @@ static void plget_check_args(void)
 
 	if (mod == RX_RATE)
 		plget->flags &= ~PLF_RT_PRINT;
+
+	if (mod != PKT_GEN && !plget->pkt_num)
+		plget_fail("packet num has to be given if not pkt-gen mode");
 
 	if (plget->flags & PLF_SCHED_STAT) {
 		/* as always present some packet scheduler
@@ -349,7 +353,7 @@ static void plget_set_output_format(void)
 		plget->flags |= PLF_HW_STAT;
 
 	if (strstr(optarg, "ipgap"))
-		plget->flags |= PLF_HW_GAP_STAT;
+		plget->flags |= PLF_IPGAP_STAT;
 
 	if (strstr(optarg, "plain"))
 		plget->flags |= PLF_PLAIN_FORMAT;
@@ -398,6 +402,14 @@ static void plget_set_stream_id(void)
 	plget->stream_id <<= STREAM_ID_SHIFT;
 }
 
+static void plget_set_pkt_num(void)
+{
+	plget->pkt_num = atoi(optarg);
+
+	if (plget->pkt_num == 0)
+		plget_fail("please provide countable packet number, but not 0");
+}
+
 static void read_args(int argc, char **argv)
 {
 	int idx, opt;
@@ -420,6 +432,7 @@ static void read_args(int argc, char **argv)
 			break;
 		case 'n':
 			plget->pkt_num = atoi(optarg);
+			plget_set_pkt_num();
 			break;
 		case 'm':
 			plget_set_mode();
