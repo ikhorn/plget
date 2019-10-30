@@ -92,6 +92,10 @@ fprintf(s, "\t\t\t\t\t\t\"progress\" - print progress bar while running\n");
 fprintf(s, "\t\t\t\t\t\t\"sw_poll\" - software poll of ingress packets, "
 	"DONTWAIT flag if recvmsg is used, for af_xdp it's polling of "
 	"rx queue. Can consume CPU time and power.\n");
+fprintf(s, "\t\t\t\t\t\t\"strict_order\" - receive packets only in strict "
+	   "order, one by one, no packet reordering, applicable only in "
+	   "rx-lat mode\n");
+
 }
 
 static struct option plget_options[] = {
@@ -380,6 +384,9 @@ static void plget_set_option(void)
 
 	if (strstr(optarg, "sw_poll"))
 		plget->flags |= PLF_SW_POLL;
+
+	if (strstr(optarg, "strict_order"))
+		plget->flags |= PLF_STRICT_ID_ORDER;
 }
 
 static void plget_set_relative_time(void)

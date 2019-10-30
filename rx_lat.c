@@ -28,11 +28,12 @@
 
 #define RATE_INERVAL			1
 
-static void rxlat_handle_ts(struct timespec *ts, __u32 ts_id)
+static int rxlat_handle_ts(struct timespec *ts, __u32 ts_id)
 {
 	struct scm_timestamping *tss = NULL;
 	struct msghdr *msg = &plget->msg;
 	struct cmsghdr *cmsg;
+	int id_offset;
 
 	for (cmsg = CMSG_FIRSTHDR(msg); cmsg; cmsg = CMSG_NXTHDR(msg, cmsg)) {
 		if (cmsg->cmsg_level != SOL_SOCKET ||
@@ -45,12 +46,21 @@ static void rxlat_handle_ts(struct timespec *ts, __u32 ts_id)
 
 	if (!tss) {
 		fprintf(stderr, "SCM_TIMESTAMPING not found!\n");
-		return;
+		return -1;
+	}
+
+	id_offset = ts_id - rx_app_v.id;
+	if (id_offset && plget->flags & PLF_STRICT_ID_ORDER) {
+		if (id_offset == 1)
+			fprintf(stderr, "id order violation, expect %d, but %d\n",
+				rx_app_v.id, ts_id);
+		return -1;
 	}
 
 	stats_push_id(&rx_sw_v, tss->ts, ts_id);
 	stats_push_id(&rx_hw_v, tss->ts + 2, ts_id);
 	stats_push_id(&rx_app_v, ts, ts_id);
+	return 0;
 }
 
 static int rxlat_recvmsg_start(struct timespec *ts)
@@ -128,16 +138,21 @@ static int rxlat_recvmsg(struct timespec *ts, __u32 *ts_id)
 void rxlat_proc_packet(void)
 {
 	struct timespec ts;
+	int psize, ret;
 	__u32 ts_id;
-	int psize;
 
-	plget->msg.msg_controllen = sizeof(plget->control);
-	psize = rxlat_recvmsg(&ts, &ts_id);
+	for (;;) {
+		plget->msg.msg_controllen = sizeof(plget->control);
+		psize = rxlat_recvmsg(&ts, &ts_id);
 
-	if (psize < 0)
-		return perror("recvmsg");
+		if (psize < 0)
+			return perror("recvmsg");
 
-	rxlat_handle_ts(&ts, ts_id);
+		ret = rxlat_handle_ts(&ts, ts_id);
+		if (!ret)
+			break;
+	}
+
 	plget->sk_payload_size = psize;
 }
 
