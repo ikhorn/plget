@@ -266,18 +266,48 @@ static void print_hwts_configuration(struct hwtstamp_config *hwcnf, char *sfx)
 	printf("\t\n");
 }
 
+void get_inf_addr(void)
+{
+	int type = plget->pkt_type;
+	struct ifreq ifr;
+	int ok;
+
+	ok = type == PKT_ETH || type == PKT_RAW || type == PKT_XDP;
+	if (!ok)
+		return;
+
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, plget->if_name, sizeof(ifr.ifr_name));
+
+	if (ioctl(plget->sfd, SIOCGIFHWADDR, &ifr))
+		plget_fail("cann't get interface hw address");
+
+	plget->if_addr = *((struct ether_addr *)ifr.ifr_hwaddr.sa_data);
+}
+
+static void get_inf_info(void)
+{
+	struct ethtool_ts_info info;
+	int ret;
+
+	get_inf_addr();
+
+	/* timestamping capabilities */
+	ret = get_timestamp_info(&info);
+	if (ret)
+		return;
+
+	print_timestamp_info(&info);
+}
+
 static int enable_hw_timestamping(void)
 {
 	struct hwtstamp_config hwconfig_requested;
 	struct hwtstamp_config hwconfig;
 	int need_tx_hwts, need_rx_hwts;
-	struct ethtool_ts_info info;
 	struct ifreq ifreq_ts;
 	int ret;
 
-	/* timestamping capabilities */
-	get_timestamp_info(&info);
-	print_timestamp_info(&info);
 
 	/* current timestamping configuration */
 	memset(&ifreq_ts, 0, sizeof(ifreq_ts));
@@ -676,25 +706,6 @@ static void fill_in_data_pointers(void)
 	}
 }
 
-void get_inf_addr(void)
-{
-	int type = plget->pkt_type;
-	struct ifreq ifr;
-	int ok;
-
-	ok = type == PKT_ETH || type == PKT_RAW || type == PKT_XDP;
-	if (!ok)
-		return;
-
-	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, plget->if_name, sizeof(ifr.ifr_name));
-
-	if (ioctl(plget->sfd, SIOCGIFHWADDR, &ifr))
-		plget_fail("cann't get interface hw address");
-
-	plget->if_addr = *((struct ether_addr *)ifr.ifr_hwaddr.sa_data);
-}
-
 static int init_test(void)
 {
 	int ts_flags = SOF_TIMESTAMPING_SOFTWARE;
@@ -704,7 +715,7 @@ static int init_test(void)
 	if (ret)
 		return ret;
 
-	get_inf_addr();
+	get_inf_info();
 
 	enable_hw_timestamping();
 
