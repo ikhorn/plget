@@ -152,20 +152,18 @@ static void plget_set_ptp_default_macaddr(void)
 static void plget_check_args(void)
 {
 	int mod = plget->mod;
-	int need_addr;
+	int need_addr = 0;
 
-	plget->phc_idx = -1;
-
-	if (!mod && !(plget->flags && PLF_TITLE))
+	if (!mod && !(plget->flags & PLF_TITLE))
 		plget_fail("packet num has to be given if not pkt-gen mode");
 
-	if (!mod)
-		return;
+	if (plget->flags & PLF_TITLE && (plget->if_name[0] == '\0'))
+		plget_fail("To print PHC clock info dev has to be specified");
 
 	if (mod == RX_RATE)
 		plget->flags &= ~PLF_RT_PRINT;
 
-	if (mod != PKT_GEN && !plget->pkt_num)
+	if (mod && mod != PKT_GEN && !plget->pkt_num)
 		plget_fail("packet num has to be given if not pkt-gen mode");
 
 	if (plget->flags & PLF_SCHED_STAT) {
@@ -258,7 +256,8 @@ static void plget_check_args(void)
 			    (mod == TX_LAT || mod == RTT_MOD || mod == PKT_GEN);
 		break;
 	default:
-		plget_fail("Please, specify packet_type");
+		if (mod)
+			plget_fail("Please, specify packet_type");
 	}
 
 	if (need_addr)

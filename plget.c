@@ -285,7 +285,7 @@ void get_inf_addr(void)
 	plget->if_addr = *((struct ether_addr *)ifr.ifr_hwaddr.sa_data);
 }
 
-static void get_inf_info(void)
+static int get_inf_info(void)
 {
 	struct ethtool_ts_info info;
 	int ret;
@@ -300,6 +300,7 @@ static void get_inf_info(void)
 	}
 
 	res_title_print();
+	return 0;
 }
 
 static int enable_hw_timestamping(void)
@@ -309,7 +310,6 @@ static int enable_hw_timestamping(void)
 	int need_tx_hwts, need_rx_hwts;
 	struct ifreq ifreq_ts;
 	int ret;
-
 
 	/* current timestamping configuration */
 	memset(&ifreq_ts, 0, sizeof(ifreq_ts));
@@ -538,6 +538,27 @@ static int plget_more_sock_options(void)
 	return 0;
 }
 
+/* spare socket type, to get info only */
+static int plget_spare_socket(void)
+{
+	int sfd, ret;
+
+	/* spare socket to get info only */
+	sfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if (sfd < 0)
+		return perror("socket"), -errno;
+
+	/* bind socket to the interface */
+	ret = setsockopt(sfd, SOL_SOCKET, SO_BINDTODEVICE,
+			 plget->if_name, sizeof(plget->if_name));
+	if (ret < 0) {
+		perror("Couldn't bind to the interface");
+		return ret;
+	}
+
+	return sfd;
+}
+
 static int plget_create_socket(void)
 {
 	if (plget->pkt_type == PKT_UDP)
@@ -546,8 +567,10 @@ static int plget_create_socket(void)
 		plget->sfd = packet_socket();
 	else if (plget->pkt_type == PKT_XDP)
 		plget->sfd = xdp_socket();
+	else if (!plget->mod)
+		plget->sfd = plget_spare_socket();
 	else
-		plget_fail("uknown packet type");
+		plget_fail("cannot assign socket");
 
 	if (plget->sfd < 0)
 		return 1;
