@@ -154,6 +154,8 @@ static void plget_check_args(void)
 	int mod = plget->mod;
 	int need_addr;
 
+	plget->phc_idx = -1;
+
 	if (!mod && !(plget->flags && PLF_TITLE))
 		plget_fail("packet num has to be given if not pkt-gen mode");
 

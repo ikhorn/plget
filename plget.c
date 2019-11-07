@@ -294,8 +294,10 @@ static void get_inf_info(void)
 
 	/* timestamping capabilities */
 	ret = get_timestamp_info(&info);
-	if (!ret)
+	if (!ret) {
+		plget->phc_idx = info.phc_index;
 		print_timestamp_info(&info);
+	}
 
 	res_title_print();
 }

@@ -286,19 +286,22 @@ static struct stats *res_best_tx_vect(void)
 void res_title_print(void)
 {
 	struct timespec ts1, ts2, res;
-	int ptp_fd;
+	int ptp_fd, phc_idx;
+	char phc_addr[20];
 
 	if (!(plget->flags & PLF_TITLE))
 		return;
 
 	res_print_clock_info(CLOCK_REALTIME, "CLOCK_REALTIME");
 
-	if (access("/dev/ptp0", 0)) {
-		perror("PHC is not registered");
+	phc_idx = (plget->phc_idx == -1) ? 0 : plget->phc_idx;
+	snprintf(phc_addr, sizeof(phc_addr), "/dev/ptp%u", phc_idx);
+	if (access(phc_addr, 0)) {
+		printf("PHC %s is not registered\n", phc_addr);
 		goto ptp_err;
 	}
 
-	ptp_fd = open("/dev/ptp0", O_RDWR);
+	ptp_fd = open(phc_addr, O_RDWR);
 	if (ptp_fd == -1) {
 		perror("open PHC");
 		goto ptp_err;
