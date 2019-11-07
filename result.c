@@ -31,6 +31,7 @@ static void res_print_clock_info(int clock, char *clock_name)
 	int res_is_avarage;
 	double aver_res;
 	int i, j, k;
+	__u64 val;
 	int ret;
 
 	ret = clock_getres(clock, &ts1);
@@ -40,6 +41,9 @@ static void res_print_clock_info(int clock, char *clock_name)
 	printf("-----------------------------------------\n");
 	printf("%s info:\n", clock_name);
 	printf("Declared resolution: %ldns\n", ts1.tv_nsec);
+	clock_gettime(clock, &ts1);
+	val = NSEC_PER_SEC * ts1.tv_sec + ts1.tv_nsec;
+	printf("Current time: %lluns\n", val);
 
 	for (j =0; j < MEASUREMENTS_NUM; j++) {
 		for (i = 0, k = 0; k < 8;) {
