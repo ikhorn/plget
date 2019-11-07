@@ -294,10 +294,10 @@ static void get_inf_info(void)
 
 	/* timestamping capabilities */
 	ret = get_timestamp_info(&info);
-	if (ret)
-		return;
+	if (!ret)
+		print_timestamp_info(&info);
 
-	print_timestamp_info(&info);
+	res_title_print();
 }
 
 static int enable_hw_timestamping(void)
@@ -717,6 +717,12 @@ static int init_test(void)
 
 	get_inf_info();
 
+	/* if requested some info only and mode is not set then no need to
+	 * continue
+	 */
+	if (!plget->mod)
+		return 0;
+
 	enable_hw_timestamping();
 
 	if (mod == RTT_MOD || mod == ECHO_LAT || mod == TX_LAT ||
@@ -785,14 +791,12 @@ int main(int argc, char **argv)
 
 	plget_args(argc, argv);
 
-	res_title_print();
-
-	if (!plget->mod)
-		return 0;
-
 	ret = init_test();
 	if (ret)
 		return ret;
+
+	if (!plget->mod)
+		return 0;
 
 	/* lock current and future pages */
 	if (mlockall(MCL_CURRENT | MCL_FUTURE))
