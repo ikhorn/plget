@@ -707,7 +707,6 @@ static int init_test(void)
 	get_inf_addr();
 
 	enable_hw_timestamping();
-	res_title_print();
 
 	if (mod == RTT_MOD || mod == ECHO_LAT || mod == TX_LAT ||
 	    mod == RX_LAT)
@@ -774,6 +773,11 @@ int main(int argc, char **argv)
 		return -ENOMEM;
 
 	plget_args(argc, argv);
+
+	res_title_print();
+
+	if (!plget->mod)
+		return 0;
 
 	ret = init_test();
 	if (ret)
