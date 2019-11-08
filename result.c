@@ -307,7 +307,8 @@ void res_title_print(void)
 		goto ptp_err;
 	}
 
-	res_print_clock_info(ptp_fd, "PHC");
+	snprintf(phc_addr, sizeof(phc_addr), "PHC %u", phc_idx);
+	res_print_clock_info(ptp_fd, phc_addr);
 	printf("-----------------------------------------\n");
 
 	/* Check roughly if timeline is same for Sys and PHC */
