@@ -152,6 +152,9 @@ static int get_timestamp_info(struct ethtool_ts_info *info)
 
 static void print_timestamp_info(struct ethtool_ts_info *info)
 {
+	if (!(plget->flags & PLF_TS_INFO))
+		return;
+
 	printf("\n\"%s\" timestamp capabilities: \n", plget->if_name);
 	printf("RX filters: \n");
 
@@ -217,6 +220,9 @@ static void print_timestamp_info(struct ethtool_ts_info *info)
 
 static void print_hwts_configuration(struct hwtstamp_config *hwcnf, char *sfx)
 {
+	if (!(plget->flags & PLF_TS_INFO))
+		return;
+
 	printf("\n\"%s\" HWTS configuration %s: \n", plget->if_name,
 	       sfx);
 

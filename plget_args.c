@@ -88,6 +88,8 @@ fprintf(s, "\t\t\t\t\t\t\"dis_hwts\" - disable h/w ts, usefull to check "
 	"possible impact of mmio calls while h/w ts retrieve\n");
 fprintf(s, "\t\t\t\t\t\t\"clock_check\" - print title along with system "
 	"and ptp clock counts\n");
+fprintf(s, "\t\t\t\t\t\t\"ts_info\" - print timestamp capabilities and "
+	"configuration\n");
 fprintf(s, "\t\t\t\t\t\t\"progress\" - print progress bar while running\n");
 fprintf(s, "\t\t\t\t\t\t\"sw_poll\" - software poll of ingress packets, "
 	"DONTWAIT flag if recvmsg is used, for af_xdp it's polling of "
@@ -394,6 +396,9 @@ static void plget_set_option(void)
 
 	if (strstr(optarg, "strict_order"))
 		plget->flags |= PLF_STRICT_ID_ORDER;
+
+	if (strstr(optarg, "ts_info"))
+		plget->flags |= PLF_TS_INFO;
 }
 
 static void plget_set_relative_time(void)
